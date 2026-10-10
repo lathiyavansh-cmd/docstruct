@@ -1,6 +1,7 @@
 import type { DocumentDto, DocumentStatus, VersionDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
+import { scheduleExtraction } from '../../extraction/extractor.js';
 import { recordActivity } from '../../lib/activity.js';
 import { HttpError, badRequest, notFound } from '../../lib/errors.js';
 import { VERSION_COLUMNS, VERSION_JOINS, findDocument, toVersionDto, type VersionRow } from '../documents/queries.js';
@@ -108,7 +109,9 @@ export class VersionService {
       if (upload) await this.ctx.storage.removeOrphan(upload.storageKey);
       throw error;
     }
-    return (await findDocument(this.ctx.db, documentId))!;
+    const doc = (await findDocument(this.ctx.db, documentId))!;
+    if (doc.currentVersion.extractionStatus === 'PENDING') scheduleExtraction(this.ctx, doc.currentVersion.versionId);
+    return doc;
   }
 
   /**

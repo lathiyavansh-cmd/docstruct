@@ -77,6 +77,11 @@ export class ObjectStore {
     return 'ok';
   }
 
+  /** Filesystem path of an object, for server-side tools such as the text extractor. */
+  localPath(key: string): string {
+    return this.pathFor(key);
+  }
+
   async exists(key: string): Promise<boolean> {
     return (await this.size(key)) !== null;
   }
