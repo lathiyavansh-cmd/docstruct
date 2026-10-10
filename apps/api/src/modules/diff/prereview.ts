@@ -203,7 +203,9 @@ function describeModification(change: Change, idf: Map<string, number>): string 
       ins = words[k + 1].text;
       k++;
     }
-    if ((del + ins).replace(/[\s\p{P}]/gu, '')) spans.push({ del: del.trim(), ins: ins.trim(), before });
+    // Quote the words themselves, without the punctuation that joins them to their neighbours.
+    const tidy = (t: string) => t.trim().replace(/^[,;:.]+\s*/, '').replace(/\s*[,;:]+$/, '');
+    if ((del + ins).replace(/[\s\p{P}]/gu, '')) spans.push({ del: tidy(del), ins: tidy(ins), before });
   }
   const context = (s: { before: string }, text: string) => {
     // A bare number or a single short word reads better with the word before it ("50 MB" -> "limit of 50 MB").
