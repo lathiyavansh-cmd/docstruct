@@ -6,6 +6,7 @@ import { useAuth } from './lib/auth';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage, ResetPasswordPage } from './pages/auth/PasswordPages';
 import { SignUpPage } from './pages/auth/SignUpPage';
+import { ComparePage } from './pages/ComparePage';
 import { DocumentPage } from './pages/DocumentPage';
 import { HelpPage } from './pages/HelpPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -52,6 +53,7 @@ export function App() {
           <Route path="activity" element={<ActivityPage />} />
         </Route>
         <Route path="d/:documentId" element={<DocumentPage />} />
+        <Route path="d/:documentId/compare" element={<ComparePage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="help" element={<HelpPage />} />
         <Route path="profile" element={<ProfilePage />} />
