@@ -2,13 +2,81 @@
 
 **A Project-Centric Document Management and Review Platform**
 
-Mini Project (PR1) · Semester V · B.Tech Computer Engineering · Sardar Patel Institute of Technology · 2026-27
-Team: Vansh Lathiya (2024300124) · Vivan Dhoka (2024300048) · Shrut Diwakar (2024300051) · Guide: Dr. Sudhir Dhage
+Mini Project (PR1), Semester V, B.Tech Computer Engineering, Sardar Patel Institute of Technology, 2026-27
+Team: Vansh Lathiya (2024300124), Vivan Dhoka (2024300048), Shrut Diwakar (2024300051). Guide: Dr. Sudhir Dhage.
 
-DocStruct keeps every document inside a project: members hold explicit roles, documents live in a folder
+DocStruct keeps every document inside a project. Members hold explicit roles, documents live in a folder
 hierarchy, every upload is a new immutable version, and a document is formally submitted to one named
-reviewer who approves it or requests changes. Before the reviewer looks, the system compares the version
-with its predecessor and produces a change summary and advisory pre-review findings.
+reviewer who approves it or requests changes. Before the reviewer looks, DocStruct compares the version with
+its predecessor and prepares a change summary and pre-review findings.
 
-- Branching strategy and commit conventions: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)
-- Team and module ownership: [docs/TEAM.md](docs/TEAM.md)
+## What it does
+
+| SRS feature | Implemented |
+|---|---|
+| 3.1 Accounts and authentication | Sign-up, login with throttling, idle and absolute session expiry, logout, password reset by single-use link, profile |
+| 3.2 Projects and membership | Projects, four roles (Owner, Editor, Reviewer, Viewer), last-owner protection, archive to read-only |
+| 3.3 Documents and folders | Nested folders with cycle prevention, signed-URL upload in one transaction, previews for PDF, images, text and Markdown |
+| 3.4 Version management | Concurrency-safe numbering, history, download of any version, restore as a new version, immutable versions |
+| 3.5 Review workflow | One open review per document, designated reviewer, approve or request changes, cancel, resubmit, queue, full history |
+| 3.6 Comparison and pre-review | Paragraph-level diff, cosmetic-change filter, word highlights, in-house change summary and findings, stored results |
+| 3.7 Sharing and annotation | Comments on a version, pinned to a PDF region, replies, resolve; view-only expiring and revocable share links |
+| 3.8 Search and filtering | Typo-tolerant title search, full-text content search, ranking, filters by status, folder, reviewer and date |
+| 3.9 Dashboard and activity | Status counts, pending actions, review progress, immutable activity log |
+
+Everything is written by the team: authentication, file storage, text extraction (a PDF parser and DOCX
+reader in pure Python) and the comparison and summary engine. No external service API is used.
+
+## Stack
+
+React 19, TypeScript and Tailwind CSS (web) · Node.js and Express in TypeScript (API) · PostgreSQL, embedded
+through PGlite in development or any PostgreSQL 15+ server such as Supabase · Python 3.9+ standard library
+(text extraction) · Vitest, Supertest and unittest (tests).
+
+## Run it
+
+Requirements: Node.js 20.19 or newer, npm, and optionally Python 3.9+ (for PDF and DOCX text).
+
+```bash
+npm install
+npm run setup -- --seed
+npm run dev
+```
+
+Open http://localhost:5173 and log in with a demo account (password `docstruct-demo`):
+
+| Account | Role in the demo project |
+|---|---|
+| vansh@docstruct.test | Owner |
+| vivan@docstruct.test | Editor |
+| shrut@docstruct.test | Editor |
+| reviewer@docstruct.test | Reviewer, with "SRS Sections 3 and 5" waiting in the review queue |
+
+No database server is needed: data lives in `apps/api/.data`. To use PostgreSQL or Supabase instead, set
+`DATABASE_URL` in `apps/api/.env` (see `.env.example`) and run `npm run db:migrate`.
+
+## Test
+
+```bash
+npm test
+npm run test:extractor
+npm run typecheck
+```
+
+## Repository layout
+
+```
+apps/api            REST API: one folder per module under src/modules, SQL migrations in migrations/
+apps/web            React client: pages/, components/, lib/
+packages/shared     types, enums, permission matrix and review state machine used by both sides
+services/extractor  Python text extraction service and its tests
+docs/               architecture, API reference, Git workflow, team and module ownership
+scripts/            setup, dev runner, commit-message checker
+```
+
+## Documentation
+
+- [Architecture and design decisions](docs/ARCHITECTURE.md)
+- [REST API reference](docs/API.md)
+- [Git workflow: branching strategy and commit conventions](docs/GIT_WORKFLOW.md)
+- [Team and module ownership](docs/TEAM.md)
