@@ -326,6 +326,27 @@ export interface SharedDocumentDto {
   expiresAt: string | null;
 }
 
+// ---- M08 search and filtering ------------------------------------------------------------------
+
+export interface SearchQuery {
+  q?: string;
+  status?: DocumentStatus;
+  folderId?: string;
+  reviewerId?: string;
+  /** Filter.Date: last updated on or after / on or before (YYYY-MM-DD). */
+  updatedFrom?: string;
+  updatedTo?: string;
+}
+
+export interface SearchResultDto {
+  document: DocumentDto;
+  projectName: string;
+  score: number;
+  matchedIn: Array<'title' | 'content'>;
+  /** Excerpt of the matching content; matched words are wrapped in [[ and ]]. */
+  snippet: string | null;
+}
+
 export interface ActivityEntryDto {
   logId: string;
   projectId: string;

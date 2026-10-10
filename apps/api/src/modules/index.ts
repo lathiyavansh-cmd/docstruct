@@ -8,6 +8,7 @@ import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
 import { projectRoutes } from './projects/routes.js';
 import { reviewRoutes } from './reviews/routes.js';
+import { searchRoutes } from './search/routes.js';
 import { shareRoutes } from './shares/routes.js';
 import { versionRoutes } from './versions/routes.js';
 
@@ -26,4 +27,5 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   diffRoutes, // F3.6
   annotationRoutes, // M07
   shareRoutes, // M07
+  searchRoutes, // M08
 ];

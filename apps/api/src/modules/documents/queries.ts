@@ -48,11 +48,12 @@ export function toVersionDto(r: VersionRow): VersionDto {
 
 /**
  * One row per (non-deleted) document with its current version and open review.
- * Callers append WHERE / ORDER BY clauses using the aliases d, v, cr.
+ * Callers append WHERE / ORDER BY clauses using the aliases d, v, cr; extra columns may be prepended.
  */
-export const DOCUMENT_SELECT = `
-  SELECT d.document_id, d.project_id, d.folder_id, d.title, d.description, d.status, d.created_by,
-         cb.display_name AS created_by_name, d.created_at, d.updated_at,
+export function documentSelect(extraColumns = ''): string {
+  return `
+  SELECT ${extraColumns ? `${extraColumns},` : ''} d.document_id, d.project_id, d.folder_id, d.title, d.description, d.status, d.created_by,
+         cb.display_name AS created_by_name, d.created_at AS doc_created_at, d.updated_at,
          ${VERSION_COLUMNS},
          cr.review_id, cr.reviewer_id, rp.display_name AS reviewer_name, cr.due_date::text AS due_date
     FROM documents d
@@ -61,6 +62,9 @@ export const DOCUMENT_SELECT = `
     JOIN profiles cb ON cb.user_id = d.created_by
     LEFT JOIN reviews cr ON cr.document_id = d.document_id AND cr.status = 'PENDING'
     LEFT JOIN profiles rp ON rp.user_id = cr.reviewer_id`;
+}
+
+export const DOCUMENT_SELECT = documentSelect();
 
 export interface DocumentRow extends VersionRow {
   project_id: string;
@@ -70,6 +74,7 @@ export interface DocumentRow extends VersionRow {
   status: DocumentStatus;
   created_by: string;
   created_by_name: string;
+  doc_created_at: Date;
   updated_at: Date;
   review_id: string | null;
   reviewer_id: string | null;
@@ -91,7 +96,7 @@ export function toDocumentDto(r: DocumentRow): DocumentDto {
     description: r.description,
     status: r.status,
     createdBy: { userId: r.created_by, displayName: r.created_by_name },
-    createdAt: r.created_at.toISOString(),
+    createdAt: r.doc_created_at.toISOString(),
     updatedAt: r.updated_at.toISOString(),
     currentVersion: toVersionDto(r),
     openReview: r.review_id
