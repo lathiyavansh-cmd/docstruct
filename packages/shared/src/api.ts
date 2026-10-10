@@ -1,7 +1,7 @@
 // Request/response shapes of the DocStruct REST API, shared by server and client (Maintainability-2).
 // Timestamps travel as ISO-8601 strings.
 
-import type { DocumentStatus, ExtractionStatus, ProjectRole } from './enums.js';
+import type { DocumentStatus, ExtractionStatus, ProjectRole, ReviewStatus } from './enums.js';
 
 /** Every error response has this body (Usability-4: state the reason). */
 export interface ApiErrorBody {
@@ -156,6 +156,39 @@ export interface FileLinkDto {
   mimeType: string;
   previewable: boolean;
   expiresAt: string;
+}
+
+// ---- M05 reviews -------------------------------------------------------------------------------
+
+export interface ReviewDto {
+  reviewId: string;
+  projectId: string;
+  projectName: string;
+  documentId: string;
+  documentTitle: string;
+  versionId: string;
+  versionNo: number;
+  /** The document's current version is newer than the reviewed one. */
+  superseded: boolean;
+  reviewer: UserRefDto;
+  submittedBy: UserRefDto;
+  submissionNote: string;
+  dueDate: string | null;
+  status: ReviewStatus;
+  decisionNote: string;
+  decidedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+}
+
+export interface SubmitReviewRequest {
+  reviewerId: string;
+  dueDate?: string | null;
+  note?: string;
+}
+
+export interface DecisionRequest {
+  note?: string;
 }
 
 export interface ActivityEntryDto {
