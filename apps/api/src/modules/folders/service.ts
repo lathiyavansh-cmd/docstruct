@@ -3,6 +3,7 @@ import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
 import { recordActivity } from '../../lib/activity.js';
 import { HttpError, badRequest, conflict, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { assertNoOpenReview } from '../reviews/service.js';
 import { buildFolderTree, depthOf, descendantsOf, subtreeHeight, wouldCreateCycle } from './tree.js';
 
 const DUPLICATE = 'A folder with that name already exists here';
@@ -133,6 +134,7 @@ export class FolderService {
         'SELECT document_id, title FROM documents WHERE folder_id = ANY($1::uuid[]) AND deleted_at IS NULL',
         [subtree],
       );
+      await assertNoOpenReview(q, docs.map((d) => d.document_id), 'delete this folder');
       const empty = docs.length === 0 && subtree.length === 1;
       if (!empty && !confirmed) {
         throw new HttpError(409, 'FOLDER_NOT_EMPTY', 'This folder is not empty. Confirm to delete it with its contents.', {
