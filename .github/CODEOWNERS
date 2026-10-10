@@ -1,0 +1,27 @@
+# Each module's owner must approve pull requests that touch it (see docs/TEAM.md).
+# Replace the two placeholder handles with Vivan's and Shrut's GitHub usernames
+# once they accept the repository invitation.
+
+*                                   @lathiyavansh-cmd
+
+# Vansh Lathiya - M01, M04, M06, F3.6, repository and CI
+/apps/api/src/modules/auth/         @lathiyavansh-cmd
+/apps/api/src/modules/versions/     @lathiyavansh-cmd
+/apps/api/src/modules/rbac/         @lathiyavansh-cmd
+/apps/api/src/modules/diff/         @lathiyavansh-cmd
+/packages/shared/                   @lathiyavansh-cmd
+/.github/                           @lathiyavansh-cmd
+
+# Vivan Dhoka - M02, M05, M09
+/apps/api/src/modules/projects/     @VIVAN_GITHUB_USERNAME
+/apps/api/src/modules/reviews/      @VIVAN_GITHUB_USERNAME
+/apps/api/src/modules/activity/     @VIVAN_GITHUB_USERNAME
+/apps/api/src/modules/dashboard/    @VIVAN_GITHUB_USERNAME
+
+# Shrut Diwakar - M03, M07, M08, extractor
+/apps/api/src/modules/folders/      @SHRUT_GITHUB_USERNAME
+/apps/api/src/modules/documents/    @SHRUT_GITHUB_USERNAME
+/apps/api/src/modules/annotations/  @SHRUT_GITHUB_USERNAME
+/apps/api/src/modules/shares/       @SHRUT_GITHUB_USERNAME
+/apps/api/src/modules/search/       @SHRUT_GITHUB_USERNAME
+/services/extractor/                @SHRUT_GITHUB_USERNAME
