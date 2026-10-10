@@ -18,7 +18,7 @@
     "dev:api": "npm run dev -w @docstruct/api",
     "dev:web": "npm run dev -w @docstruct/web",
     "build": "npm run build -w @docstruct/shared && npm run build -w @docstruct/api && npm run build -w @docstruct/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run build -w @docstruct/shared && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:extractor": "node scripts/run-python.mjs -m unittest discover -s services/extractor/tests -v",
     "db:migrate": "npm run db:migrate -w @docstruct/api",
