@@ -1,6 +1,8 @@
 // Request/response shapes of the DocStruct REST API, shared by server and client (Maintainability-2).
 // Timestamps travel as ISO-8601 strings.
 
+import type { ProjectRole } from './enums.js';
+
 /** Every error response has this body (Usability-4: state the reason). */
 export interface ApiErrorBody {
   error: {
@@ -43,6 +45,38 @@ export const PASSWORD_MIN_LENGTH = 8;
 export interface UserRefDto {
   userId: string;
   displayName: string;
+}
+
+// ---- M02 projects and membership -------------------------------------------------------------
+
+export interface ProjectDto {
+  projectId: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt: string | null;
+  /** The caller's role in this project (UI-11). */
+  myRole: ProjectRole;
+  memberCount: number;
+}
+
+export interface MemberDto {
+  userId: string;
+  displayName: string;
+  role: ProjectRole;
+  addedAt: string;
+  isYou: boolean;
+}
+
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+}
+
+export interface AddMemberRequest {
+  email: string;
+  role: ProjectRole;
 }
 
 export interface ActivityEntryDto {

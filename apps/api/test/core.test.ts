@@ -29,7 +29,14 @@ describe('core platform', () => {
   });
 
   it('refuses to edit or delete activity log entries (Log.Immutable)', async () => {
-    const projectId = '00000000-0000-0000-0000-000000000001';
+    const user = await env.ctx.db.query<{ user_id: string }>(
+      `INSERT INTO profiles (email, display_name) VALUES ('log@x.test', 'Log') RETURNING user_id`,
+    );
+    const project = await env.ctx.db.query<{ project_id: string }>(
+      `INSERT INTO projects (name, created_by) VALUES ('Log test', $1) RETURNING project_id`,
+      [user.rows[0].user_id],
+    );
+    const projectId = project.rows[0].project_id;
     await recordActivity(env.ctx.db, { projectId, actorId: null, action: 'project.created', entityType: 'project' });
     await expect(env.ctx.db.query(`UPDATE activity_log SET action = 'x'`)).rejects.toThrow(/immutable/);
     await expect(env.ctx.db.query(`DELETE FROM activity_log`)).rejects.toThrow(/immutable/);

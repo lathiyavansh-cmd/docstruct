@@ -60,6 +60,21 @@ export async function signUp(env: TestEnv, displayName = 'User'): Promise<TestUs
   };
 }
 
+/** Creates a project owned by `owner` and adds the other users with the given roles. */
+export async function createProject(
+  env: TestEnv,
+  owner: TestUser,
+  members: Array<[TestUser, 'OWNER' | 'EDITOR' | 'REVIEWER' | 'VIEWER']> = [],
+  name = 'Test Project',
+): Promise<string> {
+  const res = await env.http.post('/api/projects').set(owner.auth).send({ name }).expect(201);
+  const projectId: string = res.body.projectId;
+  for (const [user, role] of members) {
+    await env.http.post(`/api/projects/${projectId}/members`).set(owner.auth).send({ email: user.email, role }).expect(201);
+  }
+  return projectId;
+}
+
 /** Splits a signed URL produced by the API into the path supertest should call. */
 export function relative(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, '');
