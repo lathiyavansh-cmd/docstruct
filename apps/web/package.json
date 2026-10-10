@@ -1,6 +1,6 @@
 {
   "name": "@docstruct/web",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "DocStruct web client (React + TypeScript + Tailwind CSS)",
   "type": "module",

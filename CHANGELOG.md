@@ -2,6 +2,11 @@
 
 All notable changes, following [Keep a Changelog](https://keepachangelog.com/) and Semantic Versioning.
 
+## [1.0.1] - 2026-10-10
+
+### Fixed
+- Change summary: both sides of a short replacement now carry the same leading words.
+
 ## [1.0.0] - 2026-10-10
 
 Release 1.0 scope of the SRS, delivered for Phase 3 (Implementation).
