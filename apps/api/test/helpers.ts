@@ -37,6 +37,29 @@ export async function createTestEnv(): Promise<TestEnv> {
   };
 }
 
+export interface TestUser {
+  token: string;
+  userId: string;
+  email: string;
+  displayName: string;
+  auth: { Authorization: string };
+}
+
+let counter = 0;
+/** Registers a fresh user and returns their session. */
+export async function signUp(env: TestEnv, displayName = 'User'): Promise<TestUser> {
+  counter += 1;
+  const email = `${displayName.toLowerCase().replace(/\W+/g, '.')}.${counter}@example.test`;
+  const res = await env.http.post('/api/auth/signup').send({ email, password: 'correct-horse-1', displayName }).expect(201);
+  return {
+    token: res.body.token,
+    userId: res.body.user.userId,
+    email,
+    displayName,
+    auth: { Authorization: `Bearer ${res.body.token}` },
+  };
+}
+
 /** Splits a signed URL produced by the API into the path supertest should call. */
 export function relative(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, '');
