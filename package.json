@@ -1,0 +1,32 @@
+{
+  "name": "docstruct",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DocStruct - a project-centric document management and review platform (Mini Project PR1, SPIT 2026-27)",
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "dev:api": "npm run dev -w @docstruct/api",
+    "dev:web": "npm run dev -w @docstruct/web",
+    "build": "npm run build -w @docstruct/shared && npm run build -w @docstruct/api && npm run build -w @docstruct/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:extractor": "node scripts/run-python.mjs -m unittest discover -s services/extractor/tests -v",
+    "db:migrate": "npm run db:migrate -w @docstruct/api",
+    "db:seed": "npm run db:seed -w @docstruct/api",
+    "verify": "npm run typecheck && npm test && npm run build",
+    "commit:check": "node scripts/verify-commit-msg.mjs"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

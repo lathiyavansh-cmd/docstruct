@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# local runtime data (embedded database, local object storage)
+.data/
+apps/api/.data/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
