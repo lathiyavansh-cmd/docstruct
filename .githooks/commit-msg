@@ -1,0 +1,4 @@
+#!/bin/sh
+# Enforces the DocStruct commit convention locally.
+# Enabled once per clone with:  git config core.hooksPath .githooks
+exec node "$(git rev-parse --show-toplevel)/scripts/verify-commit-msg.mjs" "$1"

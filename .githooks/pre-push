@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuses direct pushes to the protected long-lived branches.
+# main and develop only change through reviewed pull requests (CO-9).
+protected='^refs/heads/(main|develop)$'
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if echo "$remote_ref" | grep -Eq "$protected"; then
+    if [ "${DOCSTRUCT_ALLOW_PROTECTED_PUSH:-0}" != "1" ]; then
+      echo "Direct push to ${remote_ref#refs/heads/} is not allowed - open a pull request." >&2
+      echo "(Maintainers bootstrapping the remote can set DOCSTRUCT_ALLOW_PROTECTED_PUSH=1.)" >&2
+      exit 1
+    fi
+  fi
+done
+exit 0
