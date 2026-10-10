@@ -75,6 +75,37 @@ export async function createProject(
   return projectId;
 }
 
+/** Runs both upload steps; returns the finalise response (status checked by the caller via `expect`). */
+export async function uploadFile(
+  env: TestEnv,
+  user: TestUser,
+  projectId: string,
+  fileName: string,
+  content: string | Buffer,
+): Promise<string> {
+  const body = typeof content === 'string' ? Buffer.from(content) : content;
+  const ticket = await env.http
+    .post(`/api/projects/${projectId}/uploads`)
+    .set(user.auth)
+    .send({ fileName, byteSize: body.length })
+    .expect(201);
+  await env.http.put(relative(ticket.body.uploadUrl)).set('Content-Type', 'application/octet-stream').send(body).expect(201);
+  return ticket.body.uploadKey;
+}
+
+export async function createDocument(
+  env: TestEnv,
+  user: TestUser,
+  projectId: string,
+  fileName: string,
+  content: string | Buffer,
+  extra: Record<string, unknown> = {},
+) {
+  const uploadKey = await uploadFile(env, user, projectId, fileName, content);
+  const res = await env.http.post(`/api/projects/${projectId}/documents`).set(user.auth).send({ uploadKey, ...extra }).expect(201);
+  return res.body as import('@docstruct/shared').DocumentDto;
+}
+
 /** Splits a signed URL produced by the API into the path supertest should call. */
 export function relative(url: string): string {
   return url.replace(/^https?:\/\/[^/]+/, '');
