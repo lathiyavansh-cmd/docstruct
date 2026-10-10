@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+/*
+ * DocStruct design tokens.
+ * Interface in IBM Plex Sans; document content (previews, diffs, notes) in IBM Plex Serif so a document
+ * always reads as a document. Colour is mostly neutral ink on cool paper; the status colours carry meaning.
+ */
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'IBM Plex Serif', ui-serif, Georgia, serif;
+
+  --color-paper: #f6f7f9;
+  --color-surface: #ffffff;
+  --color-ink: #1c2440;
+  --color-ink-soft: #4a5370;
+  --color-ink-faint: #7b8399;
+  --color-rule: #dce1ea;
+  --color-rule-strong: #c4cbd8;
+  --color-primary: #2a45c2;
+  --color-primary-hover: #213799;
+  --color-primary-wash: #eaedfb;
+
+  --color-st-draft: #5b6478;
+  --color-st-draft-wash: #edeff3;
+  --color-st-review: #9a5b00;
+  --color-st-review-wash: #fdf1dc;
+  --color-st-changes: #b42346;
+  --color-st-changes-wash: #fbe7ec;
+  --color-st-approved: #1f7a4d;
+  --color-st-approved-wash: #e2f3ea;
+  --color-st-archived: #6e7480;
+  --color-st-archived-wash: #eceef1;
+
+  /* Diff highlighting: a highlighter for insertions, a struck rose for deletions. */
+  --color-mark-insert: #e6f6a6;
+  --color-mark-delete: #f9d9de;
+  --color-mark-insert-rule: #9cbf1e;
+  --color-mark-delete-rule: #d0647a;
+}
+
+@layer base {
+  html {
+    color: var(--color-ink);
+    background: var(--color-paper);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-primary-wash);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rendered Markdown previews (our own renderer emits these elements). */
+.doc-prose {
+  font-family: var(--font-serif);
+  line-height: 1.7;
+  max-width: 72ch;
+}
+.doc-prose h1 { font-size: 1.6rem; font-weight: 600; margin: 1.4em 0 0.5em; line-height: 1.25; }
+.doc-prose h2 { font-size: 1.3rem; font-weight: 600; margin: 1.3em 0 0.4em; }
+.doc-prose h3 { font-size: 1.1rem; font-weight: 600; margin: 1.2em 0 0.3em; }
+.doc-prose p { margin: 0.7em 0; }
+.doc-prose ul { list-style: disc; padding-left: 1.4em; margin: 0.6em 0; }
+.doc-prose ol { list-style: decimal; padding-left: 1.4em; margin: 0.6em 0; }
+.doc-prose code { font-size: 0.9em; background: var(--color-paper); padding: 0.1em 0.3em; border-radius: 3px; }
+.doc-prose pre { background: var(--color-paper); padding: 0.8em 1em; overflow-x: auto; border-radius: 4px; }
+.doc-prose pre code { background: none; padding: 0; }
+.doc-prose blockquote { border-left: 3px solid var(--color-rule-strong); padding-left: 1em; color: var(--color-ink-soft); }
+.doc-prose a { color: var(--color-primary); text-decoration: underline; }
+.doc-prose hr { border: 0; border-top: 1px solid var(--color-rule); margin: 1.5em 0; }
