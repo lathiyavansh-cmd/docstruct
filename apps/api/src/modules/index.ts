@@ -5,6 +5,7 @@ import { documentRoutes } from './documents/routes.js';
 import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
 import { projectRoutes } from './projects/routes.js';
+import { versionRoutes } from './versions/routes.js';
 
 /**
  * Every feature module contributes one router. Each module lives in its own folder, is owned by one
@@ -16,4 +17,5 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   projectRoutes, // M02
   folderRoutes, // M03
   documentRoutes, // M03
+  versionRoutes, // M04
 ];
