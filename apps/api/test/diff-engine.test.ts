@@ -125,6 +125,8 @@ describe('pre-review engine (Algorithm H, in-house)', () => {
     expect(summary).toContain('Compared with version 1, version 2 changes 1 paragraph(s): 1 modified.');
     expect(summary).toContain('In "3.8 Search"');
     expect(summary).toContain('became');
+    // Both sides of the replacement carry the same leading words.
+    expect(summary).toContain('"covers titles only" became "covers titles and extracted document content"');
   });
 
   it('reports formatting-only revisions as such', () => {

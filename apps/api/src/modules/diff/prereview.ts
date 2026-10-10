@@ -207,9 +207,10 @@ function describeModification(change: Change, idf: Map<string, number>): string 
     const tidy = (t: string) => t.trim().replace(/^[,;:.]+\s*/, '').replace(/\s*[,;:]+$/, '');
     if ((del + ins).replace(/[\s\p{P}]/gu, '')) spans.push({ del: tidy(del), ins: tidy(ins), before });
   }
-  const context = (s: { before: string }, text: string) => {
-    // A bare number or a single short word reads better with the word before it ("50 MB" -> "limit of 50 MB").
-    if (text.length > 12) return text;
+  // A bare number or a single short word reads better with the words before it ("50 MB" -> "limited to
+  // 50 MB"). Both sides of a replacement get the same lead so they stay comparable.
+  const context = (s: { before: string; del: string; ins: string }, text: string) => {
+    if (s.del.length > 12 && s.ins.length > 12) return text;
     const lead = s.before.trim().split(/\s+/).slice(-2).join(' ');
     return lead ? `${lead} ${text}` : text;
   };

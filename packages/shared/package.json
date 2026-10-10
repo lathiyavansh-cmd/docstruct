@@ -1,6 +1,6 @@
 {
   "name": "@docstruct/shared",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Types, enums and rules shared by the DocStruct API and web client (Maintainability-2)",
   "type": "module",
