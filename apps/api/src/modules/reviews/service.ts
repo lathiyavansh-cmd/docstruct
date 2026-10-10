@@ -11,6 +11,7 @@ import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
 import { recordActivity } from '../../lib/activity.js';
 import { HttpError, badRequest, conflict, forbidden, isUniqueViolation, notFound } from '../../lib/errors.js';
+import { DiffService } from '../diff/service.js';
 import { loadMembership } from '../rbac/middleware.js';
 
 const REVIEW_SELECT = `
@@ -189,16 +190,14 @@ export class ReviewService {
         });
         return inserted.rows[0].review_id;
       });
-      this.afterSubmit(reviewId);
+      // Diff.PreReview.Run: compare with the predecessor in the background; the review never waits for it.
+      new DiffService(this.ctx).schedulePreReview(reviewId);
       return this.get(reviewId);
     } catch (error) {
       if (isUniqueViolation(error)) throw conflict('A review is already open for this document', 'REVIEW_ALREADY_OPEN');
       throw error;
     }
   }
-
-  /** Work started once a submission has committed (the AI pre-review is attached here). */
-  protected afterSubmit(_reviewId: string): void {}
 
   /**
    * Review.Approve, Review.RequestChanges, Review.Decision.Note, Review.Decision.Time,

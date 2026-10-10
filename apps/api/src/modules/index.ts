@@ -1,6 +1,7 @@
 import type { Router } from 'express';
 import type { AppContext } from '../context.js';
 import { authRoutes } from './auth/routes.js';
+import { diffRoutes } from './diff/routes.js';
 import { documentRoutes } from './documents/routes.js';
 import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
@@ -20,4 +21,5 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   documentRoutes, // M03
   versionRoutes, // M04
   reviewRoutes, // M05
+  diffRoutes, // F3.6
 ];

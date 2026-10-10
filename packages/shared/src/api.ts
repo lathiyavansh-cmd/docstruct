@@ -1,7 +1,7 @@
 // Request/response shapes of the DocStruct REST API, shared by server and client (Maintainability-2).
 // Timestamps travel as ISO-8601 strings.
 
-import type { DocumentStatus, ExtractionStatus, ProjectRole, ReviewStatus } from './enums.js';
+import type { ChangeKind, DocumentStatus, ExtractionStatus, ProjectRole, ReviewStatus } from './enums.js';
 
 /** Every error response has this body (Usability-4: state the reason). */
 export interface ApiErrorBody {
@@ -189,6 +189,72 @@ export interface SubmitReviewRequest {
 
 export interface DecisionRequest {
   note?: string;
+}
+
+// ---- F3.6 version comparison and pre-review -----------------------------------------------------
+
+export interface WordSegmentDto {
+  op: 'equal' | 'insert' | 'delete';
+  text: string;
+}
+
+export interface ChangeDto {
+  kind: ChangeKind;
+  position: number;
+  oldText: string;
+  newText: string;
+  similarity: number;
+  isSubstantive: boolean;
+  section: string | null;
+  words?: WordSegmentDto[];
+}
+
+/** One advisory observation of the pre-review engine (Diff.PreReview.Findings). */
+export interface PreReviewFinding {
+  id: string;
+  severity: 'high' | 'medium' | 'info';
+  rule: string;
+  title: string;
+  message: string;
+  section: string | null;
+  position: number;
+  kind: ChangeKind;
+  excerpt: string;
+}
+
+export interface DiffStatsDto {
+  total: number;
+  added: number;
+  deleted: number;
+  modified: number;
+  substantive: number;
+  cosmetic: number;
+  paragraphsBefore: number;
+  paragraphsAfter: number;
+}
+
+export interface DiffDto {
+  /** PENDING while text extraction is still running; UNAVAILABLE when no textual comparison is possible. */
+  status: 'PENDING' | 'READY' | 'UNAVAILABLE';
+  reason: string | null;
+  documentId: string;
+  from: { versionId: string; versionNo: number };
+  to: { versionId: string; versionNo: number };
+  stats: DiffStatsDto | null;
+  changes: ChangeDto[];
+  /** Machine-generated, advisory only (Diff.PreReview.Advisory, Diff.PreReview.Attribution). */
+  summary: string | null;
+  findings: PreReviewFinding[];
+  machineGenerated: true;
+  engine: string;
+  generatedAt: string | null;
+}
+
+export interface PreReviewDto {
+  reviewId: string;
+  /** Diff.FirstVersion: the submitted version is version 1, so there is nothing to compare against. */
+  firstVersion: boolean;
+  diff: DiffDto | null;
 }
 
 export interface ActivityEntryDto {
