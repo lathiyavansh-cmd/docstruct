@@ -1,7 +1,7 @@
 // Request/response shapes of the DocStruct REST API, shared by server and client (Maintainability-2).
 // Timestamps travel as ISO-8601 strings.
 
-import type { ProjectRole } from './enums.js';
+import type { DocumentStatus, ExtractionStatus, ProjectRole } from './enums.js';
 
 /** Every error response has this body (Usability-4: state the reason). */
 export interface ApiErrorBody {
@@ -77,6 +77,85 @@ export interface CreateProjectRequest {
 export interface AddMemberRequest {
   email: string;
   role: ProjectRole;
+}
+
+// ---- M03 folders and documents ---------------------------------------------------------------
+
+export interface FolderNodeDto {
+  folderId: string;
+  parentId: string | null;
+  name: string;
+  /** Documents directly inside this folder. */
+  documentCount: number;
+  children: FolderNodeDto[];
+}
+
+export interface VersionDto {
+  versionId: string;
+  documentId: string;
+  versionNo: number;
+  fileName: string;
+  mimeType: string;
+  byteSize: number;
+  checksum: string;
+  changeNote: string;
+  uploadedBy: UserRefDto;
+  createdAt: string;
+  restoredFromVersionNo: number | null;
+  extractionStatus: ExtractionStatus;
+  isCurrent: boolean;
+}
+
+export interface DocumentDto {
+  documentId: string;
+  projectId: string;
+  folderId: string | null;
+  title: string;
+  description: string;
+  status: DocumentStatus;
+  createdBy: UserRefDto;
+  createdAt: string;
+  updatedAt: string;
+  currentVersion: VersionDto;
+  /** Reviewer and due date of the open review, if one is pending. */
+  openReview: { reviewId: string; reviewer: UserRefDto; dueDate: string | null } | null;
+}
+
+export interface DocumentDetailDto extends DocumentDto {
+  /** Folders from the project root down to the document's folder. */
+  folderPath: Array<{ folderId: string; name: string }>;
+  versionCount: number;
+}
+
+/** Step 1 of an upload: the browser PUTs the file to `uploadUrl`, then finalises with `uploadKey`. */
+export interface UploadTicketDto {
+  uploadKey: string;
+  uploadUrl: string;
+  method: 'PUT';
+  maxBytes: number;
+  expiresAt: string;
+}
+
+export interface UploadTicketRequest {
+  fileName: string;
+  byteSize: number;
+}
+
+export interface CreateDocumentRequest {
+  uploadKey: string;
+  title?: string;
+  description?: string;
+  folderId?: string | null;
+  changeNote?: string;
+}
+
+/** A short-lived signed URL for a file (SE-13). */
+export interface FileLinkDto {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  previewable: boolean;
+  expiresAt: string;
 }
 
 export interface ActivityEntryDto {
