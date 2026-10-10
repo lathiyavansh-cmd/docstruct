@@ -1,6 +1,6 @@
 {
   "name": "docstruct",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "DocStruct - a project-centric document management and review platform (Mini Project PR1, SPIT 2026-27)",
   "type": "module",
