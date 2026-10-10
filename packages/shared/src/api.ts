@@ -17,6 +17,28 @@ export interface ProfileDto {
   createdAt: string;
 }
 
+/** Returned by sign-up and login. The token is sent back as `Authorization: Bearer <token>`. */
+export interface SessionDto {
+  token: string;
+  /** Absolute expiry; the session also ends after the configured idle period. */
+  expiresAt: string;
+  idleMinutes: number;
+  user: ProfileDto;
+}
+
+export interface SignUpRequest {
+  email: string;
+  password: string;
+  displayName: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export const PASSWORD_MIN_LENGTH = 8;
+
 /** Another user as seen alongside their activity (Account.Profile.Scope: display name only). */
 export interface UserRefDto {
   userId: string;
