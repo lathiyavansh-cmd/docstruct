@@ -1,5 +1,6 @@
 import { formatForMime, type DocumentDetailDto, type DocumentDto, type FileLinkDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
+import { scheduleExtraction } from '../../extraction/extractor.js';
 import { recordActivity } from '../../lib/activity.js';
 import { notFound } from '../../lib/errors.js';
 import { FolderService } from '../folders/service.js';
@@ -123,7 +124,9 @@ export class DocumentService {
         });
         return id;
       });
-      return (await findDocument(this.ctx.db, documentId))!;
+      const created = (await findDocument(this.ctx.db, documentId))!;
+      if (created.currentVersion.extractionStatus === 'PENDING') scheduleExtraction(this.ctx, created.currentVersion.versionId);
+      return created;
     } catch (error) {
       if (upload) await this.ctx.storage.removeOrphan(upload.storageKey);
       throw error;
