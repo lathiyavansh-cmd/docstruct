@@ -125,6 +125,8 @@ export function Modal({ title, onClose, children, footer, wide }: { title: strin
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
+    // Focus the first field so typing starts in the form, not on the close button.
+    dialog?.querySelector<HTMLElement>('input, textarea, select')?.focus();
     return () => dialog?.close();
   }, []);
   return (
