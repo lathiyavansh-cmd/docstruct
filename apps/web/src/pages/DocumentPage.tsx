@@ -9,12 +9,13 @@ import { ReviewPanel } from '../components/ReviewPanel';
 import { SharePanel } from '../components/SharePanel';
 import { useToast } from '../components/toast';
 import { UploadDialog } from '../components/UploadDialog';
+import { VersionHistory } from '../components/VersionHistory';
 import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Notice, Select, Spinner, StatusBadge, TextArea, cx } from '../components/ui';
 import { del, errorMessage, get, patch, post } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 import { useCan, useProject } from '../lib/hooks';
 
-type RailTab = 'review' | 'comments' | 'sharing';
+type RailTab = 'review' | 'comments' | 'versions' | 'sharing';
 
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children, depth + 1)]);
@@ -71,6 +72,7 @@ export function DocumentPage() {
   const tabs: Array<{ id: RailTab; label: string }> = [
     { id: 'review', label: 'Review' },
     { id: 'comments', label: `Comments${annotations.data?.filter((a) => !a.resolvedAt).length ? ` (${annotations.data.filter((a) => !a.resolvedAt).length})` : ''}` },
+    { id: 'versions', label: `Versions (${d.versionCount})` },
     ...(allowed('share.list') ? [{ id: 'sharing' as const, label: 'Sharing' }] : []),
   ];
   const canUpload = allowed('version.create') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED';
@@ -195,6 +197,16 @@ export function DocumentPage() {
               onClearAnchor={() => setAnchor(null)}
               activeId={activeId}
               onSelect={setActiveId}
+            />
+          )}
+          {tab === 'versions' && versions.data && (
+            <VersionHistory
+              documentId={d.documentId}
+              projectId={p.projectId}
+              versions={versions.data}
+              viewingId={viewing?.versionId ?? null}
+              onView={onView}
+              canRestore={allowed('version.restore') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED'}
             />
           )}
           {tab === 'sharing' && <SharePanel documentId={d.documentId} />}
