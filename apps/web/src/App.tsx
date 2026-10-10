@@ -8,6 +8,12 @@ import { ForgotPasswordPage, ResetPasswordPage } from './pages/auth/PasswordPage
 import { SignUpPage } from './pages/auth/SignUpPage';
 import { HelpPage } from './pages/HelpPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { ActivityPage } from './pages/project/ActivityPage';
+import { DashboardPage } from './pages/project/DashboardPage';
+import { MembersPage } from './pages/project/MembersPage';
+import { ProjectLayout } from './pages/project/ProjectLayout';
+import { ReviewQueuePage } from './pages/ReviewQueuePage';
 
 /** Account.Login / SE-2: every screen except the auth and share pages needs a session. */
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -32,7 +38,13 @@ export function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-        <Route index element={<Navigate to="/help" replace />} />
+        <Route index element={<ProjectsPage />} />
+        <Route path="reviews" element={<ReviewQueuePage />} />
+        <Route path="p/:projectId" element={<ProjectLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="members" element={<MembersPage />} />
+          <Route path="activity" element={<ActivityPage />} />
+        </Route>
         <Route path="help" element={<HelpPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="*" element={<div className="p-8 text-ink-soft">This page does not exist.</div>} />
