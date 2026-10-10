@@ -2,6 +2,7 @@ import type { Router } from 'express';
 import type { AppContext } from '../context.js';
 import { annotationRoutes } from './annotations/routes.js';
 import { authRoutes } from './auth/routes.js';
+import { dashboardRoutes } from './dashboard/routes.js';
 import { diffRoutes } from './diff/routes.js';
 import { documentRoutes } from './documents/routes.js';
 import { folderRoutes } from './folders/routes.js';
@@ -28,4 +29,5 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   annotationRoutes, // M07
   shareRoutes, // M07
   searchRoutes, // M08
+  dashboardRoutes, // M09
 ];
