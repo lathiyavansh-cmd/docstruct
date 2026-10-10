@@ -1,5 +1,6 @@
 import type { Router } from 'express';
 import type { AppContext } from '../context.js';
+import { annotationRoutes } from './annotations/routes.js';
 import { authRoutes } from './auth/routes.js';
 import { diffRoutes } from './diff/routes.js';
 import { documentRoutes } from './documents/routes.js';
@@ -7,6 +8,7 @@ import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
 import { projectRoutes } from './projects/routes.js';
 import { reviewRoutes } from './reviews/routes.js';
+import { shareRoutes } from './shares/routes.js';
 import { versionRoutes } from './versions/routes.js';
 
 /**
@@ -22,4 +24,6 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   versionRoutes, // M04
   reviewRoutes, // M05
   diffRoutes, // F3.6
+  annotationRoutes, // M07
+  shareRoutes, // M07
 ];
