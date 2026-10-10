@@ -257,6 +257,75 @@ export interface PreReviewDto {
   diff: DiffDto | null;
 }
 
+// ---- M07 annotations and share links ---------------------------------------------------------
+
+/** Region of a PDF page as fractions of its width and height (0..1, origin top-left). */
+export interface RegionDto {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface AnnotationDto {
+  annotationId: string;
+  versionId: string;
+  versionNo: number;
+  author: UserRefDto;
+  body: string;
+  pageNumber: number | null;
+  region: RegionDto | null;
+  /** Set when the annotation was written by the reviewer of an open review. */
+  reviewId: string | null;
+  resolvedAt: string | null;
+  resolvedBy: UserRefDto | null;
+  createdAt: string;
+  replies: AnnotationReplyDto[];
+}
+
+export interface AnnotationReplyDto {
+  annotationId: string;
+  author: UserRefDto;
+  body: string;
+  createdAt: string;
+}
+
+export interface CreateAnnotationRequest {
+  body: string;
+  pageNumber?: number | null;
+  region?: RegionDto | null;
+}
+
+export interface ShareLinkDto {
+  shareId: string;
+  documentId: string;
+  label: string;
+  createdBy: UserRefDto;
+  createdAt: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastAccessedAt: string | null;
+  accessCount: number;
+  active: boolean;
+}
+
+/** Returned once, at creation: the only time the raw token (and so the link) exists. */
+export interface CreatedShareLinkDto extends ShareLinkDto {
+  url: string;
+  token: string;
+}
+
+/** What an unregistered link recipient sees (Share.Create.ViewOnly, Share.Scope). */
+export interface SharedDocumentDto {
+  title: string;
+  description: string;
+  versionNo: number;
+  updatedAt: string;
+  file: FileLinkDto;
+  download: FileLinkDto;
+  expiresAt: string | null;
+}
+
 export interface ActivityEntryDto {
   logId: string;
   projectId: string;
