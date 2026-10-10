@@ -3,6 +3,7 @@ import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
 import { recordActivity } from '../../lib/activity.js';
 import { HttpError, conflict, notFound } from '../../lib/errors.js';
+import { assertNotPendingReviewer } from '../reviews/service.js';
 
 interface ProjectRow {
   project_id: string;
@@ -187,7 +188,7 @@ export class ProjectService {
       const member = await this.memberRow(q, projectId, userId);
       if (member.role === role) return;
       if (member.role === 'OWNER' && (await this.ownerCount(q, projectId)) === 1) throw conflict(LAST_OWNER, 'LAST_OWNER');
-      await this.beforeMembershipChange(q, projectId, userId, role);
+      await assertNotPendingReviewer(q, projectId, userId, role);
       await q.query('UPDATE project_members SET role = $3 WHERE project_id = $1 AND user_id = $2', [projectId, userId, role]);
       await recordActivity(q, {
         projectId,
@@ -208,7 +209,7 @@ export class ProjectService {
       await this.lockProject(q, projectId);
       const member = await this.memberRow(q, projectId, userId);
       if (member.role === 'OWNER' && (await this.ownerCount(q, projectId)) === 1) throw conflict(LAST_OWNER, 'LAST_OWNER');
-      await this.beforeMembershipChange(q, projectId, userId, null);
+      await assertNotPendingReviewer(q, projectId, userId, null);
       await q.query('DELETE FROM project_members WHERE project_id = $1 AND user_id = $2', [projectId, userId]);
       await recordActivity(q, {
         projectId,
@@ -222,10 +223,4 @@ export class ProjectService {
     });
     return this.members(projectId, actorId);
   }
-
-  /**
-   * Hook for checks other modules need before a member's role changes or the member leaves (newRole null).
-   * Extended by the review module.
-   */
-  protected async beforeMembershipChange(_q: Queryable, _projectId: string, _userId: string, _newRole: ProjectRole | null) {}
 }

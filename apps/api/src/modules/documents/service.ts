@@ -4,6 +4,7 @@ import { scheduleExtraction } from '../../extraction/extractor.js';
 import { recordActivity } from '../../lib/activity.js';
 import { notFound } from '../../lib/errors.js';
 import { FolderService } from '../folders/service.js';
+import { assertNoOpenReview } from '../reviews/service.js';
 import { DOCUMENT_SELECT, findDocument, toDocumentDto, type DocumentRow } from './queries.js';
 import { UploadService, type StoredUpload } from './uploads.js';
 
@@ -180,6 +181,7 @@ export class DocumentService {
   /** Doc.Delete: removed from view; versions, files and activity history are kept (SA-2, Log.Retention). */
   async remove(documentId: string, userId: string): Promise<void> {
     await this.ctx.db.tx(async (q) => {
+      await assertNoOpenReview(q, [documentId], 'delete it'); // Doc.Delete.UnderReview
       const { rows } = await q.query<{ project_id: string; title: string }>(
         'UPDATE documents SET deleted_at = now(), deleted_by = $2 WHERE document_id = $1 AND deleted_at IS NULL RETURNING project_id, title',
         [documentId, userId],
