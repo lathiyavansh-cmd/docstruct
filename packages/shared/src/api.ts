@@ -359,6 +359,24 @@ export interface ActivityEntryDto {
   createdAt: string;
 }
 
+// ---- M09 dashboard ------------------------------------------------------------------------------
+
+export interface DashboardDto {
+  project: ProjectDto;
+  /** Dash.Status.Summary: documents per status. */
+  statusCounts: Record<DocumentStatus, number>;
+  totalDocuments: number;
+  /** Dash.Pending.Self: reviews awaiting the caller's decision in this project. */
+  awaitingMyReview: ReviewDto[];
+  /** Dash.Pending.Self: the caller's documents that came back with requested changes. */
+  myChangesRequested: DocumentDto[];
+  /** Dash.Review.Progress: everything under review, with reviewer and due date. */
+  underReview: Array<{ document: DocumentDto; reviewer: UserRefDto; dueDate: string | null; overdue: boolean }>;
+  openAnnotations: number;
+  /** Dash.Recent */
+  recentActivity: ActivityEntryDto[];
+}
+
 export interface HealthDto {
   status: 'ok';
   version: string;
