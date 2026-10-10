@@ -54,11 +54,13 @@ export const DOCUMENT_SELECT = `
   SELECT d.document_id, d.project_id, d.folder_id, d.title, d.description, d.status, d.created_by,
          cb.display_name AS created_by_name, d.created_at, d.updated_at,
          ${VERSION_COLUMNS},
-         NULL::uuid AS review_id, NULL::uuid AS reviewer_id, NULL::text AS reviewer_name, NULL::date AS due_date
+         cr.review_id, cr.reviewer_id, rp.display_name AS reviewer_name, cr.due_date::text AS due_date
     FROM documents d
     JOIN document_versions v ON v.version_id = d.current_version_id
     ${VERSION_JOINS}
-    JOIN profiles cb ON cb.user_id = d.created_by`;
+    JOIN profiles cb ON cb.user_id = d.created_by
+    LEFT JOIN reviews cr ON cr.document_id = d.document_id AND cr.status = 'PENDING'
+    LEFT JOIN profiles rp ON rp.user_id = cr.reviewer_id`;
 
 export interface DocumentRow extends VersionRow {
   project_id: string;

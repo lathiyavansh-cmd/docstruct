@@ -5,6 +5,7 @@ import { documentRoutes } from './documents/routes.js';
 import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
 import { projectRoutes } from './projects/routes.js';
+import { reviewRoutes } from './reviews/routes.js';
 import { versionRoutes } from './versions/routes.js';
 
 /**
@@ -18,4 +19,5 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   folderRoutes, // M03
   documentRoutes, // M03
   versionRoutes, // M04
+  reviewRoutes, // M05
 ];
