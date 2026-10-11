@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 import type { ActivityEntryDto } from '@docstruct/shared';
 import { ROLE_LABEL, type ProjectRole } from '@docstruct/shared';
 import { formatDateTime, timeAgo } from '../lib/format';
-import { Avatar } from './ui';
+import { ActivityIcon, AnimateIcon, BadgeCheckIcon, ClipboardCheckIcon, LinkIcon, MessageSquareIcon, RefreshCwIcon, RotateCcwIcon, Trash2Icon, UploadIcon, UsersIcon } from './icons';
+import { AnimatedList } from './magicui/animated-list';
+import { Avatar, cx, type AnimatedIcon } from './ui';
 
 /** Readable sentence for one activity-log entry (Log.Record.Detail: actor, action, entity, time). */
 export function describe(entry: ActivityEntryDto): string {
@@ -40,36 +42,64 @@ export function describe(entry: ActivityEntryDto): string {
 
 const DOCUMENT_ENTITIES = new Set(['document', 'version', 'review', 'annotation', 'share']);
 
-export function ActivityItem({ entry }: { entry: ActivityEntryDto }) {
+/** Small icon per kind of entry, so the timeline can be scanned by eye. */
+function kindOf(action: string): { icon: AnimatedIcon; tone: string } {
+  if (action.startsWith('review.approved')) return { icon: BadgeCheckIcon, tone: 'bg-st-approved-wash text-st-approved' };
+  if (action.startsWith('review.changes')) return { icon: RotateCcwIcon, tone: 'bg-st-changes-wash text-st-changes' };
+  if (action.startsWith('review.')) return { icon: ClipboardCheckIcon, tone: 'bg-st-review-wash text-st-review' };
+  if (action.startsWith('annotation.')) return { icon: MessageSquareIcon, tone: 'bg-primary-wash text-violet' };
+  if (action.startsWith('share.')) return { icon: LinkIcon, tone: 'bg-primary-wash text-primary' };
+  if (action.startsWith('member.')) return { icon: UsersIcon, tone: 'bg-paper text-ink-soft' };
+  if (action.startsWith('version.restored')) return { icon: RefreshCwIcon, tone: 'bg-primary-wash text-primary' };
+  if (action.startsWith('version.') || action === 'document.uploaded') return { icon: UploadIcon, tone: 'bg-primary-wash text-primary' };
+  if (action.endsWith('.deleted')) return { icon: Trash2Icon, tone: 'bg-st-changes-wash text-st-changes' };
+  return { icon: ActivityIcon, tone: 'bg-paper text-ink-soft' };
+}
+
+export function ActivityItem({ entry, as: Tag = 'li', className, showKind }: { entry: ActivityEntryDto; as?: 'li' | 'div'; className?: string; showKind?: boolean }) {
   const actor = entry.actor?.displayName ?? 'Someone';
   const onDocument = DOCUMENT_ENTITIES.has(entry.entityType) && entry.entityLabel;
+  const kind = kindOf(entry.action);
+  const KindIcon = kind.icon;
   return (
-    <li className="flex gap-3 py-2.5">
-      <Avatar name={actor} size="sm" />
-      <div className="min-w-0 text-sm leading-relaxed">
-        <span className="font-medium">{actor}</span> {describe(entry)}{' '}
-        {onDocument &&
-          (entry.action === 'document.deleted' ? (
-            <span className="font-medium">{entry.entityLabel}</span>
-          ) : (
-            <Link to={`/d/${entry.entityId}`} className="font-medium text-primary hover:underline">
-              {entry.entityLabel}
-            </Link>
-          ))}
-        <time dateTime={entry.createdAt} title={formatDateTime(entry.createdAt)} className="ml-2 whitespace-nowrap text-[13px] text-ink-faint">
-          {timeAgo(entry.createdAt)}
-        </time>
-      </div>
-    </li>
+    <AnimateIcon animateOnHover asChild>
+      <Tag className={cx('group flex gap-3 py-2.5', className)}>
+        {showKind ? (
+          <span className={cx('relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full ring-4 ring-surface transition-transform group-hover:scale-110', kind.tone)}>
+            <KindIcon size={14} />
+          </span>
+        ) : (
+          <Avatar name={actor} size="sm" />
+        )}
+        <div className="min-w-0 text-sm leading-relaxed">
+          <span className="font-medium">{actor}</span> {describe(entry)}{' '}
+          {onDocument &&
+            (entry.action === 'document.deleted' ? (
+              <span className="font-medium">{entry.entityLabel}</span>
+            ) : (
+              <Link to={`/d/${entry.entityId}`} className="font-medium text-primary hover:underline">
+                {entry.entityLabel}
+              </Link>
+            ))}
+          <time dateTime={entry.createdAt} title={formatDateTime(entry.createdAt)} className="ml-2 whitespace-nowrap text-[13px] text-ink-faint">
+            {timeAgo(entry.createdAt)}
+          </time>
+        </div>
+      </Tag>
+    </AnimateIcon>
   );
 }
 
+/**
+ * Recent entries replayed as they happened: Magic UI's AnimatedList drops each one in on top of the last,
+ * so the newest ends up first.
+ */
 export function ActivityFeed({ entries }: { entries: ActivityEntryDto[] }) {
   return (
-    <ul className="divide-y divide-rule">
-      {entries.map((e) => (
-        <ActivityItem key={e.logId} entry={e} />
+    <AnimatedList delay={260} className="mt-3 items-stretch gap-2">
+      {[...entries].reverse().map((e) => (
+        <ActivityItem key={e.logId} entry={e} as="div" showKind className="rounded-xl border border-rule bg-surface px-3 shadow-card transition-colors hover:border-primary/30" />
       ))}
-    </ul>
+    </AnimatedList>
   );
 }
