@@ -1,12 +1,35 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'motion/react';
 import { formatBytes, type DocumentDto, type VersionDto } from '@docstruct/shared';
 import { errorMessage, post } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 import { downloadVersion } from './DocumentPreview';
+import { AnimateIcon, DownloadIcon, ExternalLinkIcon, LayersIcon, RotateCcwIcon } from './icons';
 import { useToast } from './toast';
-import { ConfirmDialog, ErrorNote, cx } from './ui';
+import { ConfirmDialog, ErrorNote, cx, type AnimatedIcon } from './ui';
+
+/** A small action pill whose icon plays when hovered. */
+function VersionAction({ icon: Icon, children, onClick, to }: { icon: AnimatedIcon; children: string; onClick?: () => void; to?: string }) {
+  const cls =
+    'inline-flex items-center gap-1 rounded-full border border-rule bg-surface px-2 py-0.5 text-[12.5px] text-ink-soft transition-colors hover:border-primary/40 hover:bg-primary-wash hover:text-primary';
+  return (
+    <AnimateIcon animateOnHover asChild>
+      {to ? (
+        <Link to={to} className={cls}>
+          <Icon size={12} />
+          {children}
+        </Link>
+      ) : (
+        <button type="button" onClick={onClick} className={cls}>
+          <Icon size={12} />
+          {children}
+        </button>
+      )}
+    </AnimateIcon>
+  );
+}
 
 /**
  * M04 version history (Version.History.View): every version newest first on a spine, the current one
@@ -41,8 +64,6 @@ export function VersionHistory({
     },
   });
 
-  const action = 'text-[13px] text-primary hover:underline';
-
   return (
     <section aria-labelledby="versions-heading">
       <h2 id="versions-heading" className="mb-1 font-semibold">Version history</h2>
@@ -53,19 +74,34 @@ export function VersionHistory({
           const previous = versions[i + 1];
           const viewing = viewingId ? viewingId === v.versionId : v.isCurrent;
           return (
-            <li key={v.versionId} className="relative grid grid-cols-[3.25rem_1fr] gap-3 pb-5 last:pb-0">
-              {/* The spine: a rule linking the version numbers. */}
-              {i < versions.length - 1 && <span className="absolute left-[1.6rem] top-9 bottom-0 w-px bg-rule-strong" aria-hidden />}
+            <motion.li
+              key={v.versionId}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.06, type: 'spring', stiffness: 400, damping: 30 }}
+              className="relative grid grid-cols-[3.25rem_1fr] gap-3 pb-5 last:pb-0"
+            >
+              {/* The spine: a rule linking the version numbers, drawn downwards as the list appears. */}
+              {i < versions.length - 1 && (
+                <motion.span
+                  className="absolute left-[1.6rem] top-9 bottom-0 w-px origin-top bg-gradient-to-b from-primary/50 to-rule-strong"
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ delay: 0.1 + i * 0.06, duration: 0.35, ease: 'easeOut' }}
+                  aria-hidden
+                />
+              )}
               <span
                 className={cx(
-                  'relative z-10 flex h-9 items-center justify-center rounded-md font-serif text-lg tabular',
-                  v.isCurrent ? 'bg-ink text-white' : 'border border-rule-strong bg-surface text-ink-soft',
+                  'relative z-10 flex h-9 items-center justify-center rounded-lg font-serif text-lg tabular',
+                  v.isCurrent ? 'bg-gradient-to-br from-primary to-violet text-white shadow-lift' : 'border border-rule-strong bg-surface text-ink-soft',
                 )}
                 aria-label={`Version ${v.versionNo}`}
               >
+                {v.isCurrent && <span className="absolute inset-0 animate-ping rounded-lg bg-primary/20 [animation-iteration-count:2]" aria-hidden />}
                 v{v.versionNo}
               </span>
-              <div className={cx('min-w-0 rounded-md px-2.5 py-1.5', viewing && 'bg-primary-wash/60')}>
+              <div className={cx('min-w-0 rounded-xl px-3 py-2 transition-colors', viewing ? 'bg-primary-wash/70 ring-1 ring-primary/15' : 'hover:bg-paper')}>
                 <p className="text-sm">
                   {v.isCurrent && <span className="mr-1.5 font-medium text-ink">Current.</span>}
                   <span className="text-ink-soft">
@@ -82,22 +118,28 @@ export function VersionHistory({
                 )}
                 {v.extractionStatus === 'FAILED' && <p className="mt-1 text-[12.5px] text-st-review">Text could not be extracted: comparison and content search are unavailable for this version.</p>}
                 {v.extractionStatus === 'PENDING' && <p className="mt-1 text-[12.5px] text-ink-faint">Reading the text of this version…</p>}
-                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                <div className="mt-2 flex flex-wrap gap-1.5">
                   {!viewing && (
-                    <button type="button" className={action} onClick={() => onView(v.versionId)}>View</button>
+                    <VersionAction icon={ExternalLinkIcon} onClick={() => onView(v.versionId)}>
+                      View
+                    </VersionAction>
                   )}
-                  <button type="button" className={action} onClick={() => downloadVersion(v.versionId)}>Download</button>
+                  <VersionAction icon={DownloadIcon} onClick={() => downloadVersion(v.versionId)}>
+                    Download
+                  </VersionAction>
                   {previous && (
-                    <Link className={action} to={`/d/${documentId}/compare?from=${previous.versionId}&to=${v.versionId}`}>
-                      Compare with v{previous.versionNo}
-                    </Link>
+                    <VersionAction icon={LayersIcon} to={`/d/${documentId}/compare?from=${previous.versionId}&to=${v.versionId}`}>
+                      {`Compare with v${previous.versionNo}`}
+                    </VersionAction>
                   )}
                   {!v.isCurrent && canRestore && (
-                    <button type="button" className={action} onClick={() => setRestoring(v)}>Restore</button>
+                    <VersionAction icon={RotateCcwIcon} onClick={() => setRestoring(v)}>
+                      Restore
+                    </VersionAction>
                   )}
                 </div>
               </div>
-            </li>
+            </motion.li>
           );
         })}
       </ol>
