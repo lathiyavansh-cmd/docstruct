@@ -6,6 +6,7 @@ import { errorMessage, post } from '../lib/api';
 import { formatDateTime, timeAgo } from '../lib/format';
 import { useToast } from './toast';
 import { Avatar, Button, ErrorNote, TextArea, cx } from './ui';
+import { CheckIcon, MessageSquareIcon, SendIcon } from './icons';
 
 /**
  * M07 feedback in context: comment threads on the version being viewed (Annot.List), new comments optionally
@@ -77,7 +78,7 @@ export function AnnotationsPanel({
           {create.error && <ErrorNote>{errorMessage(create.error)}</ErrorNote>}
           <TextArea aria-label="New comment" placeholder="Add a comment on this version" value={body} maxLength={4000} onChange={(e) => setBody(e.target.value)} />
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="primary" size="sm" busy={create.isPending} disabled={!body.trim()} onClick={() => create.mutate()}>
+            <Button variant="primary" size="sm" icon={MessageSquareIcon} busy={create.isPending} disabled={!body.trim()} onClick={() => create.mutate()}>
               Add comment
             </Button>
             {isPdf &&
@@ -196,14 +197,14 @@ function Thread({
                 <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                   <TextArea aria-label="Reply" value={reply} maxLength={4000} onChange={(e) => setReply(e.target.value)} className="min-h-14" />
                   <div className="flex gap-2">
-                    <Button size="sm" variant="primary" busy={send.isPending} disabled={!reply.trim()} onClick={() => send.mutate()}>Reply</Button>
+                    <Button size="sm" variant="primary" icon={SendIcon} busy={send.isPending} disabled={!reply.trim()} onClick={() => send.mutate()}>Reply</Button>
                     <Button size="sm" variant="quiet" onClick={() => setReplying(false)}>Cancel</Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                   {canReply && <Button size="sm" variant="quiet" onClick={() => setReplying(true)}>Reply</Button>}
-                  {canResolve && <Button size="sm" variant="quiet" busy={resolve.isPending} onClick={() => resolve.mutate()}>Resolve</Button>}
+                  {canResolve && <Button size="sm" variant="quiet" icon={CheckIcon} busy={resolve.isPending} onClick={() => resolve.mutate()}>Resolve</Button>}
                 </div>
               )}
             </div>

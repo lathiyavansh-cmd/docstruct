@@ -1,12 +1,12 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Download } from 'lucide-react';
 import type { SharedDocumentDto } from '@docstruct/shared';
 import { PdfViewer } from '../components/PdfViewer';
 import { Button, ErrorNote, Notice, Spinner } from '../components/ui';
 import { ApiError, get } from '../lib/api';
 import { formatDate, formatDateTime } from '../lib/format';
 import { renderMarkdown } from '../lib/markdown';
+import { DownloadIcon } from '../components/icons';
 
 /** What an unregistered recipient of a share link sees: one document, read-only (Share.Create.ViewOnly, Share.Scope). */
 export function SharedDocumentPage() {
@@ -37,8 +37,8 @@ export function SharedDocumentPage() {
             </p>
             {s.description && <p className="mt-2 max-w-2xl text-sm">{s.description}</p>}
           </div>
-          <Button onClick={() => window.location.assign(s.download.url)}>
-            <Download className="size-4" /> Download
+          <Button icon={DownloadIcon} onClick={() => window.location.assign(s.download.url)}>
+            Download
           </Button>
         </header>
         {!previewable && <Notice>{fileName} cannot be previewed in the browser. Download it to open it.</Notice>}

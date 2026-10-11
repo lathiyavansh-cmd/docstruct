@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy } from 'lucide-react';
 import type { CreatedShareLinkDto, ShareLinkDto } from '@docstruct/shared';
 import { errorMessage, get, post } from '../lib/api';
 import { formatDate, formatDateTime, timeAgo } from '../lib/format';
 import { useToast } from './toast';
 import { Button, ConfirmDialog, ErrorNote, Field, Input, Notice, cx } from './ui';
+import { CopyIcon, LinkIcon, XIcon } from './icons';
 
 /** M07 share links for owners: create (with optional expiry), copy once, revoke (Share.*). */
 export function SharePanel({ documentId }: { documentId: string }) {
@@ -64,8 +64,8 @@ export function SharePanel({ documentId }: { documentId: string }) {
           <p className="font-medium text-ink">Link created. Copy it now: it will not be shown again.</p>
           <div className="flex gap-2">
             <Input readOnly value={created.url} onFocus={(e) => e.target.select()} aria-label="Share link" />
-            <Button onClick={() => copy(created.url)}>
-              <Copy className="size-4" /> Copy
+            <Button icon={CopyIcon} onClick={() => copy(created.url)}>
+              Copy
             </Button>
           </div>
         </Notice>
@@ -79,7 +79,7 @@ export function SharePanel({ documentId }: { documentId: string }) {
         <Field label="Expires after" hint="Optional. Leave empty for a link that works until you revoke it.">
           {(id) => <Input id={id} type="date" min={new Date().toISOString().slice(0, 10)} value={expires} onChange={(e) => setExpires(e.target.value)} />}
         </Field>
-        <Button variant="primary" busy={create.isPending} onClick={() => create.mutate()}>
+        <Button variant="primary" icon={LinkIcon} busy={create.isPending} onClick={() => create.mutate()}>
           Create share link
         </Button>
       </div>
@@ -98,7 +98,7 @@ export function SharePanel({ documentId }: { documentId: string }) {
                 </p>
               </div>
               {l.active && (
-                <Button size="sm" variant="quiet" onClick={() => setRevoking(l)}>
+                <Button size="sm" variant="quiet" icon={XIcon} onClick={() => setRevoking(l)}>
                   Revoke
                 </Button>
               )}
