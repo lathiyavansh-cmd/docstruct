@@ -3,22 +3,37 @@
 /*
  * DocStruct design tokens.
  * Interface in IBM Plex Sans; document content (previews, diffs, notes) in IBM Plex Serif so a document
- * always reads as a document. Colour is mostly neutral ink on cool paper; the status colours carry meaning.
+ * always reads as a document. The palette follows the DocStruct brand used in the project presentations:
+ * deck blue for actions, violet for highlights, lavender washes on cool paper; status colours carry meaning.
  */
 @theme {
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-serif: 'IBM Plex Serif', ui-serif, Georgia, serif;
 
-  --color-paper: #f6f7f9;
+  --color-paper: #f7f7fb;
   --color-surface: #ffffff;
-  --color-ink: #1c2440;
-  --color-ink-soft: #4a5370;
-  --color-ink-faint: #7b8399;
-  --color-rule: #dce1ea;
-  --color-rule-strong: #c4cbd8;
-  --color-primary: #2a45c2;
-  --color-primary-hover: #213799;
-  --color-primary-wash: #eaedfb;
+  --color-ink: #15172b;
+  --color-ink-soft: #4b4e60;
+  --color-ink-faint: #8a8d9b;
+  --color-rule: #e3e5ec;
+  --color-rule-strong: #cdd1dc;
+  --color-primary: #3040c4;
+  --color-primary-hover: #2532a3;
+  --color-primary-wash: #edecfc;
+  --color-violet: #554dde;
+  --color-violet-soft: #c8c4f4;
+
+  /* Names used by the 21st.dev components (shadcn conventions), mapped onto the DocStruct palette. */
+  --color-background: #ffffff;
+  --color-foreground: #15172b;
+  --color-border: #e3e5ec;
+  --color-accent: #edecfc;
+  --color-accent-pro: #554dde;
+  --color-muted: #f2f2f8;
+  --color-muted-foreground: #8a8d9b;
+
+  --shadow-card: 0 1px 2px rgb(21 23 43 / 0.04), 0 4px 16px -6px rgb(21 23 43 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(21 23 43 / 0.05), 0 12px 32px -10px rgb(48 64 196 / 0.25);
 
   --color-st-draft: #5b6478;
   --color-st-draft-wash: #edeff3;
@@ -89,3 +104,35 @@
 .doc-prose blockquote { border-left: 3px solid var(--color-rule-strong); padding-left: 1em; color: var(--color-ink-soft); }
 .doc-prose a { color: var(--color-primary); text-decoration: underline; }
 .doc-prose hr { border: 0; border-top: 1px solid var(--color-rule); margin: 1.5em 0; }
+
+/* ── Interaction layer ──────────────────────────────────────────────────────────── */
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* A faint dot grid used behind headers and the sign-in panel. */
+.bg-dots {
+  background-image: radial-gradient(rgb(48 64 196 / 0.13) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Native dialogs: fade the backdrop in (the panel itself is animated with motion). */
+dialog[open]::backdrop {
+  animation: ds-fade-in 180ms ease-out;
+}
+@keyframes ds-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Loading placeholders. */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-muted) 0%, #e9e9f3 40%, var(--color-muted) 80%);
+  background-size: 200% 100%;
+  animation: ds-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes ds-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
