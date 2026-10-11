@@ -5,6 +5,7 @@ import { Button, ErrorNote, Field, Input, PageHeader } from '../components/ui';
 import { errorMessage, patch, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { formatDate } from '../lib/format';
+import { CheckIcon, LockIcon } from '../components/icons';
 
 /** Account.Profile.Edit: your own name and password. */
 export function ProfilePage() {
@@ -56,7 +57,7 @@ export function ProfilePage() {
         <Field label="Display name" hint="Other members see this name next to your uploads, reviews and comments.">
           {(id) => <Input id={id} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />}
         </Field>
-        <Button type="submit" variant="primary" busy={busy === 'name'} disabled={name.trim() === user.displayName}>
+        <Button type="submit" variant="primary" icon={CheckIcon} busy={busy === 'name'} disabled={name.trim() === user.displayName}>
           Save name
         </Button>
       </form>
@@ -71,7 +72,7 @@ export function ProfilePage() {
             <Input id={id} type="password" autoComplete="new-password" required minLength={PASSWORD_MIN_LENGTH} value={pw.newPassword} onChange={(e) => setPw({ ...pw, newPassword: e.target.value })} />
           )}
         </Field>
-        <Button type="submit" busy={busy === 'pw'}>
+        <Button type="submit" icon={LockIcon} busy={busy === 'pw'}>
           Change password
         </Button>
       </form>

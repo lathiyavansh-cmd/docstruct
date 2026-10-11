@@ -4,6 +4,7 @@ import { PASSWORD_MIN_LENGTH } from '@docstruct/shared';
 import { Button, ErrorNote, Field, Input, Notice } from '../../components/ui';
 import { errorMessage, post } from '../../lib/api';
 import { AuthLayout } from './AuthLayout';
+import { LockIcon, SendIcon } from '../../components/icons';
 
 /** Account.PasswordReset, step 1. */
 export function ForgotPasswordPage() {
@@ -38,7 +39,7 @@ export function ForgotPasswordPage() {
           <Field label="Email" hint="We will send a reset link to this address.">
             {(id) => <Input id={id} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}
           </Field>
-          <Button type="submit" variant="primary" busy={busy} className="w-full">
+          <Button type="submit" variant="primary" icon={SendIcon} busy={busy} className="w-full">
             Send reset link
           </Button>
         </form>
@@ -78,7 +79,7 @@ export function ResetPasswordPage() {
         <Field label="New password" hint={`At least ${PASSWORD_MIN_LENGTH} characters. You will be logged out everywhere else.`}>
           {(id) => <Input id={id} type="password" autoComplete="new-password" required minLength={PASSWORD_MIN_LENGTH} value={password} onChange={(e) => setPassword(e.target.value)} />}
         </Field>
-        <Button type="submit" variant="primary" busy={busy} disabled={!token} className="w-full">
+        <Button type="submit" variant="primary" icon={LockIcon} busy={busy} disabled={!token} className="w-full">
           Save new password
         </Button>
       </form>

@@ -1,36 +1,68 @@
 import type { ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { BlurFade } from '../../components/magicui/blur-fade';
+import { BorderBeam } from '../../components/magicui/border-beam';
+import { Spotlight } from '../../components/motion-primitives/spotlight';
+
+const STEPS = [
+  ['v1', 'Upload a draft. It becomes version 1 and stays forever.'],
+  ['v2', 'Revise it. The new upload is version 2; nothing is overwritten.'],
+  ['v2', 'Send it to a reviewer, who sees exactly what changed since v1.'],
+] as const;
 
 /** Shared frame of the login, sign-up and password screens (UI-2). */
 export function AuthLayout({ title, children, footer }: { title: string; children: ReactNode; footer?: ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1fr_1.1fr]">
-      <section className="hidden flex-col justify-between bg-ink p-12 text-white lg:flex">
-        <span className="flex items-center gap-2 font-semibold">
-          <img src="/favicon.svg" alt="" className="size-7" /> DocStruct
-        </span>
-        <div className="max-w-md">
-          <p className="font-serif text-3xl leading-snug">One project, one folder tree, and one current version of every document.</p>
-          <ol className="mt-10 space-y-4 text-sm text-white/75">
-            {[
-              ['v1', 'Upload a draft. It becomes version 1 and stays forever.'],
-              ['v2', 'Revise it. The new upload is version 2; nothing is overwritten.'],
-              ['v2', 'Send it to a reviewer, who sees exactly what changed since v1.'],
-            ].map(([tag, text], i) => (
-              <li key={i} className="flex gap-4">
-                <span className="w-8 shrink-0 font-serif text-lg text-white tabular">{tag}</span>
-                <span className="pt-1">{text}</span>
-              </li>
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-white lg:flex">
+        {/* A soft light follows the pointer across the panel (motion-primitives Spotlight). */}
+        <Spotlight size={420} className="from-[#554dde]/50 via-[#3040c4]/25 to-transparent" />
+        <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-violet/30 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -bottom-32 -left-16 size-80 rounded-full bg-primary/30 blur-3xl" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(rgb(255_255_255/0.12)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"
+          aria-hidden
+        />
+
+        <motion.span initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative flex items-center gap-2 font-semibold">
+          <motion.img src="/favicon.svg" alt="" className="size-8" whileHover={{ rotate: -10, scale: 1.1 }} /> DocStruct
+        </motion.span>
+        <div className="relative max-w-md">
+          <BlurFade delay={0.1}>
+            <p className="font-serif text-3xl leading-snug">
+              One project, one folder tree, and{' '}
+              <span className="bg-gradient-to-r from-[#a9b4ff] to-[#c8c4f4] bg-clip-text text-transparent">one current version</span> of every document.
+            </p>
+          </BlurFade>
+          <ol className="relative mt-10 space-y-3 text-sm text-white/75">
+            {STEPS.map(([tag, text], i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35 + i * 0.15, type: 'spring', stiffness: 300, damping: 26 }}
+                whileHover={{ x: 6 }}
+                className="relative flex items-center gap-4 overflow-hidden rounded-xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/[0.08]"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-violet font-serif text-base text-white tabular shadow-lg">{tag}</span>
+                <span>{text}</span>
+                {i === 2 && <BorderBeam size={60} duration={6} colorFrom="#a9b4ff" colorTo="#554dde" />}
+              </motion.li>
             ))}
           </ol>
         </div>
-        <p className="text-xs text-white/50">Mini Project, Sardar Patel Institute of Technology, 2026-27</p>
+        <p className="relative text-xs text-white/50">Mini Project, Sardar Patel Institute of Technology, 2026-27</p>
       </section>
-      <section className="flex items-center justify-center px-5 py-12">
-        <div className="w-full max-w-sm">
+      <section className="relative flex items-center justify-center overflow-hidden px-5 py-12">
+        <div className="bg-dots pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_60%)]" aria-hidden />
+        <BlurFade delay={0.05} className="relative w-full max-w-sm">
+          <div className="mb-6 flex items-center gap-2 font-semibold lg:hidden">
+            <img src="/favicon.svg" alt="" className="size-7" /> DocStruct
+          </div>
           <h1 className="mb-6 text-2xl font-semibold tracking-tight">{title}</h1>
           {children}
           {footer && <div className="mt-6 text-sm text-ink-soft">{footer}</div>}
-        </div>
+        </BlurFade>
       </section>
     </div>
   );

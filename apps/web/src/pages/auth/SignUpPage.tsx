@@ -5,6 +5,7 @@ import { Button, ErrorNote, Field, Input } from '../../components/ui';
 import { errorMessage, post } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { AuthLayout } from './AuthLayout';
+import { ArrowRightIcon } from '../../components/icons';
 
 export function SignUpPage() {
   const { signIn } = useAuth();
@@ -46,7 +47,7 @@ export function SignUpPage() {
         <Field label="Password" hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}>
           {(id) => <Input id={id} type="password" autoComplete="new-password" required minLength={PASSWORD_MIN_LENGTH} value={form.password} onChange={set('password')} />}
         </Field>
-        <Button type="submit" variant="primary" busy={busy} className="w-full">
+        <Button type="submit" variant="primary" icon={ArrowRightIcon} busy={busy} className="w-full flex-row-reverse">
           Create account
         </Button>
       </form>
