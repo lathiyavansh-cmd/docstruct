@@ -2,6 +2,11 @@
 
 All notable changes, following [Keep a Changelog](https://keepachangelog.com/) and Semantic Versioning.
 
+## [1.0.2] - 2026-10-10
+
+### Fixed
+- CI: the shared package is built before typechecking, so a fresh checkout passes.
+
 ## [1.0.1] - 2026-10-10
 
 ### Fixed
