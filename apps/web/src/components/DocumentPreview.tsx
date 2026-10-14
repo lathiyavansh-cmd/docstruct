@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Download } from 'lucide-react';
 import type { AnnotationDto, FileLinkDto, RegionDto } from '@docstruct/shared';
 import { get } from '../lib/api';
 import { renderMarkdown } from '../lib/markdown';
 import { PdfViewer } from './PdfViewer';
 import { Button, ErrorNote, Notice, Spinner } from './ui';
+import { DownloadIcon } from './icons';
 
 export async function downloadVersion(versionId: string) {
   const link = await get<FileLinkDto>(`/versions/${versionId}/download`);
@@ -53,8 +53,8 @@ export function DocumentPreview({
     return (
       <Notice className="flex flex-wrap items-center justify-between gap-3 py-4">
         <span>{fileName} cannot be previewed in the browser. Download it to open it on your computer.</span>
-        <Button onClick={() => downloadVersion(versionId)}>
-          <Download className="size-4" /> Download
+        <Button icon={DownloadIcon} onClick={() => downloadVersion(versionId)}>
+          Download
         </Button>
       </Notice>
     );

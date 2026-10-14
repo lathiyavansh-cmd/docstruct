@@ -8,6 +8,7 @@ import { useCan, useMembers } from '../lib/hooks';
 import { PreReviewPanel } from './PreReview';
 import { useToast } from './toast';
 import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, StatusBadge, TextArea } from './ui';
+import { BadgeCheckIcon, RotateCcwIcon, SendIcon, XIcon } from './icons';
 
 /** M05 on the document page: the open review, the reviewer's decision, submission and the review history. */
 export function ReviewPanel({ document: doc, project }: { document: DocumentDetailDto; project: ProjectDto }) {
@@ -53,7 +54,7 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
       <div className="flex items-center justify-between">
         <h2 id="review-heading" className="font-semibold">Review</h2>
         {canSubmit && (
-          <Button variant="primary" size="sm" onClick={() => setSubmitting(true)}>
+          <Button variant="primary" size="sm" icon={SendIcon} onClick={() => setSubmitting(true)}>
             Send for review
           </Button>
         )}
@@ -61,7 +62,7 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
       {act.error && <ErrorNote>{errorMessage(act.error)}</ErrorNote>}
 
       {open ? (
-        <div className="space-y-4 rounded-lg border border-st-review/30 bg-st-review-wash/40 p-4">
+        <div className="space-y-4 rounded-xl border border-st-review/30 bg-st-review-wash/40 p-4">
           <div className="text-sm">
             <p>
               <strong className="font-medium">{open.reviewer.displayName}</strong> is reviewing version {open.versionNo}
@@ -84,17 +85,17 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
                 {(id) => <TextArea id={id} value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} />}
               </Field>
               <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={() => setConfirm('approve')}>
+                <Button variant="primary" icon={BadgeCheckIcon} onClick={() => setConfirm('approve')}>
                   Approve version {open.versionNo}
                 </Button>
-                <Button onClick={() => setConfirm('changes')} disabled={!note.trim()}>
+                <Button icon={RotateCcwIcon} onClick={() => setConfirm('changes')} disabled={!note.trim()}>
                   Request changes
                 </Button>
               </div>
             </div>
           )}
           {canCancel && !isReviewer && (
-            <Button variant="quiet" size="sm" onClick={() => setConfirm('cancel')}>
+            <Button variant="quiet" size="sm" icon={XIcon} onClick={() => setConfirm('cancel')}>
               Cancel review
             </Button>
           )}
@@ -174,7 +175,7 @@ function SubmitDialog({ document: doc, project, onClose, onDone }: { document: D
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" busy={submit.isPending} disabled={!reviewerId} onClick={() => submit.mutate()}>
+          <Button variant="primary" icon={SendIcon} busy={submit.isPending} disabled={!reviewerId} onClick={() => submit.mutate()}>
             Send for review
           </Button>
         </>

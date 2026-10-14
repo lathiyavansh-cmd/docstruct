@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { UploadCloud } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_BYTES, formatBytes, type DocumentDto, type FolderNodeDto } from '@docstruct/shared';
 import { errorMessage, post } from '../lib/api';
 import { transferFile, validateFile } from '../lib/upload';
+import { AnimateIcon, CircleCheckIcon, CloudUploadIcon, UploadIcon } from './icons';
+import { BorderTrail } from './motion-primitives/border-trail';
 import { Button, ErrorNote, Field, Input, Modal, Select, TextArea, cx } from './ui';
 
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
@@ -67,47 +69,71 @@ export function UploadDialog({
       footer={
         <>
           <Button onClick={onClose} disabled={upload.isPending}>Cancel</Button>
-          <Button variant="primary" busy={upload.isPending} disabled={!file} onClick={() => upload.mutate()}>
+          <Button variant="primary" icon={UploadIcon} busy={upload.isPending} disabled={!file} onClick={() => upload.mutate()}>
             {mode.kind === 'document' ? 'Upload' : 'Upload version'}
           </Button>
         </>
       }
     >
       {upload.error && <ErrorNote>{errorMessage(upload.error)}</ErrorNote>}
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          pick(e.dataTransfer.files[0]);
-        }}
-        className={cx('rounded-lg border-2 border-dashed px-4 py-6 text-center', dragging ? 'border-primary bg-primary-wash' : 'border-rule-strong')}
-      >
-        <UploadCloud className="mx-auto size-6 text-ink-faint" aria-hidden />
-        {file ? (
-          <p className="mt-2 text-sm">
-            <strong className="font-medium">{file.name}</strong> <span className="text-ink-soft">({formatBytes(file.size)})</span>
-          </p>
-        ) : (
-          <p className="mt-2 text-sm text-ink-soft">Drop a file here or</p>
-        )}
-        <Button size="sm" className="mt-2" onClick={() => input.current?.click()} disabled={upload.isPending}>
-          {file ? 'Choose another file' : 'Choose a file'}
-        </Button>
-        <input ref={input} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
-        <p className="mt-2 text-[12.5px] text-ink-faint">PDF, DOCX, TXT, MD, PNG or JPEG, up to {formatBytes(MAX_UPLOAD_BYTES)}</p>
-      </div>
+      <AnimateIcon animateOnHover asChild>
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            pick(e.dataTransfer.files[0]);
+          }}
+          className={cx(
+            'group relative rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors duration-200',
+            dragging ? 'border-primary/60 bg-primary-wash' : file ? 'border-st-approved/40 bg-st-approved-wash/40' : 'border-rule-strong hover:border-primary/40 hover:bg-primary-wash/40',
+          )}
+        >
+          {/* While a file is held over the drop area, a light runs around its edge. */}
+          {dragging && <BorderTrail size={90} className="bg-gradient-to-r from-primary via-violet to-primary" transition={{ repeat: Infinity, duration: 2.4, ease: 'linear' }} />}
+          <motion.span
+            className={cx('mx-auto flex size-12 items-center justify-center rounded-2xl shadow-card ring-1', file ? 'bg-st-approved-wash text-st-approved ring-st-approved/20' : 'bg-surface text-primary ring-rule')}
+            animate={dragging ? { y: -4, scale: 1.08 } : { y: 0, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            {file ? <CircleCheckIcon size={22} animate /> : <CloudUploadIcon size={22} animate={dragging} loop={dragging} />}
+          </motion.span>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={file?.name ?? (dragging ? 'drop' : 'idle')} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.15 }}>
+              {file ? (
+                <p className="mt-2.5 text-sm">
+                  <strong className="font-medium">{file.name}</strong> <span className="text-ink-soft">({formatBytes(file.size)})</span>
+                </p>
+              ) : (
+                <p className="mt-2.5 text-sm text-ink-soft">{dragging ? 'Release to add the file' : 'Drop a file here or'}</p>
+              )}
+            </motion.div>
+          </AnimatePresence>
+          <Button size="sm" className="mt-2" onClick={() => input.current?.click()} disabled={upload.isPending}>
+            {file ? 'Choose another file' : 'Choose a file'}
+          </Button>
+          <input ref={input} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+          <p className="mt-2 text-[12.5px] text-ink-faint">PDF, DOCX, TXT, MD, PNG or JPEG, up to {formatBytes(MAX_UPLOAD_BYTES)}</p>
+        </div>
+      </AnimateIcon>
       {fileError && <ErrorNote>{fileError}</ErrorNote>}
       {progress !== null && (
         <div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-paper" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full bg-primary transition-[width]" style={{ width: `${progress * 100}%` }} />
+          <div className="h-2 overflow-hidden rounded-full bg-paper ring-1 ring-rule" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
+            <motion.div
+              className="relative h-full overflow-hidden rounded-full bg-gradient-to-r from-primary to-violet"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress * 100}%` }}
+              transition={{ type: 'spring', stiffness: 120, damping: 22 }}
+            >
+              <span className="absolute inset-0 animate-pulse bg-white/20" />
+            </motion.div>
           </div>
-          <p className="mt-1 text-[12.5px] text-ink-soft">{progress < 1 ? `Uploading ${Math.round(progress * 100)}%` : 'Saving the version'}</p>
+          <p className="mt-1 text-[12.5px] text-ink-soft tabular">{progress < 1 ? `Uploading ${Math.round(progress * 100)}%` : 'Saving the version'}</p>
         </div>
       )}
       {mode.kind === 'document' && (
@@ -119,7 +145,7 @@ export function UploadDialog({
                 <option value="">Project root</option>
                 {flatten(folders).map((f) => (
                   <option key={f.folderId} value={f.folderId}>
-                    {' '.repeat(f.depth)}
+                    {' '.repeat(f.depth)}
                     {f.name}
                   </option>
                 ))}

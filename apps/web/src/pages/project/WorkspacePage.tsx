@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, Image as ImageIcon, Search, Upload, X } from 'lucide-react';
+import { FileText, Image as ImageIcon } from 'lucide-react';
 import { DOCUMENT_STATUSES, REVIEWER_ROLES, STATUS_LABEL, type DocumentDto, type FolderNodeDto, type SearchResultDto } from '@docstruct/shared';
 import { FolderTree } from '../../components/FolderTree';
 import { useToast } from '../../components/toast';
 import { UploadDialog } from '../../components/UploadDialog';
-import { Button, EmptyState, ErrorNote, Input, Select, Spinner, StatusBadge } from '../../components/ui';
+import { AnimateIcon, ArrowRightIcon, CloudUploadIcon, SearchIcon, UploadIcon, XIcon } from '../../components/icons';
+import { AnimatedBackground } from '../../components/motion-primitives/animated-background';
+import { Button, EmptyState, ErrorNote, Input, Select, Skeleton, StatusBadge } from '../../components/ui';
 import { errorMessage, get } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { useCan, useCurrentProject, useMembers } from '../../lib/hooks';
@@ -23,7 +25,7 @@ function findFolder(nodes: FolderNodeDto[], id: string | null): FolderNodeDto | 
 /** Snippet with [[matched]] words highlighted, built from text nodes only (no HTML injection). */
 function Snippet({ text }: { text: string }) {
   return (
-    <p className="mt-1 line-clamp-2 font-serif text-[13.5px] text-ink-soft">
+    <span className="mt-1 line-clamp-2 block font-serif text-[13.5px] text-ink-soft">
       {text.split(/(\[\[.*?\]\])/g).map((part, i) =>
         part.startsWith('[[') ? (
           <mark key={i} className="rounded-sm bg-mark-insert px-0.5 text-ink">{part.slice(2, -2)}</mark>
@@ -31,7 +33,7 @@ function Snippet({ text }: { text: string }) {
           <span key={i}>{part}</span>
         ),
       )}
-    </p>
+    </span>
   );
 }
 
@@ -100,13 +102,13 @@ export function WorkspacePage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">{folder ? folder.name : 'All documents'}</h2>
           {allowed('document.create') && (
-            <Button variant="primary" onClick={() => setUploading(true)}>
-              <Upload className="size-4" /> Upload
+            <Button variant="primary" icon={UploadIcon} onClick={() => setUploading(true)}>
+              Upload
             </Button>
           )}
         </div>
 
-        <div className="mb-5 space-y-3 rounded-lg bg-paper p-3">
+        <div className="mb-5 space-y-3 rounded-2xl border border-rule bg-paper/70 p-3">
           <form
             role="search"
             onSubmit={(e) => {
@@ -115,7 +117,7 @@ export function WorkspacePage() {
             }}
             className="relative"
           >
-            <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-ink-faint" aria-hidden />
+            <SearchIcon size={16} animate={term.length > 0} className="pointer-events-none absolute left-3 top-2.5 text-ink-faint" />
             <Input
               value={term}
               onChange={(e) => setTerm(e.target.value)}
@@ -149,73 +151,75 @@ export function WorkspacePage() {
               <Button
                 variant="quiet"
                 size="sm"
+                icon={XIcon}
                 onClick={() => {
                   const next = new URLSearchParams();
                   if (folderId) next.set('folder', folderId);
                   setParams(next, { replace: true });
                 }}
               >
-                <X className="size-3.5" /> Clear filters
+                Clear filters
               </Button>
             )}
           </div>
         </div>
 
-        {docs.isLoading && <Spinner />}
+        {docs.isLoading && <Skeleton rows={4} />}
         {docs.error && <ErrorNote>{errorMessage(docs.error)}</ErrorNote>}
         {docs.data?.length === 0 &&
           (filtering ? (
-            <EmptyState title="No documents match">Try a different search term or remove a filter.</EmptyState>
+            <EmptyState icon={SearchIcon} title="No documents match">Try a different search term or remove a filter.</EmptyState>
           ) : (
             <EmptyState
+              icon={CloudUploadIcon}
               title={folder ? `${folder.name} is empty` : 'No documents yet'}
-              action={allowed('document.create') && <Button variant="primary" onClick={() => setUploading(true)}>Upload a document</Button>}
+              action={allowed('document.create') && <Button variant="primary" icon={UploadIcon} onClick={() => setUploading(true)}>Upload a document</Button>}
             >
               Uploaded documents start as drafts at version 1.
             </EmptyState>
           ))}
         {!!docs.data?.length && (
-          <div className="overflow-x-auto rounded-lg border border-rule">
-            <table className="w-full text-sm">
-              <thead className="bg-paper text-left text-[13px] text-ink-soft">
-                <tr>
-                  <th className="px-4 py-2.5 font-medium">Document</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">Version</th>
-                  <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">Updated</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-rule">
+          <div className="overflow-hidden rounded-2xl border border-rule bg-surface shadow-card">
+            <div className="grid grid-cols-[1fr_auto] gap-4 border-b border-rule bg-paper/70 px-5 py-2 text-[12.5px] font-medium text-ink-soft sm:grid-cols-[1fr_9.5rem_4rem_6.5rem_1rem]">
+              <span>Document</span>
+              <span>Status</span>
+              <span className="hidden sm:block">Version</span>
+              <span className="hidden text-right sm:block">Updated</span>
+            </div>
+            <div className="flex flex-col p-1.5">
+              {/* The hover highlight glides from row to row (motion-primitives AnimatedBackground). */}
+              <AnimatedBackground enableHover className="rounded-xl bg-primary-wash/70" transition={{ type: 'spring', bounce: 0.12, duration: 0.3 }}>
                 {docs.data.map(({ document: d, snippet }) => (
-                  <tr key={d.documentId} className="cursor-pointer hover:bg-paper/60" onClick={() => navigate(`/d/${d.documentId}`)}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-start gap-2.5">
-                        {d.currentVersion.mimeType.startsWith('image/') ? (
-                          <ImageIcon className="mt-0.5 size-4 shrink-0 text-ink-faint" aria-hidden />
-                        ) : (
-                          <FileText className="mt-0.5 size-4 shrink-0 text-ink-faint" aria-hidden />
-                        )}
-                        <div className="min-w-0">
-                          <Link to={`/d/${d.documentId}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:text-primary">
-                            {d.title}
-                          </Link>
-                          {d.openReview && (
-                            <p className="text-[13px] text-ink-soft">
-                              With {d.openReview.reviewer.displayName}
-                              {d.openReview.dueDate && `, due ${formatDate(d.openReview.dueDate)}`}
-                            </p>
-                          )}
-                          {snippet && <Snippet text={snippet} />}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
-                    <td className="hidden px-4 py-3 text-ink-soft md:table-cell tabular">v{d.currentVersion.versionNo}</td>
-                    <td className="hidden whitespace-nowrap px-4 py-3 text-right text-ink-faint sm:table-cell">{timeAgo(d.updatedAt)}</td>
-                  </tr>
+                  <Link key={d.documentId} data-id={d.documentId} to={`/d/${d.documentId}`} className="group w-full rounded-xl px-3.5 py-3 text-sm">
+                    <AnimateIcon animateOnHover asChild>
+                      <span className="grid w-full grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_9.5rem_4rem_6.5rem_1rem]">
+                        <span className="flex min-w-0 items-start gap-3">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-faint ring-1 ring-rule transition-[color,transform] duration-200 group-hover:-rotate-6 group-hover:text-primary">
+                            {d.currentVersion.mimeType.startsWith('image/') ? <ImageIcon className="size-4" aria-hidden /> : <FileText className="size-4" aria-hidden />}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium transition-colors group-hover:text-primary">{d.title}</span>
+                            {d.openReview && (
+                              <span className="block text-[13px] text-ink-soft">
+                                With {d.openReview.reviewer.displayName}
+                                {d.openReview.dueDate && `, due ${formatDate(d.openReview.dueDate)}`}
+                              </span>
+                            )}
+                            {snippet && <Snippet text={snippet} />}
+                          </span>
+                        </span>
+                        <span><StatusBadge status={d.status} /></span>
+                        <span className="hidden text-ink-soft tabular sm:block">v{d.currentVersion.versionNo}</span>
+                        <span className="hidden whitespace-nowrap text-right text-ink-faint sm:block">{timeAgo(d.updatedAt)}</span>
+                        <span className="hidden text-primary opacity-0 transition-opacity group-hover:opacity-100 sm:block">
+                          <ArrowRightIcon size={15} />
+                        </span>
+                      </span>
+                    </AnimateIcon>
+                  </Link>
                 ))}
-              </tbody>
-            </table>
+              </AnimatedBackground>
+            </div>
           </div>
         )}
       </section>

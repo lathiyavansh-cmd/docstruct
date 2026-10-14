@@ -1,48 +1,68 @@
-import { NavLink, Outlet, useParams } from 'react-router-dom';
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { ROLE_LABEL } from '@docstruct/shared';
-import { ErrorNote, Notice, Spinner, cx } from '../../components/ui';
+import { ActivityIcon, AnimateIcon, LayersIcon, LayoutDashboardIcon, UsersIcon } from '../../components/icons';
+import { ErrorNote, Notice, Spinner, cx, type AnimatedIcon } from '../../components/ui';
 import { errorMessage } from '../../lib/api';
 import { useProject } from '../../lib/hooks';
 
-const TABS = [
-  ['', 'Overview'],
-  ['documents', 'Documents'],
-  ['members', 'Members'],
-  ['activity', 'Activity'],
-] as const;
+const TABS: ReadonlyArray<readonly [string, string, AnimatedIcon]> = [
+  ['', 'Overview', LayoutDashboardIcon],
+  ['documents', 'Documents', LayersIcon],
+  ['members', 'Members', UsersIcon],
+  ['activity', 'Activity', ActivityIcon],
+];
 
 /** Project workspace frame: name, the caller's role (UI-11) and the project's sections. */
 export function ProjectLayout() {
   const { projectId } = useParams();
+  const { pathname } = useLocation();
   const project = useProject(projectId);
 
-  if (project.isLoading) return <Spinner />;
+  if (project.isLoading) return <div className="px-5 lg:px-8"><Spinner /></div>;
   if (project.error || !project.data) return <div className="p-8"><ErrorNote>{errorMessage(project.error)}</ErrorNote></div>;
   const p = project.data;
+  const base = `/p/${p.projectId}`;
+  const current = pathname.slice(base.length + 1).split('/')[0] ?? '';
 
   return (
     <div>
-      <div className="border-b border-rule px-5 pt-6 lg:px-8">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div className="relative overflow-hidden border-b border-rule bg-gradient-to-b from-primary-wash/60 to-surface px-5 pt-7 lg:px-8">
+        <div className="bg-dots pointer-events-none absolute inset-y-0 right-0 w-2/5 [mask-image:linear-gradient(to_left,black,transparent)]" aria-hidden />
+        <div className="relative flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
-          <span className="text-sm text-ink-soft">
+          <span className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-ink-soft ring-1 ring-rule">
             You are {p.myRole === 'OWNER' ? 'an' : 'a'} <strong className="font-medium text-ink">{ROLE_LABEL[p.myRole].toLowerCase()}</strong>
           </span>
         </div>
-        {p.description && <p className="mt-1 max-w-3xl text-sm text-ink-soft">{p.description}</p>}
-        <nav className="-mb-px mt-4 flex gap-5 overflow-x-auto" aria-label="Project sections">
-          {TABS.map(([path, label]) => (
-            <NavLink
-              key={path}
-              to={path ? `/p/${p.projectId}/${path}` : `/p/${p.projectId}`}
-              end={!path}
-              className={({ isActive }) =>
-                cx('whitespace-nowrap border-b-2 pb-2.5 text-sm', isActive ? 'border-ink font-medium text-ink' : 'border-transparent text-ink-soft hover:text-ink')
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+        {p.description && <p className="relative mt-1 max-w-3xl text-sm text-ink-soft">{p.description}</p>}
+        <nav className="relative -mb-px mt-5 flex gap-1 overflow-x-auto no-scrollbar" aria-label="Project sections">
+          {TABS.map(([path, label, Icon]) => {
+            const active = current === path;
+            return (
+              <AnimateIcon key={path} animateOnHover asChild>
+                <Link
+                  to={path ? `${base}/${path}` : base}
+                  aria-current={active ? 'page' : undefined}
+                  className={cx(
+                    'group relative flex items-center gap-2 whitespace-nowrap px-3 pb-3 pt-1.5 text-sm transition-colors',
+                    active ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink',
+                  )}
+                >
+                  <span className="absolute inset-x-0.5 bottom-1.5 top-0 rounded-lg transition-colors group-hover:bg-primary-wash/80" aria-hidden />
+                  <Icon size={15} className={cx('relative', active && 'text-primary')} />
+                  <span className="relative">{label}</span>
+                  {active && (
+                    <motion.span
+                      layoutId="project-tab-indicator"
+                      className="absolute inset-x-2 bottom-0 h-[2.5px] rounded-full bg-gradient-to-r from-primary to-violet"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                    />
+                  )}
+                </Link>
+              </AnimateIcon>
+            );
+          })}
         </nav>
       </div>
       {p.archivedAt && (
@@ -50,7 +70,9 @@ export function ProjectLayout() {
           <Notice>This project is archived. Its documents can be opened, searched and downloaded, but nothing can be changed.</Notice>
         </div>
       )}
-      <Outlet context={p} />
+      <motion.div key={current} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <Outlet context={p} />
+      </motion.div>
     </div>
   );
 }

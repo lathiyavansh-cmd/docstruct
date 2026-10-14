@@ -2,10 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PROJECT_ROLES, ROLE_DESCRIPTION, ROLE_LABEL, type MemberDto, type ProjectRole } from '@docstruct/shared';
 import { useToast } from '../../components/toast';
-import { Avatar, Button, ConfirmDialog, ErrorNote, Field, Input, Select, Spinner } from '../../components/ui';
+import { Avatar, Button, ConfirmDialog, ErrorNote, Field, Input, Select, Skeleton } from '../../components/ui';
 import { del, errorMessage, patch, post } from '../../lib/api';
 import { formatDate } from '../../lib/format';
 import { useCan, useCurrentProject, useMembers } from '../../lib/hooks';
+import { UsersIcon, XIcon } from '../../components/icons';
 
 /** M02 member management (UI-8) with role help where roles are assigned (UD-2). */
 export function MembersPage() {
@@ -51,10 +52,10 @@ export function MembersPage() {
       <section className="min-w-0">
         <h2 className="mb-3 font-semibold">Members</h2>
         {error && <ErrorNote className="mb-3">{error}</ErrorNote>}
-        {members.isLoading && <Spinner />}
-        <ul className="divide-y divide-rule rounded-lg border border-rule">
+        {members.isLoading && <Skeleton rows={3} />}
+        <ul className="divide-y divide-rule overflow-hidden rounded-2xl border border-rule bg-surface shadow-card">
           {members.data?.map((m) => (
-            <li key={m.userId} className="flex flex-wrap items-center gap-3 px-4 py-3">
+            <li key={m.userId} className="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-primary-wash/40">
               <Avatar name={m.displayName} />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
@@ -74,7 +75,7 @@ export function MembersPage() {
                       <option key={r} value={r}>{ROLE_LABEL[r]}</option>
                     ))}
                   </Select>
-                  <Button variant="quiet" size="sm" onClick={() => setRemoving(m)}>
+                  <Button variant="quiet" size="sm" icon={XIcon} onClick={() => setRemoving(m)}>
                     Remove
                   </Button>
                 </>
@@ -149,7 +150,7 @@ function AddMember({ projectId, onAdded }: { projectId: string; onAdded: (list: 
           </Select>
         )}
       </Field>
-      <Button type="submit" variant="primary" busy={add.isPending} className="w-full">
+      <Button type="submit" variant="primary" icon={UsersIcon} busy={add.isPending} className="w-full">
         Add member
       </Button>
     </form>

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { SessionDto } from '@docstruct/shared';
+import { ArrowRightIcon } from '../../components/icons';
 import { Button, ErrorNote, Field, Input, Notice } from '../../components/ui';
 import { errorMessage, post } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -45,7 +46,7 @@ export function LoginPage() {
         <Field label="Password">
           {(id) => <Input id={id} type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />}
         </Field>
-        <Button type="submit" variant="primary" busy={busy} className="w-full">
+        <Button type="submit" variant="primary" icon={ArrowRightIcon} busy={busy} className="w-full flex-row-reverse">
           Log in
         </Button>
         <p className="text-center text-sm">

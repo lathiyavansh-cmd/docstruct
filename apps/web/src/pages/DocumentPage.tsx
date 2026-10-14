@@ -1,16 +1,30 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Download, Upload } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ChevronRight } from 'lucide-react';
 import { formatBytes, type AnnotationDto, type DocumentDetailDto, type FolderNodeDto, type RegionDto, type VersionDto } from '@docstruct/shared';
 import { AnnotationsPanel } from '../components/AnnotationsPanel';
 import { DocumentPreview, downloadVersion } from '../components/DocumentPreview';
+import {
+  AnimateIcon,
+  ChevronDownIcon,
+  ClipboardCheckIcon,
+  ClipboardListIcon,
+  DownloadIcon,
+  LayersIcon,
+  LinkIcon,
+  LockIcon,
+  MessageSquareIcon,
+  Trash2Icon,
+  UploadIcon,
+} from '../components/icons';
 import { ReviewPanel } from '../components/ReviewPanel';
 import { SharePanel } from '../components/SharePanel';
 import { useToast } from '../components/toast';
 import { UploadDialog } from '../components/UploadDialog';
 import { VersionHistory } from '../components/VersionHistory';
-import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Notice, Select, Spinner, StatusBadge, TextArea, cx } from '../components/ui';
+import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Notice, Select, Spinner, StatusBadge, TextArea, cx, type AnimatedIcon } from '../components/ui';
 import { del, errorMessage, get, patch, post } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 import { useCan, useProject } from '../lib/hooks';
@@ -20,6 +34,8 @@ type RailTab = 'review' | 'comments' | 'versions' | 'sharing';
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children, depth + 1)]);
 }
+
+const crumb = 'rounded px-1 transition-colors hover:bg-primary-wash hover:text-primary';
 
 /** UI-5: preview, version history, review status and comments of one document in a single view. */
 export function DocumentPage() {
@@ -50,7 +66,7 @@ export function DocumentPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<'upload' | 'edit' | 'move' | 'delete' | 'archive' | null>(null);
 
-  if (doc.isLoading || (doc.data && project.isLoading)) return <Spinner />;
+  if (doc.isLoading || (doc.data && project.isLoading)) return <div className="px-5 lg:px-8"><Spinner label="Opening the document" /></div>;
   if (doc.error || !doc.data || !project.data) return <div className="p-8"><ErrorNote>{errorMessage(doc.error ?? project.error)}</ErrorNote></div>;
   const d = doc.data;
   const p = project.data;
@@ -69,29 +85,34 @@ export function DocumentPage() {
     setParams(next);
   };
 
-  const tabs: Array<{ id: RailTab; label: string }> = [
-    { id: 'review', label: 'Review' },
-    { id: 'comments', label: `Comments${annotations.data?.filter((a) => !a.resolvedAt).length ? ` (${annotations.data.filter((a) => !a.resolvedAt).length})` : ''}` },
-    { id: 'versions', label: `Versions (${d.versionCount})` },
-    ...(allowed('share.list') ? [{ id: 'sharing' as const, label: 'Sharing' }] : []),
+  const openComments = annotations.data?.filter((a) => !a.resolvedAt).length ?? 0;
+  const tabs: Array<{ id: RailTab; label: string; icon: AnimatedIcon; count?: number }> = [
+    { id: 'review', label: 'Review', icon: ClipboardCheckIcon },
+    { id: 'comments', label: 'Comments', icon: MessageSquareIcon, count: openComments || undefined },
+    { id: 'versions', label: 'Versions', icon: LayersIcon, count: d.versionCount },
+    ...(allowed('share.list') ? [{ id: 'sharing' as const, label: 'Sharing', icon: LinkIcon }] : []),
   ];
   const canUpload = allowed('version.create') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED';
 
   return (
     <div className="px-5 py-6 lg:px-8">
-      <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-sm text-ink-soft">
-        <Link to={`/p/${p.projectId}`} className="hover:text-ink">{p.name}</Link>
-        <ChevronRight className="size-3.5" aria-hidden />
-        <Link to={`/p/${p.projectId}/documents`} className="hover:text-ink">Documents</Link>
+      <nav aria-label="Breadcrumb" className="-ml-1 mb-3 flex flex-wrap items-center gap-0.5 text-sm text-ink-soft">
+        <Link to={`/p/${p.projectId}`} className={crumb}>{p.name}</Link>
+        <ChevronRight className="size-3.5 text-ink-faint" aria-hidden />
+        <Link to={`/p/${p.projectId}/documents`} className={crumb}>Documents</Link>
         {d.folderPath.map((f) => (
-          <span key={f.folderId} className="flex items-center gap-1">
-            <ChevronRight className="size-3.5" aria-hidden />
-            <Link to={`/p/${p.projectId}/documents?folder=${f.folderId}`} className="hover:text-ink">{f.name}</Link>
+          <span key={f.folderId} className="flex items-center gap-0.5">
+            <ChevronRight className="size-3.5 text-ink-faint" aria-hidden />
+            <Link to={`/p/${p.projectId}/documents?folder=${f.folderId}`} className={crumb}>{f.name}</Link>
           </span>
         ))}
       </nav>
 
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-rule pb-5">
+      <motion.header
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-5 flex flex-wrap items-start justify-between gap-4 border-b border-rule pb-5"
+      >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">{d.title}</h1>
@@ -105,23 +126,23 @@ export function DocumentPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {canUpload && (
-            <Button variant="primary" onClick={() => setDialog('upload')}>
-              <Upload className="size-4" /> Upload new version
+            <Button variant="primary" icon={UploadIcon} onClick={() => setDialog('upload')}>
+              Upload new version
             </Button>
           )}
-          <Button onClick={() => downloadVersion(shownVersion!.versionId)}>
-            <Download className="size-4" /> Download{viewing ? ` v${viewing.versionNo}` : ''}
+          <Button icon={DownloadIcon} onClick={() => downloadVersion(shownVersion!.versionId)}>
+            Download{viewing ? ` v${viewing.versionNo}` : ''}
           </Button>
           <DocumentMenu
             items={[
-              allowed('document.update') && d.status !== 'ARCHIVED' && { label: 'Edit details', onClick: () => setDialog('edit') },
-              allowed('document.move') && { label: 'Move to folder', onClick: () => setDialog('move') },
-              allowed('document.archive') && d.status !== 'ARCHIVED' && d.status !== 'UNDER_REVIEW' && { label: 'Archive', onClick: () => setDialog('archive') },
-              allowed('document.delete') && { label: 'Delete', onClick: () => setDialog('delete'), danger: true },
+              allowed('document.update') && d.status !== 'ARCHIVED' && { label: 'Edit details', icon: ClipboardListIcon, onClick: () => setDialog('edit') },
+              allowed('document.move') && { label: 'Move to folder', icon: LayersIcon, onClick: () => setDialog('move') },
+              allowed('document.archive') && d.status !== 'ARCHIVED' && d.status !== 'UNDER_REVIEW' && { label: 'Archive', icon: LockIcon, onClick: () => setDialog('archive') },
+              allowed('document.delete') && { label: 'Delete', icon: Trash2Icon, onClick: () => setDialog('delete'), danger: true },
             ]}
           />
         </div>
-      </header>
+      </motion.header>
 
       {d.status === 'UNDER_REVIEW' && allowed('version.create') && (
         <Notice className="mb-4">This document is under review. New versions can be uploaded after the review is completed or cancelled.</Notice>
@@ -129,16 +150,25 @@ export function DocumentPage() {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="min-w-0">
-          {viewing && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-st-review/40 bg-st-review-wash px-3 py-2 text-sm">
-              <span>
-                You are viewing <strong className="font-medium">version {viewing.versionNo}</strong>. The current version is {current.versionNo}.
-              </span>
-              <button type="button" className="font-medium text-primary hover:underline" onClick={() => onView(null)}>
-                Show the current version
-              </button>
-            </div>
-          )}
+          <AnimatePresence>
+            {viewing && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-st-review/40 bg-st-review-wash px-3 py-2 text-sm">
+                  <span>
+                    You are viewing <strong className="font-medium">version {viewing.versionNo}</strong>. The current version is {current.versionNo}.
+                  </span>
+                  <button type="button" className="font-medium text-primary hover:underline" onClick={() => onView(null)}>
+                    Show the current version
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {placing && (
             <Notice className="mb-3 flex items-center justify-between">
               <span>Drag a box on a page to pin your comment, or click a spot.</span>
@@ -165,51 +195,77 @@ export function DocumentPage() {
         </div>
 
         <aside className="min-w-0 xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto">
-          <div className="mb-4 flex gap-4 border-b border-rule" role="tablist">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.id}
-                onClick={() => setTab(t.id)}
-                className={cx('-mb-px whitespace-nowrap border-b-2 pb-2 text-sm', tab === t.id ? 'border-ink font-medium' : 'border-transparent text-ink-soft hover:text-ink')}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="no-scrollbar mb-4 flex gap-0.5 overflow-x-auto rounded-xl bg-paper p-1 ring-1 ring-rule" role="tablist">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const selected = tab === t.id;
+              return (
+                <AnimateIcon key={t.id} animateOnHover asChild>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setTab(t.id)}
+                    className={cx(
+                      'relative flex flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-[12.5px] transition-colors',
+                      selected ? 'font-medium text-ink' : 'text-ink-soft hover:text-ink',
+                    )}
+                  >
+                    {/* The selected tab's pill slides over to the tab that was clicked. */}
+                    {selected && (
+                      <motion.span
+                        layoutId="rail-tab"
+                        className="absolute inset-0 rounded-lg bg-surface shadow-card ring-1 ring-rule"
+                        transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+                      />
+                    )}
+                    <Icon size={14} className={cx('relative', selected && 'text-primary')} />
+                    <span className="relative">{t.label}</span>
+                    {t.count !== undefined && (
+                      <span className={cx('relative rounded-full px-1.5 text-[11px] tabular', selected ? 'bg-primary-wash text-primary' : 'bg-surface text-ink-faint')}>
+                        {t.count}
+                      </span>
+                    )}
+                  </button>
+                </AnimateIcon>
+              );
+            })}
           </div>
-          {tab === 'review' && <ReviewPanel document={d} project={p} />}
-          {tab === 'comments' && shownVersion && (
-            <AnnotationsPanel
-              documentId={d.documentId}
-              versionId={shownVersion.versionId}
-              versionNo={shownVersion.versionNo}
-              isCurrent={!viewing}
-              isPdf={isPdf}
-              threads={annotations.data ?? []}
-              canCreate={allowed('annotation.create') && d.status !== 'ARCHIVED'}
-              canReply={allowed('annotation.reply')}
-              canResolve={allowed('annotation.resolve')}
-              placing={placing}
-              anchor={anchor}
-              onStartPlacing={() => setPlacing(true)}
-              onClearAnchor={() => setAnchor(null)}
-              activeId={activeId}
-              onSelect={setActiveId}
-            />
-          )}
-          {tab === 'versions' && versions.data && (
-            <VersionHistory
-              documentId={d.documentId}
-              projectId={p.projectId}
-              versions={versions.data}
-              viewingId={viewing?.versionId ?? null}
-              onView={onView}
-              canRestore={allowed('version.restore') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED'}
-            />
-          )}
-          {tab === 'sharing' && <SharePanel documentId={d.documentId} />}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={tab} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.16 }}>
+              {tab === 'review' && <ReviewPanel document={d} project={p} />}
+              {tab === 'comments' && shownVersion && (
+                <AnnotationsPanel
+                  documentId={d.documentId}
+                  versionId={shownVersion.versionId}
+                  versionNo={shownVersion.versionNo}
+                  isCurrent={!viewing}
+                  isPdf={isPdf}
+                  threads={annotations.data ?? []}
+                  canCreate={allowed('annotation.create') && d.status !== 'ARCHIVED'}
+                  canReply={allowed('annotation.reply')}
+                  canResolve={allowed('annotation.resolve')}
+                  placing={placing}
+                  anchor={anchor}
+                  onStartPlacing={() => setPlacing(true)}
+                  onClearAnchor={() => setAnchor(null)}
+                  activeId={activeId}
+                  onSelect={setActiveId}
+                />
+              )}
+              {tab === 'versions' && versions.data && (
+                <VersionHistory
+                  documentId={d.documentId}
+                  projectId={p.projectId}
+                  versions={versions.data}
+                  viewingId={viewing?.versionId ?? null}
+                  onView={onView}
+                  canRestore={allowed('version.restore') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED'}
+                />
+              )}
+              {tab === 'sharing' && <SharePanel documentId={d.documentId} />}
+            </motion.div>
+          </AnimatePresence>
         </aside>
       </div>
 
@@ -260,24 +316,53 @@ export function DocumentPage() {
   );
 }
 
-function DocumentMenu({ items }: { items: Array<false | { label: string; onClick: () => void; danger?: boolean }> }) {
+type MenuItem = { label: string; icon: AnimatedIcon; onClick: () => void; danger?: boolean };
+
+function DocumentMenu({ items }: { items: Array<false | MenuItem> }) {
   const [open, setOpen] = useState(false);
-  const visible = items.filter(Boolean) as Array<{ label: string; onClick: () => void; danger?: boolean }>;
+  const visible = items.filter(Boolean) as MenuItem[];
   if (!visible.length) return null;
   return (
     <div className="relative">
       <Button onClick={() => setOpen(!open)} onBlur={() => setTimeout(() => setOpen(false), 150)} aria-haspopup="menu" aria-expanded={open}>
         More
+        <motion.span animate={{ rotate: open ? 180 : 0 }} className="inline-flex">
+          <ChevronDownIcon size={14} />
+        </motion.span>
       </Button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-md border border-rule bg-surface py-1 shadow-lg">
-          {visible.map((it) => (
-            <button key={it.label} role="menuitem" onMouseDown={it.onClick} className={cx('block w-full px-3 py-1.5 text-left text-sm hover:bg-paper', it.danger && 'text-st-changes')}>
-              {it.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ type: 'spring', stiffness: 520, damping: 32 }}
+            style={{ transformOrigin: 'top right' }}
+            className="absolute right-0 z-20 mt-1.5 w-48 overflow-hidden rounded-xl border border-rule bg-surface p-1 shadow-lift"
+          >
+            {visible.map((it) => {
+              const Icon = it.icon;
+              return (
+                <AnimateIcon key={it.label} animateOnHover asChild>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onMouseDown={it.onClick}
+                    className={cx(
+                      'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm transition-colors',
+                      it.danger ? 'text-st-changes hover:bg-st-changes-wash' : 'hover:bg-primary-wash hover:text-primary',
+                    )}
+                  >
+                    <Icon size={15} />
+                    {it.label}
+                  </button>
+                </AnimateIcon>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -333,7 +418,7 @@ function MoveDocument({ document: d, onClose, onDone }: { document: DocumentDeta
           <Select id={id} value={target} onChange={(e) => setTarget(e.target.value)}>
             <option value="">Project root</option>
             {flatten(folders.data ?? []).map((f) => (
-              <option key={f.folderId} value={f.folderId}>{' '.repeat(f.depth)}{f.name}</option>
+              <option key={f.folderId} value={f.folderId}>{' '.repeat(f.depth)}{f.name}</option>
             ))}
           </Select>
         )}

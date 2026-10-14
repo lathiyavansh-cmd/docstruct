@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Folder, FolderOpen, FolderPlus, MoreHorizontal } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ChevronRight, Folder, FolderOpen, MoreHorizontal } from 'lucide-react';
+import { SquarePlusIcon } from './icons';
 import type { FolderNodeDto } from '@docstruct/shared';
 import { ApiError, del, errorMessage, patch, post } from '../lib/api';
 import { useToast } from './toast';
-import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, cx } from './ui';
+import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, cx, IconButton } from './ui';
 
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children, depth + 1)]);
@@ -34,18 +36,24 @@ export function FolderTree({
   const render = (nodes: FolderNodeDto[], depth: number) =>
     nodes.map((f) => (
       <li key={f.folderId}>
-        <div className={cx('group flex items-center rounded-md pr-1', selected === f.folderId ? 'bg-primary-wash text-primary' : 'hover:bg-ink/5')} style={{ paddingLeft: depth * 14 }}>
+        <div className={cx('group relative flex items-center rounded-lg pr-1 transition-colors', selected === f.folderId ? 'text-primary' : 'hover:bg-primary-wash/50')} style={{ paddingLeft: depth * 14 }}>
+          {/* The selection slides between folders. */}
+          {selected === f.folderId && <motion.span layoutId="folder-selected" className="absolute inset-0 rounded-lg bg-primary-wash" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
           <button
             type="button"
             onClick={() => toggle(f.folderId)}
-            className={cx('rounded p-1 text-ink-faint', !f.children.length && 'invisible')}
+            className={cx('relative rounded p-1 text-ink-faint', !f.children.length && 'invisible')}
             aria-label={isOpen(f.folderId) ? `Collapse ${f.name}` : `Expand ${f.name}`}
             aria-expanded={isOpen(f.folderId)}
           >
             <ChevronRight className={cx('size-3.5 transition-transform', isOpen(f.folderId) && 'rotate-90')} />
           </button>
-          <Link to={link(f.folderId)} className="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-sm">
-            {selected === f.folderId ? <FolderOpen className="size-4 shrink-0" /> : <Folder className="size-4 shrink-0 text-ink-faint" />}
+          <Link to={link(f.folderId)} className="relative flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-sm">
+            {selected === f.folderId ? (
+              <FolderOpen className="size-4 shrink-0" />
+            ) : (
+              <Folder className="size-4 shrink-0 text-ink-faint transition-transform duration-200 group-hover:-rotate-8 group-hover:text-primary" />
+            )}
             <span className="truncate">{f.name}</span>
             {f.documentCount > 0 && <span className="ml-auto pl-2 text-xs text-ink-faint tabular">{f.documentCount}</span>}
           </Link>
@@ -58,7 +66,13 @@ export function FolderTree({
             />
           )}
         </div>
-        {f.children.length > 0 && isOpen(f.folderId) && <ul>{render(f.children, depth + 1)}</ul>}
+        <AnimatePresence initial={false}>
+          {f.children.length > 0 && isOpen(f.folderId) && (
+            <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: 'spring', stiffness: 420, damping: 34 }} className="overflow-hidden">
+              {render(f.children, depth + 1)}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       </li>
     ));
 
@@ -67,15 +81,14 @@ export function FolderTree({
       <div className="mb-1 flex items-center justify-between">
         <span className="text-[13px] font-medium text-ink-faint">Folders</span>
         {canEdit && (
-          <button type="button" onClick={() => setDialog({ kind: 'create', folder: null })} className="rounded p-1 text-ink-soft hover:bg-ink/5 hover:text-ink" aria-label="New folder">
-            <FolderPlus className="size-4" />
-          </button>
+          <IconButton icon={SquarePlusIcon} label="New folder" onClick={() => setDialog({ kind: 'create', folder: null })} className="size-7" />
         )}
       </div>
       <ul className="space-y-px">
         <li>
-          <Link to={link(null)} className={cx('flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm', selected === null ? 'bg-primary-wash text-primary' : 'hover:bg-ink/5')}>
-            All documents
+          <Link to={link(null)} className={cx('relative flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors', selected === null ? 'text-primary' : 'hover:bg-primary-wash/50')}>
+            {selected === null && <motion.span layoutId="folder-selected" className="absolute inset-0 rounded-lg bg-primary-wash" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
+            <span className="relative">All documents</span>
           </Link>
         </li>
         {render(tree, 0)}
@@ -99,22 +112,31 @@ function isAncestor(tree: FolderNodeDto[], ancestorId: string, id: string): bool
 
 function FolderMenu({ name, canEdit, canDelete, onPick }: { name: string; canEdit: boolean; canDelete: boolean; onPick: (kind: 'create' | 'rename' | 'move' | 'delete') => void }) {
   const [open, setOpen] = useState(false);
-  const item = 'block w-full px-3 py-1.5 text-left text-sm hover:bg-paper';
+  const item = 'block w-full rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-primary-wash hover:text-primary';
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="rounded p-1 text-ink-faint opacity-0 hover:bg-ink/5 focus:opacity-100 group-hover:opacity-100"
+        className="relative rounded p-1 text-ink-faint opacity-0 hover:bg-surface hover:text-primary focus:opacity-100 group-hover:opacity-100"
         aria-label={`Actions for ${name}`}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         <MoreHorizontal className="size-4" />
       </button>
+      <AnimatePresence>
       {open && (
-        <div role="menu" className="absolute right-0 z-20 mt-1 w-40 overflow-hidden rounded-md border border-rule bg-surface py-1 shadow-lg">
+        <motion.div
+          role="menu"
+          initial={{ opacity: 0, scale: 0.95, y: -4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: -4 }}
+          transition={{ type: 'spring', stiffness: 520, damping: 32 }}
+          style={{ transformOrigin: 'top right' }}
+          className="absolute right-0 z-30 mt-1 w-40 overflow-hidden rounded-xl border border-rule bg-surface p-1 shadow-lift"
+        >
           {canEdit && (
             <>
               <button role="menuitem" className={item} onMouseDown={() => onPick('create')}>New subfolder</button>
@@ -122,9 +144,10 @@ function FolderMenu({ name, canEdit, canDelete, onPick }: { name: string; canEdi
               <button role="menuitem" className={item} onMouseDown={() => onPick('move')}>Move</button>
             </>
           )}
-          {canDelete && <button role="menuitem" className={cx(item, 'text-st-changes')} onMouseDown={() => onPick('delete')}>Delete</button>}
-        </div>
+          {canDelete && <button role="menuitem" className={cx(item, 'text-st-changes hover:bg-st-changes-wash hover:text-st-changes')} onMouseDown={() => onPick('delete')}>Delete</button>}
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

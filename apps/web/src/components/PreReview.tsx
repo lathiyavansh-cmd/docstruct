@@ -18,7 +18,7 @@ export function FindingList({ findings }: { findings: PreReviewFinding[] }) {
       {findings.map((f) => {
         const s = SEVERITY[f.severity];
         return (
-          <li key={f.id} className="flex gap-2.5 text-sm">
+          <li key={f.id} className="-mx-2 flex gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-paper">
             <s.icon className={cx('mt-0.5 size-4 shrink-0', s.style)} aria-label={s.label} />
             <div className="min-w-0">
               <p className="font-medium">
