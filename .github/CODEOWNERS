@@ -1,6 +1,4 @@
 # Each module's owner must approve pull requests that touch it (see docs/TEAM.md).
-# Replace the two placeholder handles with Vivan's and Shrut's GitHub usernames
-# once they accept the repository invitation.
 
 *                                   @lathiyavansh-cmd
 
@@ -13,15 +11,15 @@
 /.github/                           @lathiyavansh-cmd
 
 # Vivan Dhoka - M02, M05, M09
-/apps/api/src/modules/projects/     @VIVAN_GITHUB_USERNAME
-/apps/api/src/modules/reviews/      @VIVAN_GITHUB_USERNAME
-/apps/api/src/modules/activity/     @VIVAN_GITHUB_USERNAME
-/apps/api/src/modules/dashboard/    @VIVAN_GITHUB_USERNAME
+/apps/api/src/modules/projects/     @vivandhoka-blip
+/apps/api/src/modules/reviews/      @vivandhoka-blip
+/apps/api/src/modules/activity/     @vivandhoka-blip
+/apps/api/src/modules/dashboard/    @vivandhoka-blip
 
 # Shrut Diwakar - M03, M07, M08, extractor
-/apps/api/src/modules/folders/      @SHRUT_GITHUB_USERNAME
-/apps/api/src/modules/documents/    @SHRUT_GITHUB_USERNAME
-/apps/api/src/modules/annotations/  @SHRUT_GITHUB_USERNAME
-/apps/api/src/modules/shares/       @SHRUT_GITHUB_USERNAME
-/apps/api/src/modules/search/       @SHRUT_GITHUB_USERNAME
-/services/extractor/                @SHRUT_GITHUB_USERNAME
+/apps/api/src/modules/folders/      @ShrXT-afk
+/apps/api/src/modules/documents/    @ShrXT-afk
+/apps/api/src/modules/annotations/  @ShrXT-afk
+/apps/api/src/modules/shares/       @ShrXT-afk
+/apps/api/src/modules/search/       @ShrXT-afk
+/services/extractor/                @ShrXT-afk
