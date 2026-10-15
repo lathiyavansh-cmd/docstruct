@@ -91,6 +91,17 @@ export function HelpPage() {
         </p>
       </section>
 
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">About the document summary</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Every document page opens with a summary of the version you are viewing: its most important sentences in reading order, its key
+          terms and, for documents with headings, the gist of each section. Choose Short, Medium or Detailed. DocStruct's own summariser picks
+          sentences that share the most vocabulary with the rest of the document (the TextRank method) and skips repeats. It copies sentences
+          from the document and never writes new ones, so it cannot state anything the document does not say. Image files have no text to
+          summarise.
+        </p>
+      </section>
+
       <section className="mt-10 rounded-2xl border border-rule bg-paper/60 p-5">
         <h2 className="mb-2 text-lg font-semibold">Interface credits</h2>
         <p className="text-sm leading-relaxed text-ink-soft">
