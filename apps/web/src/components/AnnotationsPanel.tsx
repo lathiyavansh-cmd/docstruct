@@ -1,3 +1,20 @@
+/**
+ * What this file does
+ *   The comments panel beside a document. It lists comment threads for the version on screen and lets
+ *   users add, reply to and resolve comments.
+ *
+ * How it works
+ *   - The threads come in as a prop; DocumentPage loads them (query key ['annotations', versionId],
+ *     GET /versions/:id/annotations). The can* props come from the user's role and hide buttons.
+ *   - Adding a comment: useMutation POST /documents/:id/annotations, with an optional page and box (the "pin").
+ *   - Each Thread has its own mutations: reply (POST /annotations/:id/replies) and resolve (POST /annotations/:id/resolve).
+ *   - After any change, the ['annotations', versionId] query is invalidated so the list reloads.
+ *   - Pinning works with DocumentPage and PdfViewer: "Pin to the page" turns on placing mode, the user drags a box
+ *     on the PDF, and the box comes back here as the anchor prop.
+ *
+ * Where it fits
+ *   Used by DocumentPage. Module: M07 annotations (owner: Shrut).
+ */
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, MapPin } from 'lucide-react';
@@ -49,10 +66,12 @@ export function AnnotationsPanel({
   const toast = useToast();
   const [body, setBody] = useState('');
   const [showResolved, setShowResolved] = useState(false);
+  // Marks the cached comment list as old, so TanStack Query fetches it again and the new comment shows up.
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['annotations', versionId] });
   };
 
+  // New comments go to the document (the server attaches them to its current version). Without a pin, page and region are null.
   const create = useMutation({
     mutationFn: () => post<AnnotationDto>(`/documents/${documentId}/annotations`, { body, pageNumber: anchor?.page ?? null, region: anchor?.region ?? null }),
     onSuccess: () => {
@@ -65,6 +84,7 @@ export function AnnotationsPanel({
 
   const open = threads.filter((t) => !t.resolvedAt);
   const resolved = threads.filter((t) => t.resolvedAt);
+  // The number shown on a pinned comment: its position among comments that have a box on the PDF (0 = not pinned).
   const pinNumber = (id: string) => threads.filter((t) => t.region).findIndex((t) => t.annotationId === id) + 1;
 
   return (
@@ -141,6 +161,7 @@ function Thread({
   const toast = useToast();
   const [reply, setReply] = useState('');
   const [replying, setReplying] = useState(false);
+  // onChange is the parent's refresh(), so the whole thread list reloads after a reply or resolve.
   const send = useMutation({
     mutationFn: () => post<AnnotationDto>(`/annotations/${t.annotationId}/replies`, { body: reply }),
     onSuccess: () => {
@@ -157,6 +178,7 @@ function Thread({
     },
   });
 
+  // Clicking a thread selects it, which highlights its box on the PDF. The reply area stops the click from bubbling up.
   return (
     <li
       className={cx('rounded-lg border p-3 text-sm', active ? 'border-primary' : 'border-rule', t.resolvedAt && 'bg-paper/70')}

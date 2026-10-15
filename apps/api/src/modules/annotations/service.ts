@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Holds the logic for annotations: comment threads attached to one document version, with
+ *   optional page and region anchors on PDFs, one level of replies, and resolving.
+ *
+ * How it works
+ *   - list() loads all rows for a version, builds the top-level threads, then puts replies under them.
+ *   - create() always uses the document's current version and links the comment to the open review
+ *     if the author is that review's reviewer.
+ *   - reply() copies the parent's version; replies to replies are refused.
+ *   - resolve() marks a top-level thread resolved and logs it.
+ *
+ * Where it fits
+ *   Called by annotations/routes.ts. Writes to the annotations table and the activity log. Module:
+ *   M07 Sharing & Annotation (owner: Shrut).
+ */
 import type { AnnotationDto, RegionDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import { recordActivity } from '../../lib/activity.js';
@@ -35,6 +51,7 @@ export class AnnotationService {
   /** Annot.List: threads on one version, open ones first, each with its replies in order. */
   async list(versionId: string): Promise<AnnotationDto[]> {
     const { rows } = await this.ctx.db.query<AnnotationRow>(`${SELECT} WHERE a.version_id = $1 ORDER BY a.created_at`, [versionId]);
+    // First pass: rows with no parent are thread starters. Second pass: replies are added to their parent.
     const threads = new Map<string, AnnotationDto>();
     for (const r of rows.filter((x) => !x.parent_id)) {
       threads.set(r.annotation_id, {
@@ -60,6 +77,7 @@ export class AnnotationService {
         createdAt: r.created_at.toISOString(),
       });
     }
+    // Open threads (0) sort before resolved ones (1); within each group the created_at order is kept.
     return [...threads.values()].sort((a, b) => Number(!!a.resolvedAt) - Number(!!b.resolvedAt));
   }
 
@@ -81,6 +99,7 @@ export class AnnotationService {
     }
     if (input.region && !input.pageNumber) throw badRequest('A region needs a page number');
 
+    // If the author is the reviewer of an open review, the comment is tagged with that review id.
     const review = await this.ctx.db.query<{ review_id: string }>(
       `SELECT review_id FROM reviews WHERE document_id = $1 AND status = 'PENDING' AND reviewer_id = $2`,
       [documentId, userId],
@@ -120,6 +139,7 @@ export class AnnotationService {
     );
     const parent = rows[0];
     if (!parent) throw notFound('Annotation');
+    // Threads are only one level deep: you can reply to a comment but not to a reply.
     if (parent.parent_id) throw badRequest('Reply to the original annotation, not to a reply');
     await this.ctx.db.query('INSERT INTO annotations (version_id, parent_id, author_id, body) VALUES ($1, $2, $3, $4)', [
       parent.version_id,
@@ -133,6 +153,8 @@ export class AnnotationService {
   /** Annot.Resolve: records who resolved the thread and when. */
   async resolve(annotationId: string, userId: string): Promise<AnnotationDto> {
     const updated = await this.ctx.db.tx(async (q) => {
+      // The WHERE clause only matches an unresolved top-level comment, so a repeat resolve or a reply
+      // updates no rows and is reported as a conflict below.
       const { rows } = await q.query<{ version_id: string; project_id: string; title: string; document_id: string }>(
         `UPDATE annotations a SET resolved_at = now(), resolved_by = $2
            FROM document_versions v JOIN documents d ON d.document_id = v.document_id
