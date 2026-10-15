@@ -1,3 +1,20 @@
+/**
+ * What this file does
+ *   Tests document upload and management: the two-step upload, format and size checks, content
+ *   checks, rollback on failure, permissions, preview and download, rename, move, folder listing,
+ *   soft delete and version immutability.
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database with a temporary file store, and creates a project with four users.
+ *   - Tests send real HTTP requests with supertest; helpers uploadFile() and createDocument() run
+ *     the upload steps.
+ *   - Some tests check the file store or the database directly to prove nothing was left behind.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers documents/routes.ts, service.ts, uploads.ts and content.ts. Module: M03
+ *   Document & Folder Management (owner: Shrut).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, relative, signUp, uploadFile, type TestEnv, type TestUser } from './helpers.js';
 
@@ -8,6 +25,7 @@ let viewer: TestUser;
 let outsider: TestUser;
 let projectId: string;
 
+// A tiny fake PNG: the real 8-byte PNG signature followed by zeros, enough to pass the content check.
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32)]);
 
 beforeAll(async () => {
@@ -42,6 +60,7 @@ describe('M03 document upload', () => {
   });
 
   it('rejects a file whose contents do not match its extension, leaving nothing behind (Robustness-4)', async () => {
+    // The name says .pdf but the bytes are plain text, so finalising must fail with 415.
     const key = await uploadFile(env, editor, projectId, 'fake.pdf', 'this is not a pdf');
     await env.http.post(`/api/projects/${projectId}/documents`).set(editor.auth).send({ uploadKey: key }).expect(415);
     expect(await env.ctx.storage.exists(key)).toBe(false);

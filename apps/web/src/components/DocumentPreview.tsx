@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Shows one version of a document inside the page, picking the right viewer for the file type.
+ *   It also exports downloadVersion() for the Download buttons.
+ *
+ * How it works
+ *   - Loads a short-lived file link: query key ['preview-link', versionId], GET /versions/:id/preview.
+ *   - PDF goes to PdfViewer (with comment pins), images go to an <img>, text and Markdown go to TextPreview.
+ *   - TextPreview fetches the file text from the signed URL (query key ['file-text', url]). Markdown is turned
+ *     into safe HTML by renderMarkdown() from lib/markdown.ts.
+ *   - Types the browser cannot show (DOCX) get a Download button instead.
+ *   - downloadVersion() asks GET /versions/:id/download for a link and sends the browser to it.
+ *
+ * Where it fits
+ *   Used by DocumentPage and VersionHistory (which also uses downloadVersion). Module: M03 documents (owner: Shrut).
+ */
 import { useQuery } from '@tanstack/react-query';
 import type { AnnotationDto, FileLinkDto, RegionDto } from '@docstruct/shared';
 import { get } from '../lib/api';
@@ -8,6 +24,7 @@ import { DownloadIcon } from './icons';
 
 export async function downloadVersion(versionId: string) {
   const link = await get<FileLinkDto>(`/versions/${versionId}/download`);
+  // Going to the signed URL makes the browser download the file; the page itself stays open.
   window.location.assign(link.url);
 }
 
@@ -15,6 +32,7 @@ function TextPreview({ url, markdown }: { url: string; markdown: boolean }) {
   const text = useQuery({ queryKey: ['file-text', url], queryFn: () => fetch(url).then((r) => (r.ok ? r.text() : Promise.reject(new Error('unavailable')))) });
   if (text.isLoading) return <Spinner label="Opening the document" />;
   if (text.error) return <ErrorNote>The file could not be loaded for preview. Download it instead.</ErrorNote>;
+  // dangerouslySetInnerHTML is safe here only because renderMarkdown() escapes all text from the file first.
   if (markdown) return <article className="doc-prose" dangerouslySetInnerHTML={{ __html: renderMarkdown(text.data ?? '') }} />;
   return <pre className="max-w-[80ch] whitespace-pre-wrap break-words font-serif text-[15px] leading-relaxed">{text.data}</pre>;
 }
@@ -49,6 +67,7 @@ export function DocumentPreview({
   if (link.error || !link.data) return <ErrorNote>The preview could not be opened.</ErrorNote>;
   const { url, mimeType, previewable, fileName } = link.data;
 
+  // The server decides "previewable" from the file type; the checks below pick a viewer by MIME type.
   if (!previewable) {
     return (
       <Notice className="flex flex-wrap items-center justify-between gap-3 py-4">

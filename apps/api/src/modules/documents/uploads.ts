@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Runs the two-step file upload. It first hands out a short-lived signed upload URL, then checks the
+ *   stored file when the document or version is created.
+ *
+ * How it works
+ *   - issue() checks the file type and size, saves an upload ticket row and returns a signed PUT URL.
+ *   - consume() marks the ticket as used (once only, not expired), checks the file exists, checks its
+ *     bytes match the format, and returns its size and checksum.
+ *   - safeFileName() strips unsafe characters from the user's file name before it is stored.
+ *
+ * Where it fits
+ *   Used by documents/service.ts (new documents), versions/service.ts (new versions) and the seed
+ *   script. Uses content.ts and the object store. Module: M03 Document & Folder Management (owner: Shrut).
+ */
 import { randomUUID } from 'node:crypto';
 import { MAX_UPLOAD_BYTES, formatBytes, formatForFileName, type FileFormat, type UploadTicketDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
@@ -21,6 +36,7 @@ export function acceptedFormats(): string {
 }
 
 export function safeFileName(name: string): string {
+  // Keep letters, digits, _, dot, dash and space; replace the rest with "_" and keep at most the last 120 chars.
   const cleaned = name.normalize('NFKC').replace(/[^\w.\- ]+/g, '_').replace(/\s+/g, ' ').trim();
   return cleaned.slice(-120) || 'file';
 }
@@ -41,6 +57,7 @@ export class UploadService {
     }
     if (byteSize <= 0) throw badRequest('The file is empty');
 
+    // A random UUID in the key makes every upload unique, even when two files share a name.
     const storageKey = `p/${projectId}/${randomUUID()}/${safeFileName(fileName).replace(/ /g, '_')}`;
     const expiresAt = new Date(Date.now() + TICKET_MINUTES * 60_000);
     await this.ctx.db.query(
@@ -59,6 +76,8 @@ export class UploadService {
 
   /** Marks the ticket used and returns the verified upload. Throws (rolling back the caller) on any problem. */
   async consume(q: Queryable, storageKey: string, projectId: string, userId: string): Promise<StoredUpload> {
+    // One UPDATE both checks and uses the ticket: it must belong to this project and user, be unused and
+    // not expired. Setting consumed_at means the same ticket cannot be used twice.
     const { rows } = await q.query<{ file_name: string; mime_type: string }>(
       `UPDATE upload_tickets SET consumed_at = now()
         WHERE storage_key = $1 AND project_id = $2 AND user_id = $3 AND consumed_at IS NULL AND expires_at > now()
@@ -72,6 +91,7 @@ export class UploadService {
     if (byteSize === null) throw new HttpError(400, 'UPLOAD_INCOMPLETE', 'The file did not finish uploading. Please try again.');
 
     const format = formatForFileName(ticket.file_name)!;
+    // Only the first 64 KB are checked against the format's signature; a mismatch deletes the stored file.
     const head = (await this.ctx.storage.read(storageKey)).subarray(0, 64 * 1024);
     if (!contentMatchesFormat(head, format)) {
       await this.ctx.storage.removeOrphan(storageKey);

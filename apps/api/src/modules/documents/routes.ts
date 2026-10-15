@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Defines the HTTP endpoints for documents: list, the two upload steps, view, rename, move, delete,
+ *   preview and download.
+ *
+ * How it works
+ *   - Uploads happen in two steps: POST /uploads gives a signed upload URL, then POST /documents
+ *     turns the uploaded file into a document.
+ *   - authorize(...) checks the caller's project role for each action. byProject() or byDocument()
+ *     finds the project from the URL.
+ *   - Zod schemas check the body and query string; each handler calls one DocumentService method.
+ *
+ * Where it fits
+ *   Registered in modules/index.ts and mounted under /api by app.ts. Uses DocumentService (service.ts)
+ *   and the auth and rbac middleware. Module: M03 Document & Folder Management (owner: Shrut).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import { MAX_UPLOAD_BYTES, can } from '@docstruct/shared';
@@ -22,6 +38,7 @@ export function documentRoutes(ctx: AppContext): Router {
       z.object({ folderId: z.union([uuid, z.literal('root')]).optional(), recursive: z.enum(['true', 'false']).optional() }),
       req.query,
     );
+    // Three cases: no folderId = all documents, "root" = documents not in any folder (null), else one folder.
     const folderId = query.folderId === undefined ? undefined : query.folderId === 'root' ? null : query.folderId;
     res.json(await service.list(membershipOf(req).projectId, { folderId, recursive: query.recursive === 'true' }));
   });
@@ -29,8 +46,12 @@ export function documentRoutes(ctx: AppContext): Router {
   /** Upload step 1 for a new document or a new version (Doc.Upload.Format, Doc.Upload.Size). */
   router.post('/projects/:projectId/uploads', auth, authorize(ctx, 'document.read', byProject()), async (req, res) => {
     const membership = membershipOf(req);
+    // The same upload step serves new documents and new versions, so the role needs either permission.
+    // authorize() above only checked read access, so these checks are done by hand here.
     if (!can(membership.role, 'document.create') && !can(membership.role, 'version.create')) throw forbidden();
     if (membership.archived) throw forbidden('This project is archived and is now read-only');
+    // The schema lets sizes up to 10x the limit through, so issueUpload() can reply with its clearer
+    // "file too large" (413) message instead of a generic validation error.
     const body = parse(
       z.object({ fileName: z.string().trim().min(1).max(255), byteSize: z.number().int().positive().max(MAX_UPLOAD_BYTES * 10) }),
       req.body,
@@ -69,6 +90,7 @@ export function documentRoutes(ctx: AppContext): Router {
 
   router.delete('/documents/:documentId', auth, authorize(ctx, 'document.delete', byDocument()), async (req, res) => {
     await service.remove(req.params.documentId as string, currentUser(req).userId);
+    // 204 No Content: the delete worked and there is nothing to send back.
     res.status(204).end();
   });
 

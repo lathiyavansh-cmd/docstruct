@@ -1,3 +1,20 @@
+/**
+ * What this file does
+ *   Holds the business logic for documents: view with folder path, list with folder filters, create
+ *   from an upload, rename, move, soft delete, and build signed links for preview and download.
+ *
+ * How it works
+ *   - create() runs one transaction: use up the upload ticket, insert the document and version 1,
+ *     point the document at that version and log it. On failure the stored file is removed.
+ *   - get() and list() use recursive SQL (WITH RECURSIVE) to walk the folder tree.
+ *   - remove() only sets deleted_at, so versions and history are kept, and refuses while a review is open.
+ *   - After a create, text extraction is scheduled in the background for formats that support it.
+ *
+ * Where it fits
+ *   Called by documents/routes.ts, versions/routes.ts, shares/service.ts and the seed script. Uses
+ *   UploadService (uploads.ts), FolderService, queries.ts and the extractor. Module: M03 Document &
+ *   Folder Management (owner: Shrut).
+ */
 import { formatForMime, type DocumentDetailDto, type DocumentDto, type FileLinkDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import { scheduleExtraction } from '../../extraction/extractor.js';
@@ -14,6 +31,7 @@ export interface ListFilter {
   recursive?: boolean;
 }
 
+// Default title: the file name without its extension, with _ and - turned into spaces.
 function titleFromFileName(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || fileName;
 }
@@ -31,6 +49,8 @@ export class DocumentService {
   async get(documentId: string): Promise<DocumentDetailDto> {
     const doc = await findDocument(this.ctx.db, documentId);
     if (!doc) throw notFound('Document');
+    // Walks up from the document's folder to the top using parent_id (the breadcrumb path).
+    // The depth limit of 64 stops the loop if the data were ever broken, and DESC puts the top folder first.
     const { rows: path } = await this.ctx.db.query<{ folder_id: string; name: string }>(
       `WITH RECURSIVE up AS (
          SELECT folder_id, parent_id, name, 1 AS depth FROM folders WHERE folder_id = $1
@@ -54,6 +74,7 @@ export class DocumentService {
       if (filter.folderId === null) {
         if (!filter.recursive) where += ' AND d.folder_id IS NULL';
       } else if (filter.recursive) {
+        // Recursive filter: collect the folder and all folders below it, then match documents in any of them.
         params.push(filter.folderId);
         where += ` AND d.folder_id IN (
           WITH RECURSIVE sub AS (
@@ -110,6 +131,7 @@ export class DocumentService {
             upload.checksum,
             input.changeNote ?? '',
             userId,
+            // Formats we can pull text from start as PENDING; others (e.g. images) are marked UNSUPPORTED.
             upload.format.extractable ? 'PENDING' : 'UNSUPPORTED',
           ],
         );
@@ -126,6 +148,7 @@ export class DocumentService {
         return id;
       });
       const created = (await findDocument(this.ctx.db, documentId))!;
+      // Extraction starts only after the transaction has committed, and runs in the background.
       if (created.currentVersion.extractionStatus === 'PENDING') scheduleExtraction(this.ctx, created.currentVersion.versionId);
       return created;
     } catch (error) {
@@ -163,6 +186,7 @@ export class DocumentService {
         [documentId],
       );
       const doc = rows[0];
+      // Stops a document being moved into a folder that belongs to another project.
       if (folderId) await this.folders.assertInProject(q, doc.project_id, folderId);
       await q.query('UPDATE documents SET folder_id = $2, updated_at = now() WHERE document_id = $1', [documentId, folderId]);
       await recordActivity(q, {

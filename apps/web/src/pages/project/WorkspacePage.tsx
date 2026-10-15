@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   This is the Documents tab of a project. The left side shows the folder tree; the right side lists the documents in the chosen folder, with a search box, filters and an Upload button.
+ *
+ * How it works
+ *   - useQuery ['folders', projectId] loads the folder tree from GET /projects/:projectId/folders, shown by FolderTree.
+ *   - useQuery ['documents', projectId, folderId, filters] loads the list. With no filters it calls GET /projects/:projectId/documents; with a search term or filter it calls GET /projects/:projectId/search.
+ *   - The folder, search term and filters are kept in the URL (?folder=, ?q=, ?status=, ?reviewer=, ?from=, ?to=), so links from the dashboard can open a filtered list.
+ *   - useMembers loads members only to fill the "Reviewer" filter. useCan hides Upload and folder editing from roles without permission.
+ *   - UploadDialog creates a new document; afterwards the lists are refreshed and the new document page opens.
+ *
+ * Where it fits
+ *   Route /p/:projectId/documents in App.tsx, drawn inside ProjectLayout. Module: M03 Document & Folder Management with M08 Search (owner: Shrut).
+ */
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +27,7 @@ import { errorMessage, get } from '../../lib/api';
 import { formatDate, timeAgo } from '../../lib/format';
 import { useCan, useCurrentProject, useMembers } from '../../lib/hooks';
 
+// Searches the folder tree (and all subfolders) for the folder with this id, to show its name.
 function findFolder(nodes: FolderNodeDto[], id: string | null): FolderNodeDto | null {
   for (const n of nodes) {
     if (n.folderId === id) return n;
@@ -48,6 +63,7 @@ export function WorkspacePage() {
   const members = useMembers(project.projectId);
   const [uploading, setUploading] = useState(false);
 
+  // The selected folder and all filters are read from the URL query string.
   const folderId = params.get('folder');
   const filters = {
     q: params.get('q') ?? '',
@@ -56,10 +72,12 @@ export function WorkspacePage() {
     updatedFrom: params.get('from') ?? '',
     updatedTo: params.get('to') ?? '',
   };
+  // true if any search term or filter is set; this switches the list to the search endpoint.
   const filtering = Object.values(filters).some(Boolean);
   const [term, setTerm] = useState(filters.q);
   useEffect(() => setTerm(filters.q), [filters.q]);
 
+  // Sets or clears one URL parameter. Changing the URL changes the query key, so the list reloads.
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -68,6 +86,7 @@ export function WorkspacePage() {
   };
 
   const folders = useQuery({ queryKey: ['folders', project.projectId], queryFn: () => get<FolderNodeDto[]>(`/projects/${project.projectId}/folders`) });
+  // The document list. Both branches return the same shape, so the table below works for either.
   const docs = useQuery({
     queryKey: ['documents', project.projectId, folderId, filters],
     queryFn: async (): Promise<Array<{ document: DocumentDto; snippet?: string | null }>> => {
@@ -88,6 +107,7 @@ export function WorkspacePage() {
   });
 
   const folder = findFolder(folders.data ?? [], folderId);
+  // Only members whose role can review are offered in the Reviewer filter.
   const reviewers = members.data?.filter((m) => REVIEWER_ROLES.includes(m.role)) ?? [];
 
   return (
@@ -232,6 +252,7 @@ export function WorkspacePage() {
           folderId={folderId}
           onClose={() => setUploading(false)}
           onDone={(doc) => {
+            // A new document changes the list, the folder counts and the dashboard numbers, so reload them.
             for (const key of [['documents', project.projectId], ['folders', project.projectId], ['dashboard', project.projectId]]) queryClient.invalidateQueries({ queryKey: key });
             toast(`Uploaded ${doc.title}`);
             navigate(`/d/${doc.documentId}`);

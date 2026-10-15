@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Draws a PDF inside the page, one canvas per page, and shows comment boxes on top of the pages.
+ *   It also lets the user drag a box on a page to pin a new comment there.
+ *
+ * How it works
+ *   - Uses the pdf.js library. The PDF is opened from a signed URL given as a prop; the API is not called here.
+ *   - PdfViewer loads the file once per URL and makes a PdfPage for each page, up to 200 pages.
+ *   - Each PdfPage waits until it is near the screen (IntersectionObserver), then renders itself onto a canvas.
+ *   - Comment boxes are stored as fractions (0 to 1) of the page width and height, so they line up at any zoom.
+ *   - In placing mode, pointer down, move and up draw a box; on release onPlace(page, region) sends it to the parent.
+ *
+ * Where it fits
+ *   Used by DocumentPreview (with comments) and SharedDocumentPage (read-only, no comments).
+ *   Module: M03 documents and M07 annotations (owner: Shrut).
+ */
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -5,8 +21,10 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import type { AnnotationDto, RegionDto } from '@docstruct/shared';
 import { Notice, Spinner, cx } from './ui';
 
+// pdf.js does the heavy parsing in a Web Worker so the page does not freeze; this tells it where the worker file is.
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
+// A cap so a very long PDF cannot make the browser create thousands of canvases.
 const MAX_PAGES = 200;
 
 /**
@@ -31,6 +49,7 @@ export function PdfViewer({
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Load the PDF whenever the URL changes. "cancelled" stops an old, slow load from overwriting a newer one.
   useEffect(() => {
     let cancelled = false;
     setPdf(null);
@@ -87,7 +106,9 @@ function PdfPage({
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const holder = useRef<HTMLDivElement>(null);
+  // ratio is page height / width (1.294 is US Letter size) so the box keeps its size before the page is drawn.
   const [ratio, setRatio] = useState(1.294);
+  // The first two pages are drawn straight away; the rest wait until they scroll near the screen.
   const [visible, setVisible] = useState(pageNumber <= 2);
   const [drag, setDrag] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
@@ -107,6 +128,7 @@ function PdfPage({
       if (cancelled || !canvas.current || !holder.current) return;
       const base = page.getViewport({ scale: 1 });
       setRatio(base.height / base.width);
+      // Scale to fill the box width, times the screen's pixel density so text stays sharp on high-DPI screens.
       const scale = (holder.current.clientWidth / base.width) * (window.devicePixelRatio || 1);
       const viewport = page.getViewport({ scale });
       canvas.current.width = viewport.width;
@@ -120,6 +142,7 @@ function PdfPage({
     };
   }, [pdf, pageNumber, visible]);
 
+  // Converts a mouse position into a fraction (0 to 1) of the page width and height.
   const point = (e: ReactPointerEvent) => {
     const rect = holder.current!.getBoundingClientRect();
     return { x: Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)), y: Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height)) };

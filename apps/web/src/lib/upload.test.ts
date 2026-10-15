@@ -1,6 +1,19 @@
+/**
+ * What this file does
+ *   Unit tests for validateFile() in upload.ts, run with Vitest.
+ *
+ * How it works
+ *   - Builds fake File objects that only have a name and a size, which is all validateFile() reads.
+ *   - Checks that supported types pass (any letter case), other types are refused, and that too-large
+ *     and empty files get the right message.
+ *
+ * Where it fits
+ *   Run by the web app's test command; not part of the running app. Module: M03 documents (owner: Shrut).
+ */
 import { describe, expect, it } from 'vitest';
 import { validateFile } from './upload';
 
+// A fake File: the cast is safe here because validateFile() never reads the file contents.
 const file = (name: string, size: number) => ({ name, size }) as File;
 
 describe('validateFile (Doc.Upload.Format, Doc.Upload.Size)', () => {

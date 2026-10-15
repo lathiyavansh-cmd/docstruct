@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Holds the shared SQL pieces and row converters for documents and versions, so every module reads
+ *   a document the same way.
+ *
+ * How it works
+ *   - VERSION_COLUMNS and VERSION_JOINS select one version with its uploader's name.
+ *   - documentSelect() / DOCUMENT_SELECT select a document with its current version and any open review.
+ *   - toVersionDto() and toDocumentDto() turn database rows (snake_case) into API objects (camelCase).
+ *   - findDocument() loads one non-deleted document by id.
+ *
+ * Where it fits
+ *   Used by documents/service.ts, versions/service.ts, dashboard/service.ts, search/service.ts and
+ *   reviews/routes.ts. Module: M03 Document & Folder Management (owner: Shrut).
+ */
 import type { DocumentDto, DocumentStatus, ExtractionStatus, VersionDto } from '@docstruct/shared';
 import type { Queryable } from '../../db/database.js';
 
@@ -7,6 +22,7 @@ export const VERSION_COLUMNS = `
   v.created_at, v.extraction_status, v.uploaded_by, up.display_name AS uploaded_by_name,
   rf.version_no AS restored_from_version_no, (v.version_id = d.current_version_id) AS is_current`;
 
+// LEFT JOIN because only restored versions have restored_from_version_id; normal uploads leave it empty.
 export const VERSION_JOINS = `
   JOIN profiles up ON up.user_id = v.uploaded_by
   LEFT JOIN document_versions rf ON rf.version_id = v.restored_from_version_id`;
@@ -51,6 +67,8 @@ export function toVersionDto(r: VersionRow): VersionDto {
  * Callers append WHERE / ORDER BY clauses using the aliases d, v, cr; extra columns may be prepended.
  */
 export function documentSelect(extraColumns = ''): string {
+  // The reviews join only matches a PENDING review, so cr.* is empty when no review is open.
+  // A unique index allows at most one pending review per document, so this never duplicates rows.
   return `
   SELECT ${extraColumns ? `${extraColumns},` : ''} d.document_id, d.project_id, d.folder_id, d.title, d.description, d.status, d.created_by,
          cb.display_name AS created_by_name, d.created_at AS doc_created_at, d.updated_at,
@@ -82,6 +100,7 @@ export interface DocumentRow extends VersionRow {
   due_date: Date | string | null;
 }
 
+// Accepts the due date as either a Date or a string and keeps only the YYYY-MM-DD part.
 function isoDate(value: Date | string | null): string | null {
   if (value === null) return null;
   return typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10);
@@ -106,6 +125,7 @@ export function toDocumentDto(r: DocumentRow): DocumentDto {
 }
 
 export async function findDocument(q: Queryable, documentId: string): Promise<DocumentDto | null> {
+  // Soft-deleted documents (deleted_at set) are treated as not found.
   const { rows } = await q.query<DocumentRow>(`${DOCUMENT_SELECT} WHERE d.document_id = $1 AND d.deleted_at IS NULL`, [documentId]);
   return rows[0] ? toDocumentDto(rows[0]) : null;
 }
