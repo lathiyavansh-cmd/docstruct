@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the frame around every page inside one project. It shows the project name, the user's role in it, and the tabs Overview, Documents, Members and Activity.
+ *
+ * How it works
+ *   - Reads projectId from the URL and loads the project with useProject (query key ['project', id], GET /projects/:id).
+ *   - Works out which tab is active from the current URL, and slides a small underline to it.
+ *   - Shows a notice when the project is archived (read-only).
+ *   - Renders the chosen tab page through <Outlet context={p} />, so child pages get the project with useCurrentProject() without loading it again.
+ *
+ * Where it fits
+ *   Route /p/:projectId in App.tsx. Its child routes are DashboardPage (index), WorkspacePage (documents), MembersPage (members) and ActivityPage (activity). Module: M02 Project Management (owner: Vivan).
+ */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ROLE_LABEL } from '@docstruct/shared';
@@ -6,6 +19,7 @@ import { ErrorNote, Notice, Spinner, cx, type AnimatedIcon } from '../../compone
 import { errorMessage } from '../../lib/api';
 import { useProject } from '../../lib/hooks';
 
+// Each tab is [path after /p/:projectId, label, icon]. The empty path '' is the Overview (dashboard).
 const TABS: ReadonlyArray<readonly [string, string, AnimatedIcon]> = [
   ['', 'Overview', LayoutDashboardIcon],
   ['documents', 'Documents', LayersIcon],
@@ -17,12 +31,14 @@ const TABS: ReadonlyArray<readonly [string, string, AnimatedIcon]> = [
 export function ProjectLayout() {
   const { projectId } = useParams();
   const { pathname } = useLocation();
+  // Load this project, including myRole (the logged-in user's role in it).
   const project = useProject(projectId);
 
   if (project.isLoading) return <div className="px-5 lg:px-8"><Spinner /></div>;
   if (project.error || !project.data) return <div className="p-8"><ErrorNote>{errorMessage(project.error)}</ErrorNote></div>;
   const p = project.data;
   const base = `/p/${p.projectId}`;
+  // The first URL part after /p/:projectId, for example 'members'. Empty means the Overview tab.
   const current = pathname.slice(base.length + 1).split('/')[0] ?? '';
 
   return (
@@ -70,6 +86,7 @@ export function ProjectLayout() {
           <Notice>This project is archived. Its documents can be opened, searched and downloaded, but nothing can be changed.</Notice>
         </div>
       )}
+      {/* The child page for the active tab is drawn here and receives the project as outlet context. */}
       <motion.div key={current} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
         <Outlet context={p} />
       </motion.div>

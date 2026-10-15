@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Tests project and membership behaviour: creating, listing, hiding from outsiders, adding,
+ *   re-roling and removing members, the last-owner rule, renaming and archiving.
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and signs up four users (owner, editor, viewer, outsider).
+ *   - Each test sends real HTTP requests with supertest and checks the status code and JSON body.
+ *   - Some tests also query the database directly, e.g. to read the activity log or to try a raw DELETE.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers projects/routes.ts and projects/service.ts. Module: M02 Project Management
+ *   (owner: Vivan).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
 
@@ -35,6 +50,7 @@ describe('M02 projects and membership', () => {
 
   it('hides a project from non-members with 404 (SE-6)', async () => {
     const projectId = await createProject(env, owner);
+    // 404, not 403: an outsider should not even learn that the project exists.
     await env.http.get(`/api/projects/${projectId}`).set(outsider.auth).expect(404);
   });
 
@@ -80,6 +96,7 @@ describe('M02 projects and membership', () => {
 
   it('enforces the last-owner rule in the database too (Reliability-5)', async () => {
     const projectId = await createProject(env, owner);
+    // Bypasses the API and talks to the database directly; a database rule must still refuse it.
     await expect(env.ctx.db.query(`DELETE FROM project_members WHERE project_id = $1`, [projectId])).rejects.toThrow(/at least one owner/);
   });
 

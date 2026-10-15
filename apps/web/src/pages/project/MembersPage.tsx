@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the Members tab of a project. It lists the project's members and their roles. An owner can add a member by email, change roles and remove members.
+ *
+ * How it works
+ *   - Gets the project from ProjectLayout with useCurrentProject(), and the member list with useMembers (query key ['members', projectId], GET /projects/:projectId/members).
+ *   - Change role: useMutation PATCH /projects/:projectId/members/:userId. Remove: useMutation DELETE on the same path. Add: useMutation POST /projects/:projectId/members.
+ *   - Each of these returns the new member list, which is put straight into the cache with setQueryData.
+ *   - useCan decides what is shown: 'member.role.change' shows the role dropdown and Remove button, 'member.add' shows the Add form. The server checks again.
+ *
+ * Where it fits
+ *   Route /p/:projectId/members in App.tsx, drawn inside ProjectLayout. Module: M02 Project Management (owner: Vivan).
+ */
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PROJECT_ROLES, ROLE_DESCRIPTION, ROLE_LABEL, type MemberDto, type ProjectRole } from '@docstruct/shared';
@@ -15,14 +28,18 @@ export function MembersPage() {
   const allowed = useCan(project);
   const queryClient = useQueryClient();
   const toast = useToast();
+  // The member waiting for the "Remove?" confirmation. null means no dialog is open.
   const [removing, setRemoving] = useState<MemberDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = (list: MemberDto[]) => {
+    // The server sends back the updated member list, so we put it in the cache directly (no extra request).
     queryClient.setQueryData(['members', project.projectId], list);
+    // Reload the project too, because its member count and possibly my own role have changed.
     queryClient.invalidateQueries({ queryKey: ['project', project.projectId] });
   };
 
+  // Changes one member's role (PATCH /projects/:projectId/members/:userId).
   const changeRole = useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: ProjectRole }) => patch<MemberDto[]>(`/projects/${project.projectId}/members/${userId}`, { role }),
     onSuccess: (list, v) => {
@@ -32,6 +49,7 @@ export function MembersPage() {
     },
     onError: (e) => setError(errorMessage(e)),
   });
+  // Removes a member from the project (DELETE /projects/:projectId/members/:userId).
   const remove = useMutation({
     mutationFn: (userId: string) => del<MemberDto[]>(`/projects/${project.projectId}/members/${userId}`),
     onSuccess: (list) => {
@@ -45,6 +63,7 @@ export function MembersPage() {
     },
   });
 
+  // Only roles allowed to change roles (the owner) see the dropdown and Remove button; others just see the role name.
   const manage = allowed('member.role.change');
 
   return (
@@ -118,10 +137,12 @@ export function MembersPage() {
   );
 }
 
+/** Form to add an existing DocStruct user to the project by email, with a chosen role (default Editor). */
 function AddMember({ projectId, onAdded }: { projectId: string; onAdded: (list: MemberDto[]) => void }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<ProjectRole>('EDITOR');
   const toast = useToast();
+  // Adds the member (POST /projects/:projectId/members); the reply is the new member list.
   const add = useMutation({
     mutationFn: () => post<MemberDto[]>(`/projects/${projectId}/members`, { email, role }),
     onSuccess: (list) => {
