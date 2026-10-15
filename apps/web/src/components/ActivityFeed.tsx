@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Shows entries from a project's activity log as readable lines, such as
+ *   "Asha uploaded version 2 of Report.pdf, 3 min ago".
+ *
+ * How it works
+ *   - describe() maps each action code (like 'review.approved') to a short sentence.
+ *   - kindOf() picks an icon and colour for each kind of action.
+ *   - ActivityItem draws one entry: icon or avatar, actor name, sentence, a link to the document and the time.
+ *   - ActivityFeed takes the entries as a prop (it loads nothing itself) and shows them in an AnimatedList.
+ *
+ * Where it fits
+ *   ActivityFeed is used on DashboardPage (recent activity). ActivityItem is used on ActivityPage (full log).
+ *   Module: M09 activity log (owner: Vivan).
+ */
 import { Link } from 'react-router-dom';
 import type { ActivityEntryDto } from '@docstruct/shared';
 import { ROLE_LABEL, type ProjectRole } from '@docstruct/shared';
@@ -8,6 +23,7 @@ import { Avatar, cx, type AnimatedIcon } from './ui';
 
 /** Readable sentence for one activity-log entry (Log.Record.Detail: actor, action, entity, time). */
 export function describe(entry: ActivityEntryDto): string {
+  // detail holds extra facts saved with the entry, such as the old and new role or the version number.
   const d = entry.detail as Record<string, string | number | null>;
   const role = (r: unknown) => (typeof r === 'string' && r in ROLE_LABEL ? ROLE_LABEL[r as ProjectRole].toLowerCase() : String(r));
   switch (entry.action) {
@@ -40,6 +56,7 @@ export function describe(entry: ActivityEntryDto): string {
   }
 }
 
+// Entries about these entity types name a document, so the document title is shown after the sentence.
 const DOCUMENT_ENTITIES = new Set(['document', 'version', 'review', 'annotation', 'share']);
 
 /** Small icon per kind of entry, so the timeline can be scanned by eye. */
@@ -61,6 +78,7 @@ export function ActivityItem({ entry, as: Tag = 'li', className, showKind }: { e
   const onDocument = DOCUMENT_ENTITIES.has(entry.entityType) && entry.entityLabel;
   const kind = kindOf(entry.action);
   const KindIcon = kind.icon;
+  // A deleted document has no page to open, so its title is shown as plain text instead of a link.
   return (
     <AnimateIcon animateOnHover asChild>
       <Tag className={cx('group flex gap-3 py-2.5', className)}>
@@ -95,6 +113,7 @@ export function ActivityItem({ entry, as: Tag = 'li', className, showKind }: { e
  * so the newest ends up first.
  */
 export function ActivityFeed({ entries }: { entries: ActivityEntryDto[] }) {
+  // The list is reversed (oldest first) because AnimatedList puts each new item on top.
   return (
     <AnimatedList delay={260} className="mt-3 items-stretch gap-2">
       {[...entries].reverse().map((e) => (
