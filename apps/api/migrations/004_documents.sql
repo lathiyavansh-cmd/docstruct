@@ -1,3 +1,16 @@
+-- What this file does
+--   Creates the tables for folders, documents, document versions and upload tickets.
+--
+-- How it works
+--   - folders form a tree inside a project through parent_id.
+--   - documents hold title, status and a pointer to the current version; deletes are soft.
+--   - document_versions hold one row per uploaded file, guarded by the guard_version() trigger.
+--   - upload_tickets remember which user may turn which uploaded file into a version.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts after 003_projects. Modules: documents and folders (owner: Shrut)
+--   and versions (owner: Vansh).
+--
 -- 004_documents: folders, documents and their immutable versions (M03, M04).
 -- DOCUMENT carries the stable identity and status; each DOCUMENT_VERSION is an immutable record of content,
 -- so a revision never overwrites its predecessor (SRS Appendix A).
@@ -10,6 +23,7 @@ CREATE TABLE folders (
   created_by  uuid NOT NULL REFERENCES profiles (user_id),
   created_at  timestamptz NOT NULL DEFAULT now(),
   updated_at  timestamptz NOT NULL DEFAULT now(),
+  -- A folder cannot be its own parent. Deeper loops are blocked in the folder service.
   CHECK (parent_id IS DISTINCT FROM folder_id)
 )
 -- ;;
@@ -39,6 +53,7 @@ CREATE TABLE documents (
   deleted_by          uuid REFERENCES profiles (user_id)
 )
 -- ;;
+-- Partial index: only documents that are not deleted, which is what list queries ask for.
 CREATE INDEX documents_project_idx ON documents (project_id, updated_at DESC) WHERE deleted_at IS NULL
 -- ;;
 CREATE INDEX documents_folder_idx ON documents (folder_id) WHERE deleted_at IS NULL
@@ -53,6 +68,7 @@ CREATE TABLE document_versions (
   storage_key               text NOT NULL,
   file_name                 text NOT NULL,
   mime_type                 text NOT NULL,
+  -- 52428800 bytes = 50 MB, the upload size limit.
   byte_size                 integer NOT NULL CHECK (byte_size >= 0 AND byte_size <= 52428800),
   checksum                  text NOT NULL,
   change_note               text NOT NULL DEFAULT '' CHECK (char_length(change_note) <= 500),
@@ -98,6 +114,7 @@ CREATE TRIGGER document_versions_guard BEFORE UPDATE OR DELETE ON document_versi
   FOR EACH ROW EXECUTE FUNCTION guard_version()
 -- ;;
 
+-- Added after document_versions exists, because documents and versions refer to each other.
 ALTER TABLE documents
   ADD CONSTRAINT documents_current_version_fk FOREIGN KEY (current_version_id) REFERENCES document_versions (version_id)
 -- ;;

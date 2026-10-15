@@ -1,4 +1,18 @@
 /**
+ * What this file does
+ *   Fills the database with demo users, a project and documents (details in the comment below).
+ *
+ * How it works
+ *   - Stops early if the demo user already exists.
+ *   - Creates accounts, a project, members and folders through the real service classes.
+ *   - Uploads files with store() and builds a small PDF with pdf().
+ *   - Creates documents in each review state, plus one annotation.
+ *
+ * Where it fits
+ *   Run by `npm run db:seed`. Uses bootstrap.ts and the module services, so the same rules
+ *   and activity logging apply as in the real app. Module: scripts / server core (owner: Vansh).
+ */
+/**
  * Demo data for presentations and manual testing:  npm run db:seed
  *
  * Creates four local accounts (password: docstruct-demo), one project with folders, and documents in every
@@ -19,6 +33,7 @@ import type { FolderNodeDto } from '@docstruct/shared';
 const PASSWORD = 'docstruct-demo';
 const ctx = await bootstrap();
 
+// Running the seed twice would fail on duplicate emails, so exit if the first demo user exists.
 const existing = await ctx.db.query(`SELECT 1 FROM profiles WHERE email = 'vansh@docstruct.test'`);
 if (existing.rows.length) {
   console.log('Demo data already present. Log in as vansh@docstruct.test / docstruct-demo');
@@ -46,6 +61,7 @@ await projects.addMember(pid, vansh.userId, 'vivan@docstruct.test', 'EDITOR');
 await projects.addMember(pid, vansh.userId, 'shrut@docstruct.test', 'EDITOR');
 await projects.addMember(pid, vansh.userId, 'reviewer@docstruct.test', 'REVIEWER');
 
+// Searches the nested folder tree with a stack (depth-first) and returns the folder id by name.
 const find = (tree: FolderNodeDto[], name: string): string => {
   const stack = [...tree];
   while (stack.length) {
@@ -60,6 +76,8 @@ tree = await folders.create(pid, vansh.userId, 'Design', null);
 tree = await folders.create(pid, vivan.userId, 'Reports', null);
 tree = await folders.create(pid, vivan.userId, 'Weekly', find(tree, 'Reports'));
 
+// Uploads a file the same way the web client does: get an upload ticket, then write the bytes
+// under that key. The key is later passed to documents.create() or versions.upload().
 async function store(userId: string, fileName: string, content: Buffer | string): Promise<string> {
   const data = typeof content === 'string' ? Buffer.from(content, 'utf8') : content;
   const ticket = await uploads.issue(pid, userId, fileName, data.length);
@@ -88,6 +106,8 @@ function pdf(paragraphs: string[][]): Buffer {
   ];
   let body = '%PDF-1.4\n';
   const offsets: number[] = [];
+  // A PDF ends with a cross-reference table giving the byte offset of each object,
+  // so we record each offset while writing the objects.
   objects.forEach((o, i) => {
     offsets.push(Buffer.byteLength(body, 'latin1'));
     body += `${i + 1} 0 obj\n${o}\nendobj\n`;
@@ -142,6 +162,8 @@ const srs = await documents.create(pid, vansh.userId, {
   folderId: find(tree, 'Requirements'),
   changeNote: 'First complete draft',
 });
+// Wait for background text extraction of version 1 before uploading version 2,
+// so the change summary can compare the two texts.
 await ctx.jobs.idle();
 await versions.upload(srs.documentId, vansh.userId, await store(vansh.userId, 'SRS_Sections_3_and_5.md', srsV2), 'Fuzzy title search, content search, tighter search time');
 await ctx.jobs.idle();
