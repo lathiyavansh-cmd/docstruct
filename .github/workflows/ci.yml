@@ -1,3 +1,14 @@
+# What this file does
+#   GitHub Actions workflow that checks every push and pull request to develop and main.
+#
+# How it works
+#   - commit-messages: on pull requests, checks every new commit message.
+#   - node: installs packages, then runs typecheck, tests and build.
+#   - extractor: installs Python 3.12 and runs the text extractor's unit tests.
+#
+# Where it fits
+#   Run by GitHub on its own servers. Uses scripts/verify-commit-msg.mjs and the npm scripts
+#   in package.json. Module: CI (owner: Vansh).
 name: CI
 
 on:
@@ -13,11 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # Fetch the full history so the base branch is available for the commit range below.
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Check only the commits this pull request adds on top of its target branch.
       - run: node scripts/verify-commit-msg.mjs --range "origin/${{ github.base_ref }}..HEAD"
 
   node:
@@ -29,6 +42,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # npm ci installs the exact versions from package-lock.json for a repeatable build.
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
