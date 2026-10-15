@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Defines every setting the API uses and reads them from environment variables,
+ *   with safe defaults for local development.
+ *
+ * How it works
+ *   - AppConfig lists all settings (port, URLs, database, storage, timeouts, extractor).
+ *   - intEnv() reads a number from the environment and rejects bad values.
+ *   - devSecret() creates and saves a random signing secret for development.
+ *   - loadConfig() builds the final config; test code can pass overrides.
+ *
+ * Where it fits
+ *   Called by bootstrap.ts. Values are listed in apps/api/.env.example. Module: server core (owner: Vansh).
+ */
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -48,10 +62,13 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
 
   let signingSecret = overrides.signingSecret ?? process.env.SIGNING_SECRET ?? '';
   if (!signingSecret) {
+    // Production must set a real secret; otherwise anyone could forge signed download links.
     if (env === 'production') throw new Error('SIGNING_SECRET is required in production');
     signingSecret = env === 'test' ? 'test-secret' : devSecret(dataDir);
   }
 
+  // dataDir and signingSecret were already handled above, so drop them from the overrides.
+  // The remaining overrides are spread last and win over the environment values.
   const { dataDir: _d, signingSecret: _s, ...rest } = overrides;
   overrides = rest;
   return {
@@ -69,6 +86,7 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     resetTokenMinutes: intEnv('RESET_TOKEN_MINUTES', 30),
     extractor: {
       driver: (process.env.EXTRACTOR ?? 'python') as AppConfig['extractor']['driver'],
+      // Windows uses the 'py' launcher; Linux and macOS use 'python3'.
       pythonBin: process.env.PYTHON_BIN ?? (process.platform === 'win32' ? 'py' : 'python3'),
       timeoutMs: intEnv('EXTRACTOR_TIMEOUT_MS', 20_000),
     },

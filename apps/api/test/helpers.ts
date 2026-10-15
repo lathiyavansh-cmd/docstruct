@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Shared setup code for the API tests. It starts a complete copy of the API for each test file and offers
+ *   shortcuts for common steps like signing up, creating a project and uploading a document.
+ *
+ * How it works
+ *   - createTestEnv() boots the API with an in-memory PGlite database ("memory://") and a temporary folder
+ *     for stored files, and wraps the Express app in supertest so tests can send real HTTP requests.
+ *   - signUp(), createProject(), uploadFile() and createDocument() call the real endpoints, step by step.
+ *   - close() waits for background jobs, closes the database and deletes the temporary folder.
+ *
+ * Where it fits
+ *   Imported by the *.test.ts files in this folder (run with vitest). Module: server core (owner: Vansh).
+ */
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -49,6 +63,7 @@ let counter = 0;
 /** Registers a fresh user and returns their session. */
 export async function signUp(env: TestEnv, displayName = 'User'): Promise<TestUser> {
   counter += 1;
+  // The counter makes every e-mail unique, so tests never hit the duplicate-account check by accident.
   const email = `${displayName.toLowerCase().replace(/\W+/g, '.')}.${counter}@example.test`;
   const res = await env.http.post('/api/auth/signup').send({ email, password: 'correct-horse-1', displayName }).expect(201);
   return {
@@ -84,6 +99,7 @@ export async function uploadFile(
   content: string | Buffer,
 ): Promise<string> {
   const body = typeof content === 'string' ? Buffer.from(content) : content;
+  // Step 1 asks the API for an upload ticket; step 2 sends the bytes to the signed upload URL it returns.
   const ticket = await env.http
     .post(`/api/projects/${projectId}/uploads`)
     .set(user.auth)
