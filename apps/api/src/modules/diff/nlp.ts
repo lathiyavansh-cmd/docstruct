@@ -1,8 +1,21 @@
 /**
+ * What this file does
+ *   Text helpers for picking out important words and sentences, used by the pre-review and the summary.
+ *
+ * How it works
+ *   - terms() lists the meaningful words of a text; idfTable() and salience() score them with TF-IDF.
+ *   - sentences() splits a paragraph into sentences; keySentence() picks the highest scoring one.
+ *   - clip() shortens long text at a word boundary.
+ *
+ * Where it fits
+ *   Imported by prereview.ts and by summary/summarise.ts. Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
+/**
  * Small natural-language utilities used by the change summary and the pre-review: tokenisation, stop
  * words, TF-IDF term weights and sentence splitting. Written for DocStruct; no external NLP library.
  */
 
+// Very common words that carry no topic, so they are ignored when scoring.
 const STOP_WORDS = new Set(
   `a about above after again against all also am an and any are as at be because been before being below between both
   but by can could did do does doing down during each few for from further had has have having he her here hers him his
@@ -12,6 +25,7 @@ const STOP_WORDS = new Set(
   may might per via etc`.split(/\s+/),
 );
 
+// A term starts with a letter or digit and may contain apostrophes or hyphens. Stop words and 1-letter terms are dropped.
 export function terms(text: string): string[] {
   return (text.toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? []).filter((t) => !STOP_WORDS.has(t) && t.length > 1);
 }
@@ -19,6 +33,7 @@ export function terms(text: string): string[] {
 /** Inverse document frequency of every term over a set of paragraphs (smoothed: log((N+1)/(df+1)) + 1). */
 export function idfTable(paragraphs: string[]): Map<string, number> {
   const df = new Map<string, number>();
+  // Document frequency: in how many paragraphs each term appears (the Set counts a term once per paragraph).
   for (const p of paragraphs) for (const t of new Set(terms(p))) df.set(t, (df.get(t) ?? 0) + 1);
   const n = paragraphs.length;
   const idf = new Map<string, number>();
@@ -33,6 +48,7 @@ export function salience(text: string, idf: Map<string, number>): number {
   const tf = new Map<string, number>();
   for (const t of ts) tf.set(t, (tf.get(t) ?? 0) + 1);
   let score = 0;
+  // Score = sum of (term count x term weight). A term missing from the table gets a fixed default weight, log(2) + 1.
   for (const [t, f] of tf) score += f * (idf.get(t) ?? Math.log(2) + 1);
   return score / Math.sqrt(ts.length);
 }
@@ -68,6 +84,7 @@ export function clip(text: string, max = 140): string {
   const t = text.replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
   const cut = t.slice(0, max);
+  // Cut at the last space if it is past 60% of the limit, so we do not chop a word in half; then add an ellipsis.
   const space = cut.lastIndexOf(' ');
   return `${cut.slice(0, space > max * 0.6 ? space : max).replace(/[,;:\s]+$/, '')}…`;
 }

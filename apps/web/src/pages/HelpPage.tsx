@@ -1,7 +1,21 @@
+/**
+ * What this file does
+ *   This is the in-app Help screen. It explains the main tasks step by step, the project roles, the document statuses, and how the automatic summaries work.
+ *
+ * How it works
+ *   - It is a static page: no useQuery, no API calls.
+ *   - Facts like accepted file formats, the upload size limit and role names come from the shared package (@docstruct/shared), so the help text always matches the real rules.
+ *   - STEPS is a list of [title, text] pairs drawn as a numbered timeline.
+ *   - motion is used only for entrance animations.
+ *
+ * Where it fits
+ *   Route /help in App.tsx, inside AppLayout. Module: shared help page (owner: Vansh).
+ */
 import { FILE_FORMATS, MAX_UPLOAD_BYTES, PROJECT_ROLES, ROLE_DESCRIPTION, ROLE_LABEL, formatBytes } from '@docstruct/shared';
 import { motion } from 'motion/react';
 import { PageHeader, StatusBadge } from '../components/ui';
 
+// The main workflow, in order. Each item is [step title, explanation].
 const STEPS = [
   ['Create a project', 'From Projects, choose "New project". You become its owner. Add members from the Members page and give each one a role.'],
   ['Organise folders', 'In the project, create folders and subfolders. A folder cannot be moved inside one of its own subfolders.'],
@@ -51,6 +65,7 @@ export function HelpPage() {
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-semibold">Roles</h2>
         <dl className="divide-y divide-rule border-y border-rule">
+          {/* One row per role (Owner, Editor, and so on), with the label and description from the shared package. */}
           {PROJECT_ROLES.map((role) => (
             <div key={role} className="grid gap-1 py-3 sm:grid-cols-[8rem_1fr]">
               <dt className="font-medium">{ROLE_LABEL[role]}</dt>
@@ -63,6 +78,7 @@ export function HelpPage() {
       <section className="mb-10">
         <h2 className="mb-4 text-lg font-semibold">Document status</h2>
         <dl className="space-y-3 text-sm">
+          {/* Each document status with the same coloured badge used in the rest of the app. */}
           {(
             [
               ['DRAFT', 'Being written. Uploading a new version of an approved document returns it to Draft, because the approval covered the version that was reviewed.'],

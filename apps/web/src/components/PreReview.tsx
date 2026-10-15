@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Shows the automatic "pre-review" for a reviewer: a summary of what changed since the previous
+ *   version and a list of findings (things worth checking), each marked by severity.
+ *
+ * How it works
+ *   - PreReviewPanel loads the result: query key ['pre-review', reviewId], GET /reviews/:id/pre-review.
+ *   - While the server is still comparing (status PENDING) the query re-runs every 1.5 seconds.
+ *   - DiffSummaryBlock shows the summary, the findings and a link to the side-by-side compare page.
+ *     It always shows the "Machine-generated, advisory only" label.
+ *   - SummaryText splits the summary into an overview paragraph and bullet points. FindingList draws findings with icons.
+ *
+ * Where it fits
+ *   PreReviewPanel is used by ReviewPanel. FindingList and SummaryText are also used by ComparePage.
+ *   Module: F3.6 pre-review and summarisation (owner: Vansh).
+ */
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Info, OctagonAlert } from 'lucide-react';
@@ -5,6 +21,7 @@ import type { DiffDto, PreReviewDto, PreReviewFinding } from '@docstruct/shared'
 import { get } from '../lib/api';
 import { MachineLabel, Notice, Spinner, cx } from './ui';
 
+// Icon, colour and screen-reader label for each finding severity.
 const SEVERITY = {
   high: { icon: OctagonAlert, style: 'text-st-changes', label: 'Needs attention' },
   medium: { icon: AlertTriangle, style: 'text-st-review', label: 'Check' },
@@ -37,6 +54,7 @@ export function FindingList({ findings }: { findings: PreReviewFinding[] }) {
 
 /** The change summary as written by the engine: an overview paragraph, then one bullet per key change. */
 export function SummaryText({ summary }: { summary: string }) {
+  // Text before the first blank line is the overview; every later non-empty line is one bullet.
   const [overview, ...rest] = summary.split('\n\n');
   const bullets = rest.join('\n').split('\n').filter(Boolean);
   return (
@@ -57,6 +75,7 @@ export function SummaryText({ summary }: { summary: string }) {
 }
 
 export function DiffSummaryBlock({ diff, compareLink }: { diff: DiffDto; compareLink?: string }) {
+  // PENDING: still being prepared. UNAVAILABLE: the files could not be compared, and the server says why.
   if (diff.status === 'PENDING') return <Spinner label="Comparing with the previous version" />;
   if (diff.status === 'UNAVAILABLE') return <Notice>{diff.reason}</Notice>;
   return (
@@ -86,6 +105,7 @@ export function PreReviewPanel({ reviewId, documentId }: { reviewId: string; doc
   const pre = useQuery({
     queryKey: ['pre-review', reviewId],
     queryFn: () => get<PreReviewDto>(`/reviews/${reviewId}/pre-review`),
+    // Poll every 1.5 s only while the comparison is PENDING; stop (false) once it is ready.
     refetchInterval: (q) => (q.state.data?.diff?.status === 'PENDING' ? 1500 : false),
   });
   if (pre.isLoading) return <Spinner label="Preparing the change summary" />;

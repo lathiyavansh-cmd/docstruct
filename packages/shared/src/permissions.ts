@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Defines every permission in DocStruct and which project role (Owner, Editor, Reviewer, Viewer) holds it.
+ *   It answers one question: "may a user with this role do this action?"
+ *
+ * How it works
+ *   - PERMISSIONS is the full list of action names, like 'document.create' or 'member.add'.
+ *   - OWN says which permissions each role adds by itself.
+ *   - PARENTS says which roles each role inherits from (Owner inherits Editor and Reviewer, both inherit Viewer).
+ *   - resolvePermissions() merges a role's own and inherited permissions into one set and caches it.
+ *   - can(role, permission) is the yes/no check used everywhere else.
+ *
+ * Where it fits
+ *   The server checks can() on every request (apps/api/src/modules/rbac/middleware.ts, reviews/service.ts).
+ *   The website uses it only to hide buttons (apps/web/src/lib/hooks.ts, ReviewPanel.tsx). Module: M06 RBAC (owner: Vansh).
+ */
 import type { ProjectRole } from './enums.js';
 
 /**
@@ -46,8 +62,11 @@ export const PERMISSIONS = [
   'share.list',
   'review.cancel.any',
 ] as const;
+// `as const` keeps each string as its own type, so Permission is a union of exactly these names
+// and a typo like 'document.raed' fails to compile.
 export type Permission = (typeof PERMISSIONS)[number];
 
+// Permission table: what each role gets by itself, before inheritance is added.
 const OWN: Record<ProjectRole, Permission[]> = {
   VIEWER: [
     'project.read',
@@ -90,6 +109,7 @@ const OWN: Record<ProjectRole, Permission[]> = {
   ],
 };
 
+// Inheritance graph: a role also gets every permission of the roles listed here.
 const PARENTS: Record<ProjectRole, ProjectRole[]> = {
   VIEWER: [],
   REVIEWER: ['VIEWER'],
@@ -97,6 +117,7 @@ const PARENTS: Record<ProjectRole, ProjectRole[]> = {
   OWNER: ['EDITOR', 'REVIEWER'],
 };
 
+// Each role's merged set is computed once and reused, since the tables never change at runtime.
 const cache = new Map<ProjectRole, ReadonlySet<Permission>>();
 
 /** Expands a role into its full permission set by walking the inheritance graph (cached per role). */
@@ -104,11 +125,13 @@ export function resolvePermissions(role: ProjectRole): ReadonlySet<Permission> {
   const hit = cache.get(role);
   if (hit) return hit;
   const collected = new Set<Permission>(OWN[role]);
+  // Recursive step: add everything each parent role has (which already includes its own parents).
   for (const parent of PARENTS[role]) for (const p of resolvePermissions(parent)) collected.add(p);
   cache.set(role, collected);
   return collected;
 }
 
+// No role means the user is not a member of the project, so the answer is always false.
 export function can(role: ProjectRole | null | undefined, permission: Permission): boolean {
   return role ? resolvePermissions(role).has(permission) : false;
 }

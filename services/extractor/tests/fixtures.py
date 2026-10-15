@@ -1,4 +1,15 @@
-"""Builds small but structurally real PDF and DOCX files for the tests."""
+"""Builds small but structurally real PDF and DOCX files for the tests.
+
+How it works
+    - build_pdf() writes the PDF objects by hand (catalogue, page tree, font, pages, content streams),
+      then the cross-reference table and trailer, exactly as a real PDF writer would.
+    - text_page() writes a content stream that places text lines with known spacing.
+    - build_docx() writes a minimal ZIP with word/document.xml holding paragraphs and an optional table.
+    Building inputs in code means no binary sample files need to be stored in the repository.
+
+Where it fits
+    Imported by tests/test_extractor.py. Module: text extractor (owner: Shrut).
+"""
 from __future__ import annotations
 
 import io
@@ -15,6 +26,8 @@ def build_pdf(pages: List[bytes], *, compress: bool = False, fonts: Optional[byt
     """
     objects: List[bytes] = []
     n_pages = len(pages)
+    # Object numbering: 1 catalogue, 2 page tree, 3 font, then each page takes two numbers
+    # (page object 4 + 2i, content stream 5 + 2i).
     kids = " ".join(f"{4 + 2 * i} 0 R" for i in range(n_pages))
     objects.append(b"<< /Type /Catalog /Pages 2 0 R >>")
     objects.append(f"<< /Type /Pages /Kids [{kids}] /Count {n_pages} >>".encode())
@@ -32,11 +45,13 @@ def build_pdf(pages: List[bytes], *, compress: bool = False, fonts: Optional[byt
     objects.extend(extra_objects or [])
 
     out = io.BytesIO()
+    # PDF header; the second line holds four high bytes, the usual marker that the file is binary.
     out.write(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
     offsets = []
     for num, body in enumerate(objects, start=1):
         offsets.append(out.tell())
         out.write(f"{num} 0 obj\n".encode() + body + b"\nendobj\n")
+    # Cross-reference table: the byte offset of every object, in fixed-width 20-byte entries.
     xref = out.tell()
     out.write(f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode())
     for off in offsets:
@@ -52,8 +67,9 @@ def text_page(paragraphs: List[List[str]], size: int = 12) -> bytes:
     for para in paragraphs:
         for j, line in enumerate(para):
             if not first:
-                ops.append(b"0 -28 Td" if j == 0 else b"0 -14 Td")
+                ops.append(b"0 -28 Td" if j == 0 else b"0 -14 Td")  # Td moves down: 28pt before a new paragraph, 14pt per line
             first = False
+            # Inside a PDF (...) string, backslash and parentheses must be escaped with a backslash.
             escaped = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
             ops.append(f"({escaped}) Tj".encode("cp1252"))
     ops.append(b"ET")
@@ -64,6 +80,7 @@ def build_docx(paragraphs: List[str], table: Optional[List[List[str]]] = None) -
     w = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
     body = []
     for p in paragraphs:
+        # A "|" in the test input splits the paragraph into separate runs (w:r), to test run joining.
         runs = "".join(f"<w:r><w:t xml:space=\"preserve\">{part}</w:t></w:r>" for part in p.split("|"))
         body.append(f"<w:p>{runs}</w:p>")
     if table:

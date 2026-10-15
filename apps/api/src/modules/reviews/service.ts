@@ -1,3 +1,22 @@
+/**
+ * What this file does
+ *   Holds the logic for the review workflow. A document version is sent to one reviewer, who then
+ *   approves it or requests changes. The submitter or an owner can cancel the review.
+ *
+ * How it works
+ *   - submit() locks the document row, checks the reviewer and the status change, inserts a review
+ *     and sets the document to UNDER_REVIEW.
+ *   - decide() locks the review and document, checks that the caller is the named reviewer, then sets
+ *     APPROVED or CHANGES_REQUESTED.
+ *   - cancel() puts the document back to the status it had before the review.
+ *   - canTransition() from the shared package is the state machine that says which status changes are legal.
+ *   - assertNoOpenReview() and assertNotPendingReviewer() are guards used by other modules.
+ *
+ * Where it fits
+ *   Called by reviews/routes.ts. The guards are used by the projects, documents and folders modules. After a
+ *   submit it asks DiffService to compare versions in the background. Module: M05 Review & Approval
+ *   (owner: Vivan).
+ */
 import {
   REVIEWER_ROLES,
   can,
@@ -14,6 +33,8 @@ import { HttpError, badRequest, conflict, forbidden, isUniqueViolation, notFound
 import { DiffService } from '../diff/service.js';
 import { loadMembership } from '../rbac/middleware.js';
 
+// Shared query for one review with its document, project, version and both people's names.
+// "superseded" is true when a newer version has been uploaded since this review was opened.
 const REVIEW_SELECT = `
   SELECT r.review_id, d.project_id, p.name AS project_name, r.document_id, d.title AS document_title,
          r.version_id, v.version_no, (d.current_version_id <> r.version_id) AS superseded,
@@ -139,6 +160,8 @@ export class ReviewService {
   async submit(documentId: string, userId: string, input: { reviewerId: string; dueDate?: string | null; note?: string }): Promise<ReviewDto> {
     try {
       const reviewId = await this.ctx.db.tx(async (q) => {
+        // FOR UPDATE locks the document row until the transaction ends, so two people cannot submit
+        // the same document at the same moment.
         const { rows } = await q.query<{ project_id: string; title: string; status: DocumentStatus; current_version_id: string }>(
           'SELECT project_id, title, status, current_version_id FROM documents WHERE document_id = $1 AND deleted_at IS NULL FOR UPDATE',
           [documentId],
@@ -153,6 +176,7 @@ export class ReviewService {
         }
 
         if (doc.status === 'UNDER_REVIEW') throw conflict('A review is already open for this document', 'REVIEW_ALREADY_OPEN');
+        // State machine check: the current status must be allowed to move to UNDER_REVIEW.
         if (!canTransition(doc.status, 'UNDER_REVIEW')) {
           throw conflict(
             doc.status === 'APPROVED'
@@ -194,6 +218,8 @@ export class ReviewService {
       new DiffService(this.ctx).schedulePreReview(reviewId);
       return this.get(reviewId);
     } catch (error) {
+      // A unique index (reviews_one_open_per_document) allows only one PENDING review per document.
+      // If two submits race past the checks, the database rejects the second and we report it here.
       if (isUniqueViolation(error)) throw conflict('A review is already open for this document', 'REVIEW_ALREADY_OPEN');
       throw error;
     }
@@ -213,6 +239,7 @@ export class ReviewService {
       );
       const review = rows[0];
       if (!review) throw notFound('Review');
+      // Holding the review permission is not enough: only the person named on this review may decide it.
       if (review.reviewer_id !== userId) throw forbidden('Only the designated reviewer can decide this review');
       if (review.status !== 'PENDING') throw conflict('This review has already been decided or cancelled', 'REVIEW_CLOSED');
       const membership = await loadMembership(q, review.project_id, userId);
@@ -252,6 +279,7 @@ export class ReviewService {
       }
       if (review.status !== 'PENDING') throw conflict('Only a pending review can be cancelled', 'REVIEW_CLOSED');
       await q.query(`UPDATE reviews SET status = 'CANCELLED', cancelled_at = now(), cancelled_by = $2 WHERE review_id = $1`, [reviewId, userId]);
+      // previous_status was saved when the review was submitted, so the document goes back to exactly that state.
       await q.query('UPDATE documents SET status = $2, updated_at = now() WHERE document_id = $1', [review.document_id, review.previous_status]);
       await recordActivity(q, {
         projectId: review.project_id,

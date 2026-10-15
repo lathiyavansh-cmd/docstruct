@@ -1,4 +1,10 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   Makes its content fade in from a slight blur and slide a few pixels into place when it first appears.
+ *   Used by: pages/ProjectsPage.tsx, ReviewQueuePage.tsx, SearchPage.tsx, auth/AuthLayout.tsx and
+ *   project/DashboardPage.tsx. It only affects appearance; no feature logic.
+ */
 import { useRef } from "react"
 import {
   AnimatePresence,

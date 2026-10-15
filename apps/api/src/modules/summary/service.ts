@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Returns the summary of one document version, computing it the first time and reading it from the database after that.
+ *
+ * How it works
+ *   - forVersion() loads the version's extracted text from document_versions.
+ *   - If version_summaries already has a row, that saved result is returned.
+ *   - Otherwise it calls summariseDocument() from summarise.ts and saves the result (or the reason it is unavailable).
+ *   - dto() shapes the row into the response the frontend expects.
+ *
+ * Where it fits
+ *   Called by routes.ts. Uses summarise.ts. Module: Document summarisation, extends F3.6 (owner: Vansh).
+ */
 import type { DocumentSummaryDto, ExtractionStatus } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import { notFound } from '../../lib/errors.js';
@@ -65,10 +78,13 @@ export class SummaryService {
       [versionId],
     );
     if (stored.rows[0]) return this.dto(v, stored.rows[0]);
+    // Nothing is saved while extraction is still running, so the next request tries again.
     if (v.extraction_status === 'PENDING') return this.dto(v, null, 'Text extraction is still running for this version.');
 
     const result = v.extraction_status === 'DONE' && v.extracted_text ? summariseDocument(v.extracted_text) : null;
+    // DONE but no result means the text had no usable sentences, so the EMPTY message is used.
     const reason = result ? null : (UNAVAILABLE[v.extraction_status] ?? UNAVAILABLE.EMPTY);
+    // ON CONFLICT handles two requests saving at the same time: the first row is kept and returned to both.
     const inserted = await this.ctx.db.query<SummaryRow>(
       `INSERT INTO version_summaries (version_id, document_id, status, reason, result, engine)
        VALUES ($1, $2, $3, $4, $5, $6)

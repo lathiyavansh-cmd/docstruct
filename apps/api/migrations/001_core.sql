@@ -1,3 +1,17 @@
+-- What this file does
+--   First migration. Creates the profiles and activity_log tables and two helper
+--   functions that later migrations reuse.
+--
+-- How it works
+--   - Enables the pg_trgm extension (used later for the title search index).
+--   - forbid_mutation() is a trigger function that blocks UPDATE and DELETE.
+--   - lock_down() turns on row-level security and removes Supabase client access.
+--   - Creates profiles (users) and activity_log (append-only history) with their indexes.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts. Modules: auth (profiles) and activity (activity_log)
+--   (owners: Vansh and Vivan).
+--
 -- 001_core: user profiles, the immutable activity log and helpers shared by later migrations.
 -- Statements are separated by "-- ;;" lines (see src/db/migrate.ts).
 
@@ -37,6 +51,7 @@ CREATE TABLE profiles (
   updated_at    timestamptz NOT NULL DEFAULT now()
 )
 -- ;;
+-- Unique on lower(email), so "A@x.com" and "a@x.com" count as the same account.
 CREATE UNIQUE INDEX profiles_email_key ON profiles (lower(email))
 -- ;;
 SELECT lock_down('profiles')
@@ -56,10 +71,12 @@ CREATE TABLE activity_log (
   created_at    timestamptz NOT NULL DEFAULT now()
 )
 -- ;;
+-- Speeds up "latest activity for this project", which the dashboard asks for.
 CREATE INDEX activity_log_project_idx ON activity_log (project_id, created_at DESC)
 -- ;;
 CREATE INDEX activity_log_entity_idx ON activity_log (entity_id)
 -- ;;
+-- Makes the log append-only: any UPDATE or DELETE on a row raises an error.
 CREATE TRIGGER activity_log_immutable BEFORE UPDATE OR DELETE ON activity_log
   FOR EACH ROW EXECUTE FUNCTION forbid_mutation()
 -- ;;

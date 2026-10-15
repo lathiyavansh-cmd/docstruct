@@ -12,6 +12,11 @@ Pipeline:
 
 Scanned PDFs (images without a text layer) yield no text; the caller reports extraction as failed, which is
 what the SRS requires (Version.Text.Failure).
+
+Where it fits
+    Registered in docstruct_extractor/__init__.py for application/pdf; extract_pdf_text() at the bottom is
+    the entry point. The file is laid out in the same order as the pipeline above.
+    Module: text extractor (owner: Shrut).
 """
 from __future__ import annotations
 
@@ -163,6 +168,7 @@ class Lexer:
         if not word:
             self.pos += 1
             return Operator(chr(c))
+        # A PDF number: optional sign, then digits with an optional decimal point (e.g. 12, -3.5, .25).
         if re.fullmatch(rb"[+-]?(\d+\.?\d*|\.\d+)", word):
             return float(word) if b"." in word else int(word)
         if word == b"true":
@@ -319,6 +325,8 @@ def _png_unpredict(data: bytes, columns: int) -> bytes:
     return bytes(out)
 
 
+# Stage 3 lookup table: filter name in the stream dictionary -> decoder function.
+# Each filter has a long name and a short abbreviation; both are accepted.
 FILTERS = {
     "FlateDecode": _flate, "Fl": _flate,
     "ASCIIHexDecode": _ascii_hex, "AHx": _ascii_hex,
@@ -331,6 +339,7 @@ FILTERS = {
 # Document
 # ---------------------------------------------------------------------------------------------------------
 
+# Matches the start of an indirect object such as "12 0 obj" (object number, generation number).
 OBJ_RE = re.compile(rb"(\d+)\s+(\d+)\s+obj\b")
 
 
@@ -345,6 +354,8 @@ class PdfDocument:
         self._index()
 
     def _index(self) -> None:
+        # Stage 1: object index. Instead of reading the cross-reference table, scan the whole file for
+        # every "N G obj" header and parse what follows. This also works when the xref table is damaged.
         # Later definitions override earlier ones (incremental updates append new revisions).
         for m in OBJ_RE.finditer(self.data):
             num = int(m.group(1))
@@ -403,6 +414,7 @@ class PdfDocument:
             params = [params]
         elif not isinstance(params, list):
             params = [params] * len(filters)
+        # Filters can be chained (for example ASCII85 then Flate); apply them in the listed order.
         for f, p in zip(filters, params):
             fn = FILTERS.get(str(self.resolve(f)))
             if fn is None:
@@ -429,6 +441,8 @@ class PdfDocument:
         result: List[Dict[str, Any]] = []
         seen = set()
 
+        # Stage 2: recursive page tree walk. Inner nodes (/Pages) list children in /Kids; leaves are pages.
+        # A page without its own /Resources inherits them from its parent. `seen` stops loops in broken files.
         def walk(node_ref: Any, inherited: Dict[str, Any]) -> None:
             key = node_ref.num if isinstance(node_ref, Ref) else id(node_ref)
             if key in seen or len(result) > 10000:
@@ -524,6 +538,8 @@ class Font:
     def decode(self, raw: bytes) -> str:
         out = []
         step = self.code_bytes
+        # Stage 5: character code -> Unicode. Try the ToUnicode map first, then /Differences,
+        # then the font's base encoding (only for one-byte fonts). Unknown codes are dropped.
         for code in self.codes(raw):
             if code in self.to_unicode:
                 out.append(self.to_unicode[code])
@@ -548,6 +564,9 @@ def parse_cmap(data: bytes) -> Tuple[Dict[int, str], int]:
             raw = b"\x00" + raw
         return raw.decode("utf-16-be", errors="replace")
 
+    # bfchar lines map one code to one string: <0041> <0041>.
+    # bfrange lines map a range of codes: <lo> <hi> <start> (counting up) or <lo> <hi> [<a> <b> ...].
+    # re.S lets "." also match newlines, because each block spans several lines.
     for block in re.findall(rb"beginbfchar(.*?)endbfchar", data, re.S):
         for src, dst in re.findall(rb"<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]*)>", block):
             mapping[int(src, 16)] = utf16(dst)
@@ -620,6 +639,8 @@ def load_font(doc: PdfDocument, font_obj: Any) -> Font:
     elif isinstance(enc, dict):
         font.base_encoding = str(doc.resolve(enc.get("BaseEncoding")) or "WinAnsiEncoding")
         code = 0
+        # /Differences looks like [32 /space /exclam 65 /A]: a number sets the starting code,
+        # and each following glyph name takes the next code.
         for item in doc.resolve(enc.get("Differences")) or []:
             item = doc.resolve(item)
             if isinstance(item, int):
@@ -653,6 +674,8 @@ class Fragment:
     end: float = 0.0  # x where the fragment's last glyph ends (device space)
 
 
+# Multiplies two PDF transformation matrices. Each is stored as 6 numbers [a b c d e f], the short form
+# of a 3x3 matrix; e and f are the x and y offset. Used to turn text positions into page positions.
 def _mul(a: List[float], b: List[float]) -> List[float]:
     return [
         a[0] * b[0] + a[1] * b[2], a[0] * b[1] + a[1] * b[3],
@@ -662,6 +685,10 @@ def _mul(a: List[float], b: List[float]) -> List[float]:
 
 
 def interpret(doc: PdfDocument, content: bytes, fonts: Dict[str, Any], depth: int = 0) -> List[Fragment]:
+    # Stage 4: text operator interpretation. Content streams are postfix, e.g. "/F1 12 Tf (Hello) Tj":
+    # operands come first and are collected in `operands` until an operator arrives and uses them.
+    # State: ctm = current transformation matrix (q/Q save and restore it), tm = text matrix (where the
+    # next glyph goes), tlm = text line matrix (start of the current line), plus font, size and spacing.
     lexer = Lexer(content)
     operands: List[Any] = []
     frags: List[Fragment] = []
@@ -780,6 +807,8 @@ def layout(frags: List[Fragment]) -> str:
     if not frags:
         return ""
     lines: List[Tuple[float, float, List[Fragment]]] = []  # (y, size, fragments)
+    # Stage 6a: lines. A fragment joins an existing line when its baseline is within about
+    # a third of the font size of that line; otherwise it starts a new line.
     for f in frags:
         tolerance = max(1.0, f.size * 0.35)
         for i, (y, s, items) in enumerate(lines):
@@ -788,7 +817,7 @@ def layout(frags: List[Fragment]) -> str:
                 break
         else:
             lines.append((f.y, f.size, [f]))
-    lines.sort(key=lambda line: -line[0])
+    lines.sort(key=lambda line: -line[0])  # PDF y grows upwards, so the largest y is the top line
 
     texts: List[Tuple[float, float, str]] = []
     for y, s, items in lines:
@@ -813,6 +842,8 @@ def layout(frags: List[Fragment]) -> str:
     for line in texts:
         if prev is not None:
             gap = prev[0] - line[0]
+            # Stage 6b: paragraphs. Start a new one when the gap is clearly larger than normal line spacing,
+            # when the next line is higher up (gap < 0, e.g. a new column), or when the font size changes (e.g. a heading).
             if gap > typical * 1.45 or gap < 0 or abs(line[1] - prev[1]) > 1.5:
                 out.append(" ".join(para))
                 para = []
@@ -857,6 +888,8 @@ def _forms(doc: PdfDocument, resources: Dict[str, Any]) -> List[Tuple[bytes, Dic
 def extract_pdf_text(data: bytes) -> str:
     doc = PdfDocument(data)
     pages_text = []
+    # For each page: decode its content, interpret the text operators (also inside form XObjects),
+    # then lay the fragments out as paragraphs. Pages are joined with a blank line.
     for page in doc.pages():
         resources = doc.resolve(page.get("Resources")) or {}
         fonts = doc.resolve(resources.get("Font")) if isinstance(resources, dict) else {}

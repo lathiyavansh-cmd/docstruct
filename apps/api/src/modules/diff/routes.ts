@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Defines the two HTTP endpoints for version comparison: compare any two versions of a document, and get
+ *   the pre-review (change summary and findings) for a review.
+ *
+ * How it works
+ *   - Both routes run requireAuth and then authorize(ctx, 'diff.read', ...) to check project membership.
+ *   - The compare route validates the "from" and "to" query values as UUIDs, then calls DiffService.compare().
+ *   - The pre-review route calls DiffService.preReview() with the review id.
+ *
+ * Where it fits
+ *   Registered in modules/index.ts. Logic lives in service.ts. Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import type { AppContext } from '../../context.js';
@@ -19,6 +32,7 @@ export function diffRoutes(ctx: AppContext): Router {
   });
 
   /** Diff.PreReview.Run: the change summary and findings for a submitted version. */
+  // byReview() finds the project through the review's document, so outsiders get 404.
   router.get('/reviews/:reviewId/pre-review', auth, authorize(ctx, 'diff.read', byReview()), async (req, res) => {
     res.json(await service.preReview(req.params.reviewId as string));
   });

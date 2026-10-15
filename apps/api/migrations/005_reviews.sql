@@ -1,3 +1,16 @@
+-- What this file does
+--   Creates the reviews table for the submit, approve and request-changes workflow.
+--
+-- How it works
+--   - Each review row points to the exact version that was submitted and to the reviewer.
+--   - CHECK rules keep status and its timestamps consistent.
+--   - A partial unique index allows only one PENDING review per document.
+--   - The guard_review() trigger makes finished reviews read-only and blocks deletes.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts after 004_documents. Used by the reviews module.
+--   Module: reviews (owner: Vivan).
+--
 -- 005_reviews: the structured review workflow (M05). A review refers to the specific DOCUMENT_VERSION that
 -- was submitted, so a later version never alters the record of what was reviewed (Review.Submit.Version).
 
@@ -26,6 +39,7 @@ CREATE TABLE reviews (
 -- Review.Submit.Single: at most one open review per document, enforced by the database.
 CREATE UNIQUE INDEX reviews_one_open_per_document ON reviews (document_id) WHERE status = 'PENDING'
 -- ;;
+-- Speeds up a reviewer's queue: "my reviews with status PENDING".
 CREATE INDEX reviews_reviewer_idx ON reviews (reviewer_id, status)
 -- ;;
 CREATE INDEX reviews_document_idx ON reviews (document_id, created_at DESC)
@@ -39,6 +53,7 @@ BEGIN
   IF TG_OP = 'DELETE' THEN
     RAISE EXCEPTION 'reviews cannot be deleted' USING ERRCODE = 'check_violation';
   END IF;
+  -- Only a PENDING review may be updated (to record a decision or a cancellation).
   IF OLD.status <> 'PENDING' THEN
     RAISE EXCEPTION 'completed reviews are immutable' USING ERRCODE = 'check_violation';
   END IF;

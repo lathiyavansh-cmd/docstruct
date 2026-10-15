@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Defines the HTTP endpoints for accounts: sign up, log in, log out, view and edit profile, change and reset password.
+ *
+ * How it works
+ *   - Each request body is checked with a zod schema through parse(); bad input becomes a 400 error.
+ *   - The route then calls one AuthService method and sends back its result with the right status code.
+ *   - Endpoints that need a logged-in user add the requireAuth middleware ("auth").
+ *
+ * Where it fits
+ *   Registered in modules/index.ts and mounted under /api by app.ts. Business logic lives in service.ts.
+ *   Module: M01 Authentication (owner: Vansh).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import { PASSWORD_MIN_LENGTH } from '@docstruct/shared';
@@ -6,6 +19,7 @@ import { parse } from '../../lib/validate.js';
 import { currentUser, requireAuth } from './middleware.js';
 import { AuthService } from './service.js';
 
+// Shared input rules. E-mails are trimmed and lower-cased so "A@x.com" and "a@x.com" are the same account.
 const email = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
 const password = z
   .string()
@@ -25,6 +39,7 @@ export function authRoutes(ctx: AppContext): Router {
   });
 
   router.post('/auth/login', async (req, res) => {
+    // Login does not enforce the minimum length, it only needs a non-empty password to check.
     const body = parse(z.object({ email, password: z.string().min(1).max(128) }), req.body);
     res.json(await service.login(body.email, body.password));
   });
@@ -52,6 +67,7 @@ export function authRoutes(ctx: AppContext): Router {
   router.post('/auth/password/forgot', async (req, res) => {
     const body = parse(z.object({ email }), req.body);
     await service.requestPasswordReset(body.email);
+    // Same reply whether or not the e-mail is registered, so nobody can probe for accounts.
     res.status(202).json({ message: 'If an account exists for that address, a reset link has been sent.' });
   });
 

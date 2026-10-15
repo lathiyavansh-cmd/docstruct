@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Builds a summary of a whole document: short, medium and detailed sentence lists, key terms, a section
+ *   outline and simple stats. It picks real sentences from the text; it does not write new ones.
+ *
+ * How it works
+ *   - sentenceUnits() cuts the text into sentences and remembers which section each belongs to.
+ *   - vectors() and cosine() measure how similar every pair of sentences is (TF-IDF).
+ *   - textRank() scores sentences with PageRank; summariseDocument() adjusts, picks and orders them.
+ *   - keyTerms() finds frequent words and two-word phrases.
+ *
+ * Where it fits
+ *   Called by SummaryService (service.ts). Reuses paragraph and heading helpers from diff/compare.ts and
+ *   term and sentence helpers from diff/nlp.ts. Module: Document summarisation, extends F3.6 (owner: Vansh).
+ */
 import { headingText, isHeading, segmentParagraphs } from '../diff/compare.js';
 import { sentences as splitSentences, terms } from '../diff/nlp.js';
 
@@ -28,6 +43,7 @@ export interface SummaryResult {
   stats: { words: number; sentences: number; sections: number; readingMinutes: number };
 }
 
+// Standard PageRank settings: 0.85 damping, stop after 60 rounds or when scores change by less than 0.000001.
 const DAMPING = 0.85;
 const MAX_ITERATIONS = 60;
 const TOLERANCE = 1e-6;
@@ -43,6 +59,7 @@ interface Unit {
   leadsSection: boolean;
 }
 
+// A line that starts with a bullet (-, *, •, –), "1." / "1)" or "a." / "a)" followed by a space.
 const LIST_ITEM = /^\s*(?:[-*•–]|\d+[.)]|[a-z][.)])\s+/;
 
 /** Plain sentence text for display: markdown emphasis, code marks, links and list markers removed. */
@@ -119,6 +136,7 @@ export function textRank(weights: number[][]): number[] {
   let scores = new Array<number>(n).fill(1 / n);
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     const next = new Array<number>(n).fill((1 - DAMPING) / n);
+    // Each sentence j shares its current score with its neighbours, in proportion to edge weight.
     for (let j = 0; j < n; j++) {
       if (!outSum[j]) continue;
       const share = (DAMPING * scores[j]) / outSum[j];
@@ -190,6 +208,7 @@ export function summariseDocument(text: string): SummaryResult | null {
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const w = cosine(vecs[i], vecs[j], norms[i], norms[j]);
+      // Very weak links (similarity 0.05 or less) are left out of the graph. The matrix is symmetric.
       if (w > 0.05) weights[i][j] = weights[j][i] = w;
     }
   }
@@ -197,6 +216,8 @@ export function summariseDocument(text: string): SummaryResult | null {
   const top = Math.max(...rank) || 1;
   const scores = units.map((u, i) => {
     const words = countWords(u.text);
+    // Scale to 0..1, then boost section openers and the first 3 sentences, and penalise very short, very long
+    // or nearly content-free sentences.
     let s = rank[i] / top;
     if (u.leadsSection) s *= 1.2;
     if (i < 3) s *= 1.1;
@@ -209,6 +230,7 @@ export function summariseDocument(text: string): SummaryResult | null {
   // Greedy pick, most important first, skipping repeats of a sentence already picked.
   const order = units.map((_, i) => i).sort((a, b) => scores[b] - scores[a] || a - b);
   const picked: number[] = [];
+  // Detailed summary size: about 30% of the sentences, kept between 6 and 12 (and never more than n).
   const longest = Math.min(n, Math.max(6, Math.min(12, Math.round(n * 0.3))));
   for (const i of order) {
     if (picked.length >= longest) break;

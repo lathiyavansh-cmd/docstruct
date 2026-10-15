@@ -1,9 +1,22 @@
 #!/bin/sh
+# What this file does
+#   Git hook that blocks pushing straight to main or develop.
+#
+# How it works
+#   - Git sends one line per ref being pushed on standard input.
+#   - The loop checks each remote ref name against the protected pattern.
+#   - A match stops the push with exit 1, unless the override variable is set to 1.
+#
+# Where it fits
+#   Enabled by scripts/setup.mjs (core.hooksPath). Module: repository tooling (owner: Vansh).
+#
 # Refuses direct pushes to the protected long-lived branches.
 # main and develop only change through reviewed pull requests (CO-9).
 protected='^refs/heads/(main|develop)$'
+# Each input line is: <local ref> <local sha> <remote ref> <remote sha>.
 while read -r local_ref local_sha remote_ref remote_sha; do
   if echo "$remote_ref" | grep -Eq "$protected"; then
+    # ${VAR:-0} means "use 0 if the variable is not set".
     if [ "${DOCSTRUCT_ALLOW_PROTECTED_PUSH:-0}" != "1" ]; then
       echo "Direct push to ${remote_ref#refs/heads/} is not allowed - open a pull request." >&2
       echo "(Maintainers bootstrapping the remote can set DOCSTRUCT_ALLOW_PROTECTED_PUSH=1.)" >&2

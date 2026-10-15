@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Defines the HTTP endpoints for document versions: list history, upload a new version, restore an old one,
+ *   and get a download or preview link for any version.
+ *
+ * How it works
+ *   - Every route runs requireAuth, then authorize() with the permission it needs (for example version.create).
+ *   - The body or URL params are validated with zod, then one VersionService method does the work.
+ *   - Download and preview reuse DocumentService.fileLink() to get a link to the stored file.
+ *
+ * Where it fits
+ *   Registered in modules/index.ts. Uses service.ts, the RBAC middleware and the documents module.
+ *   Module: M04 Version Control (owner: Vansh).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import type { AppContext } from '../../context.js';
@@ -20,6 +34,7 @@ export function versionRoutes(ctx: AppContext): Router {
 
   /** Upload step 2 for a new version (step 1 is POST /projects/:projectId/uploads). */
   router.post('/documents/:documentId/versions', auth, authorize(ctx, 'version.create', byDocument()), async (req, res) => {
+    // uploadKey points to the file already sent to storage in step 1; the version number is never taken from the client.
     const body = parse(z.object({ uploadKey: z.string().min(1).max(400), changeNote: z.string().trim().max(500).optional() }), req.body);
     res.status(201).json(await service.upload(req.params.documentId as string, currentUser(req).userId, body.uploadKey, body.changeNote ?? ''));
   });
@@ -29,6 +44,7 @@ export function versionRoutes(ctx: AppContext): Router {
     auth,
     authorize(ctx, 'version.restore', byDocument()),
     async (req, res) => {
+      // The version id is checked to be a UUID here; the service also checks it belongs to this document.
       const { versionId } = parse(z.object({ versionId: uuid }), req.params);
       res.status(201).json(await service.restore(req.params.documentId as string, versionId, currentUser(req).userId));
     },

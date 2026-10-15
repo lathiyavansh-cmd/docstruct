@@ -1,3 +1,15 @@
+-- What this file does
+--   Creates the annotations table (comments on a version) and the share_links table (view-only links).
+--
+-- How it works
+--   - annotations can be pinned to a page and region, and can have one level of replies.
+--   - guard_annotation_reply() trigger checks that a reply matches its parent's version.
+--   - share_links stores only a hash of the link token, plus expiry, revoke and access counts.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts after 006_version_diffs. Used by the annotations and shares modules.
+--   Module: annotations and shares (owner: Shrut).
+--
 -- 007_annotations_shares: feedback attached to the document version it concerns, and view-only share links (M07).
 
 CREATE TABLE annotations (
@@ -14,7 +26,9 @@ CREATE TABLE annotations (
   resolved_at    timestamptz,
   resolved_by    uuid REFERENCES profiles (user_id),
   created_at     timestamptz NOT NULL DEFAULT now(),
+  -- A reply has no page, region or resolved state of its own; only top-level annotations do.
   CHECK (parent_id IS NULL OR (page_number IS NULL AND region IS NULL AND resolved_at IS NULL)),
+  -- resolved_at and resolved_by are either both set or both empty.
   CHECK ((resolved_at IS NULL) = (resolved_by IS NULL))
 )
 -- ;;
@@ -43,6 +57,7 @@ BEGIN
 END
 $$
 -- ;;
+-- Runs before every insert, so a bad reply is rejected before it is saved.
 CREATE TRIGGER annotations_reply_scope BEFORE INSERT ON annotations
   FOR EACH ROW EXECUTE FUNCTION guard_annotation_reply()
 -- ;;

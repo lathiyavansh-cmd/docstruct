@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Unit tests for the comparison algorithms: SequenceMatcher, paragraph comparison and classification,
+ *   word-level diff, the pre-review rules and the change summary.
+ *
+ * How it works
+ *   - It does not start the API; it calls the functions in modules/diff directly with small text samples.
+ *   - SequenceMatcher results are checked against values produced by Python's difflib on the same input.
+ *   - analyse() runs the full pipeline (compare, classify, annotate, stats, findings, summary) like DiffService does.
+ *
+ * Where it fits
+ *   Run by vitest. Covers compare.ts, prereview.ts and sequence-matcher.ts.
+ *   Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import { describe, expect, it } from 'vitest';
 import { annotateChanges, changeStatistics, classifySubstantive, compareVersions, isHeading, normalise, segmentParagraphs, wordDiff } from '../src/modules/diff/compare.js';
 import { findIssues, summarise } from '../src/modules/diff/prereview.js';
@@ -47,6 +61,7 @@ describe('Algorithms F and G - the worked example from the design document', () 
 
   it('produces the same changes and statistics as the Python reference', () => {
     const changes = classifySubstantive(compareVersions(v1, v2));
+    // The first paragraph only gained extra spaces, so it is a cosmetic (not substantive) modification.
     expect(changes.map((c) => [c.kind, c.isSubstantive])).toEqual([
       ['MODIFIED', false],
       ['MODIFIED', true],

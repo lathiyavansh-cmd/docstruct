@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Tests the basic platform pieces: the health endpoint, the 404 for unknown routes, database safety rules
+ *   (row-level security on, activity log cannot be changed) and the signed upload and download links.
+ *
+ * How it works
+ *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
+ *   - Tests send real HTTP requests with supertest, or run SQL directly through env.ctx.db.
+ *   - The storage tests create signed URLs, then tamper with or expire them to check they are refused.
+ *
+ * Where it fits
+ *   Run by vitest with the other API tests. Module: server core (owner: Vansh).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { recordActivity } from '../src/lib/activity.js';
 import { createTestEnv, relative, type TestEnv } from './helpers.js';
@@ -20,6 +33,7 @@ describe('core platform', () => {
   });
 
   it('enables row-level security on every application table (CO-6)', async () => {
+    // Reads PostgreSQL's catalog to list every normal table in the public schema and its RLS flag.
     const { rows } = await env.ctx.db.query<{ relname: string; relrowsecurity: boolean }>(
       `SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relname <> 'schema_migrations'`,
@@ -63,6 +77,7 @@ describe('object store signed URLs (CI-4, SE-13)', () => {
 
   it('rejects a tampered signature and an oversized body', async () => {
     const put = env.ctx.storage.createUploadUrl('test/b.txt', 4);
+    // Changing the key in the URL breaks the signature, so the upload is refused with 403.
     await env.http.put(relative(put).replace('key=test%2Fb.txt', 'key=test%2Fc.txt')).send('x').expect(403);
     await env.http.put(relative(put)).set('Content-Type', 'text/plain').send('too long').expect(413);
     expect(await env.ctx.storage.exists('test/b.txt')).toBe(false);

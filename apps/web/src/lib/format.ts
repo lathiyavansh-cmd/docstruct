@@ -1,5 +1,21 @@
+/**
+ * What this file does
+ *   Small helpers that turn raw values into text people can read: dates, "3 min ago" times,
+ *   file sizes and plural words.
+ *
+ * How it works
+ *   - formatBytes is re-exported from the shared package so server and web show sizes the same way.
+ *   - Two Intl.DateTimeFormat objects are made once and reused; they follow the browser's locale.
+ *   - timeAgo() works out the gap in seconds and steps up to minutes, hours and days.
+ *   - plural() picks "1 file" or "2 files".
+ *
+ * Where it fits
+ *   Used by ActivityFeed, AnnotationsPanel, ReviewPanel, SharePanel, VersionHistory and most pages.
+ *   Module: app shell / shared UI (owner: Vansh).
+ */
 export { formatBytes } from '@docstruct/shared';
 
+// Built once and reused, because creating an Intl formatter is slow compared with calling it.
 const dateTime = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const dateOnly = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -15,6 +31,7 @@ export function formatDate(iso: string): string {
 /** "3 minutes ago", "yesterday", or the date for older events. */
 export function timeAgo(iso: string): string {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  // Each step rounds to the next bigger unit; after a week we show the date instead.
   if (seconds < 45) return 'just now';
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes} min ago`;

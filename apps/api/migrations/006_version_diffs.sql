@@ -1,3 +1,15 @@
+-- What this file does
+--   Creates the version_diffs table, a cache of comparisons between two versions of a document.
+--
+-- How it works
+--   - Each row stores the change list, stats, summary and pre-review findings as JSON or text.
+--   - status is READY, or UNAVAILABLE with a reason (for example when text could not be extracted).
+--   - engine records which comparison engine produced the row.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts after 005_reviews. Used by the diff module.
+--   Module: diff (owner: Vansh).
+--
 -- 006_version_diffs: stored comparisons between two versions (F3.6). Diff.Summary.Store: a comparison is
 -- computed once per ordered pair of versions and reused on every later request.
 
@@ -14,6 +26,7 @@ CREATE TABLE version_diffs (
   findings         jsonb NOT NULL DEFAULT '[]'::jsonb,
   engine           text NOT NULL,
   created_at       timestamptz NOT NULL DEFAULT now(),
+  -- One stored result per ordered pair, and a version is never compared with itself.
   UNIQUE (from_version_id, to_version_id),
   CHECK (from_version_id <> to_version_id)
 )

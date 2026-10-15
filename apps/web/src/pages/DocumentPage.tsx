@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   This is the page for one document. It shows the file preview and summary on the left, and a side panel with tabs for Review, Comments, Versions and Sharing. From here the user can upload a new version, download, edit details, move, archive or delete the document.
+ *
+ * How it works
+ *   - useQuery ['document', id] loads GET /documents/:id; useProject loads the project (GET /projects/:projectId) so useCan knows the user's role.
+ *   - useQuery ['versions', id] loads GET /documents/:id/versions; useQuery ['annotations', versionId] loads GET /versions/:versionId/annotations (comments for the version on screen).
+ *   - ?v=<versionId> in the URL shows an older version instead of the current one.
+ *   - Child components do the detailed work: SummaryCard, DocumentPreview, ReviewPanel, AnnotationsPanel, VersionHistory, SharePanel, UploadDialog.
+ *   - Actions: PATCH /documents/:id (edit), POST /documents/:id/move, POST /documents/:id/archive, DELETE /documents/:id. Each button only shows if useCan allows it; the server checks again.
+ *
+ * Where it fits
+ *   Route /d/:documentId in App.tsx, inside AppLayout. Module: M03 Document & Folder Management, with M04/M05/M07 panels (owner: Shrut).
+ */
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -32,6 +46,7 @@ import { useCan, useProject } from '../lib/hooks';
 
 type RailTab = 'review' | 'comments' | 'versions' | 'sharing';
 
+// Turns the nested folder tree into a flat list with a depth number, for the "Move to folder" dropdown.
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children, depth + 1)]);
 }
@@ -46,11 +61,15 @@ export function DocumentPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
+  // The document itself (title, status, current version, folder path).
   const doc = useQuery({ queryKey: ['document', documentId], queryFn: () => get<DocumentDetailDto>(`/documents/${documentId}`) });
+  // The project is loaded after the document, because we only learn the project id from the document.
   const project = useProject(doc.data?.projectId);
+  // allowed('permission') says if the user's role in this project allows an action. Used to hide buttons.
   const allowed = useCan(project.data);
   const versions = useQuery({ queryKey: ['versions', documentId], queryFn: () => get<VersionDto[]>(`/documents/${documentId}/versions`), enabled: !!doc.data });
 
+  // ?v=<versionId> means the user picked an older version. If there is none, show the current version.
   const viewingId = params.get('v');
   const viewing = versions.data?.find((v) => v.versionId === viewingId) ?? null;
   const shownVersion = viewing ?? doc.data?.currentVersion ?? null;
@@ -61,7 +80,9 @@ export function DocumentPage() {
     enabled: !!shownVersion,
   });
 
+  // Which side panel tab is open. Review is the default.
   const [tab, setTab] = useState<RailTab>('review');
+  // placing is true while the user is choosing a spot on the page to pin a new comment.
   const [placing, setPlacing] = useState(false);
   const [anchor, setAnchor] = useState<{ page: number; region: RegionDto } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -74,6 +95,7 @@ export function DocumentPage() {
   const current = d.currentVersion;
   const isPdf = shownVersion?.mimeType === 'application/pdf';
 
+  // After any change, mark every list that shows this document as old so it reloads with fresh data.
   const refresh = () => {
     for (const key of [['document', d.documentId], ['versions', d.documentId], ['documents', p.projectId], ['dashboard', p.projectId], ['folders', p.projectId]]) {
       queryClient.invalidateQueries({ queryKey: key });
@@ -93,6 +115,7 @@ export function DocumentPage() {
     { id: 'versions', label: 'Versions', icon: LayersIcon, count: d.versionCount },
     ...(allowed('share.list') ? [{ id: 'sharing' as const, label: 'Sharing', icon: LinkIcon }] : []),
   ];
+  // A new version needs permission, and the document must not be under review or archived.
   const canUpload = allowed('version.create') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED';
 
   return (
@@ -271,6 +294,7 @@ export function DocumentPage() {
         </aside>
       </div>
 
+      {/* Only one dialog is open at a time; the dialog state says which one. */}
       {dialog === 'upload' && (
         <UploadDialog
           projectId={p.projectId}
@@ -320,6 +344,7 @@ export function DocumentPage() {
 
 type MenuItem = { label: string; icon: AnimatedIcon; onClick: () => void; danger?: boolean };
 
+/** The "More" dropdown. Items the user may not use are passed as false and filtered out. */
 function DocumentMenu({ items }: { items: Array<false | MenuItem> }) {
   const [open, setOpen] = useState(false);
   const visible = items.filter(Boolean) as MenuItem[];
@@ -369,6 +394,7 @@ function DocumentMenu({ items }: { items: Array<false | MenuItem> }) {
   );
 }
 
+/** A yes/no confirm box that runs one API call (used for Archive and Delete). */
 function SimpleAction({ title, label, text, danger, run, done, onClose }: { title: string; label: string; text: string; danger?: boolean; run: () => Promise<unknown>; done: () => void; onClose: () => void }) {
   const action = useMutation({ mutationFn: run, onSuccess: () => { done(); onClose(); } });
   return (
@@ -383,6 +409,7 @@ function EditDetails({ document: d, onClose, onDone }: { document: DocumentDetai
   const [title, setTitle] = useState(d.title);
   const [description, setDescription] = useState(d.description);
   const toast = useToast();
+  // Saves the new title and description with PATCH /documents/:id.
   const save = useMutation({
     mutationFn: () => patch(`/documents/${d.documentId}`, { title, description }),
     onSuccess: () => {
@@ -401,9 +428,12 @@ function EditDetails({ document: d, onClose, onDone }: { document: DocumentDetai
 }
 
 function MoveDocument({ document: d, onClose, onDone }: { document: DocumentDetailDto; onClose: () => void; onDone: () => void }) {
+  // The project's folder tree (GET /projects/:projectId/folders) for the dropdown.
   const folders = useQuery({ queryKey: ['folders', d.projectId], queryFn: () => get<FolderNodeDto[]>(`/projects/${d.projectId}/folders`) });
+  // '' means the project root (no folder).
   const [target, setTarget] = useState(d.folderId ?? '');
   const toast = useToast();
+  // Moves the document with POST /documents/:id/move.
   const move = useMutation({
     mutationFn: () => post(`/documents/${d.documentId}/move`, { folderId: target || null }),
     onSuccess: () => {

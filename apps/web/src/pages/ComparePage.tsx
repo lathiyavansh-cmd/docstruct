@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   This is the "Compare versions" screen. The user picks an earlier and a later version of one document and sees what changed, paragraph by paragraph and word by word, plus an automatic change summary and pre-review findings.
+ *
+ * How it works
+ *   - useQuery ['document', id] loads the document (GET /documents/:id) and ['versions', id] loads its versions (GET /documents/:id/versions, newest first).
+ *   - The chosen versions live in the URL as ?from=...&to=... . If missing, it compares the second newest with the newest.
+ *   - useQuery ['diff', id, from, to] calls GET /documents/:id/compare?from=&to=. While the server answers PENDING it asks again every 1.5 seconds.
+ *   - ChangeBlock draws one change (Added, Removed or Edited); Words marks inserted and deleted words. Formatting-only changes are hidden unless the checkbox is ticked.
+ *   - The side panel shows the summary (SummaryText) and findings (FindingList) from components/PreReview.
+ *
+ * Where it fits
+ *   Route /d/:documentId/compare in App.tsx, inside AppLayout. Module: F3.6 Version Comparison (owner: Vansh).
+ */
 import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -29,6 +43,7 @@ function Words({ change }: { change: ChangeDto }) {
   );
 }
 
+/** One change in the list. The left border colour shows the kind: green added, red removed, grey edited. */
 function ChangeBlock({ change, index }: { change: ChangeDto; index: number }) {
   const rule = change.kind === 'ADDED' ? 'border-mark-insert-rule' : change.kind === 'DELETED' ? 'border-mark-delete-rule' : 'border-ink-faint';
   return (
@@ -89,12 +104,16 @@ function PanelTitle({ icon: Icon, children, extra }: { icon: AnimatedIcon; child
 export function ComparePage() {
   const { documentId } = useParams();
   const [params, setParams] = useSearchParams();
+  // When true, formatting-only changes (spacing, letter case or punctuation spacing) are also listed.
   const [showCosmetic, setShowCosmetic] = useState(false);
+  // The document (for its title) and all its versions (for the two dropdowns).
   const doc = useQuery({ queryKey: ['document', documentId], queryFn: () => get<DocumentDetailDto>(`/documents/${documentId}`) });
   const versions = useQuery({ queryKey: ['versions', documentId], queryFn: () => get<VersionDto[]>(`/documents/${documentId}/versions`) });
 
+  // Versions come newest first, so [1] is the previous version and [0] is the current one.
   const from = params.get('from') ?? versions.data?.[1]?.versionId ?? '';
   const to = params.get('to') ?? versions.data?.[0]?.versionId ?? '';
+  // Ask the server for the differences. Only runs when two different versions are chosen.
   const diff = useQuery({
     queryKey: ['diff', documentId, from, to],
     queryFn: () => get<DiffDto>(`/documents/${documentId}/compare`, { from, to }),
@@ -104,6 +123,7 @@ export function ComparePage() {
   });
 
   const changes = useMemo(() => (diff.data?.changes ?? []).filter((c) => showCosmetic || c.isSubstantive), [diff.data, showCosmetic]);
+  // Changing a dropdown writes both versions into the URL, so the page can be reloaded or shared.
   const pick = (key: 'from' | 'to', value: string) => {
     const next = new URLSearchParams(params);
     next.set('from', from);
@@ -162,6 +182,7 @@ export function ComparePage() {
       {from === to && list.length >= 2 && <Notice>Choose two different versions.</Notice>}
       {diff.isLoading && <Spinner label="Comparing the versions" />}
       {diff.error && <ErrorNote>{errorMessage(diff.error)}</ErrorNote>}
+      {/* The diff has three states: PENDING (text still being extracted), UNAVAILABLE (cannot compare, with a reason) and READY. */}
       {d?.status === 'PENDING' && <Spinner label="Reading the text of both versions" />}
       {d?.status === 'UNAVAILABLE' && <Notice>{d.reason}</Notice>}
 

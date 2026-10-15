@@ -1,7 +1,24 @@
+/**
+ * What this file does
+ *   Describes the exact shape of every JSON body that travels between the website and the server.
+ *   A "DTO" (data transfer object) is one such shape; a "Request" is what the website sends.
+ *
+ * How it works
+ *   - Each interface lists the fields and their types; there is no runtime code except PASSWORD_MIN_LENGTH.
+ *   - The server builds its responses to match these types, and the website reads them using the same types.
+ *   - If one side changes a field, the other side stops compiling, so the two can never drift apart silently.
+ *   - Groups follow the project modules (M01 accounts, M02 projects, M03 documents, M05 reviews, and so on).
+ *
+ * Where it fits
+ *   Imported through @docstruct/shared by the API route handlers (apps/api) and the website's API client
+ *   and pages (apps/web). Module: shared core (owner: Vansh).
+ */
 // Request/response shapes of the DocStruct REST API, shared by server and client (Maintainability-2).
 // Timestamps travel as ISO-8601 strings.
 
 import type { ChangeKind, DocumentStatus, ExtractionStatus, ProjectRole, ReviewStatus } from './enums.js';
+
+// ---- Errors, M01 accounts and sessions: error body, profile, sign-up, login and session token.
 
 /** Every error response has this body (Usability-4: state the reason). */
 export interface ApiErrorBody {
@@ -48,6 +65,7 @@ export interface UserRefDto {
 }
 
 // ---- M02 projects and membership -------------------------------------------------------------
+// A project as listed for the caller, its members, and the bodies for creating a project and adding a member.
 
 export interface ProjectDto {
   projectId: string;
@@ -80,6 +98,7 @@ export interface AddMemberRequest {
 }
 
 // ---- M03 folders and documents ---------------------------------------------------------------
+// The folder tree, documents with their versions, the two-step upload, and signed file links.
 
 export interface FolderNodeDto {
   folderId: string;
@@ -159,6 +178,7 @@ export interface FileLinkDto {
 }
 
 // ---- M05 reviews -------------------------------------------------------------------------------
+// One review request with its reviewer, due date and decision, plus the submit and decide bodies.
 
 export interface ReviewDto {
   reviewId: string;
@@ -192,6 +212,8 @@ export interface DecisionRequest {
 }
 
 // ---- F3.6 version comparison and pre-review -----------------------------------------------------
+// The result of comparing two versions: per-paragraph changes, word-level segments, counts, and
+// rule-based findings shown to the reviewer before they decide.
 
 export interface WordSegmentDto {
   op: 'equal' | 'insert' | 'delete';
@@ -258,6 +280,7 @@ export interface PreReviewDto {
 }
 
 // ---- Document summarisation ------------------------------------------------------------------
+// A summary picked from the document's own sentences at three lengths, with key terms, outline and word counts.
 
 export interface SummarySentenceDto {
   text: string;
@@ -287,6 +310,7 @@ export interface DocumentSummaryDto {
 }
 
 // ---- M07 annotations and share links ---------------------------------------------------------
+// Comments pinned to a version (optionally to a PDF region) with replies, and view-only share links.
 
 /** Region of a PDF page as fractions of its width and height (0..1, origin top-left). */
 export interface RegionDto {
@@ -356,6 +380,7 @@ export interface SharedDocumentDto {
 }
 
 // ---- M08 search and filtering ------------------------------------------------------------------
+// Search filters and results, then one activity-log entry (used by the activity feed and the dashboard).
 
 export interface SearchQuery {
   q?: string;
@@ -389,6 +414,7 @@ export interface ActivityEntryDto {
 }
 
 // ---- M09 dashboard ------------------------------------------------------------------------------
+// Everything the project dashboard shows in one response, then the server health-check reply.
 
 export interface DashboardDto {
   project: ProjectDto;

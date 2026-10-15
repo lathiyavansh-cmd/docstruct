@@ -1,4 +1,9 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   A list whose items appear one at a time with a small "pop in" spring, a short delay apart.
+ *   Used by: components/ActivityFeed.tsx. It only affects appearance; no feature logic.
+ */
 import React, {
   useEffect,
   useMemo,

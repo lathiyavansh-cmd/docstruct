@@ -1,9 +1,23 @@
+/**
+ * What this file does
+ *   This is the shared frame around the login, sign-up and password pages. It shows a dark side panel that explains versioning, and a form area on the right.
+ *
+ * How it works
+ *   - Takes three props: title (the heading), children (the form) and footer (links under the form).
+ *   - Makes no API calls. It only arranges the layout.
+ *   - The left panel is hidden on small screens (hidden ... lg:flex), so phones only see the form.
+ *   - Spotlight, BlurFade, BorderBeam and motion are animations for looks only.
+ *
+ * Where it fits
+ *   Used by LoginPage, SignUpPage, ForgotPasswordPage and ResetPasswordPage (/login, /signup, /forgot-password, /reset-password). Module: M01 Authentication (owner: Vansh).
+ */
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { BlurFade } from '../../components/magicui/blur-fade';
 import { BorderBeam } from '../../components/magicui/border-beam';
 import { Spotlight } from '../../components/motion-primitives/spotlight';
 
+// The three steps listed on the left panel. Each item is [badge text, sentence].
 const STEPS = [
   ['v1', 'Upload a draft. It becomes version 1 and stays forever.'],
   ['v2', 'Revise it. The new upload is version 2; nothing is overwritten.'],
@@ -60,6 +74,7 @@ export function AuthLayout({ title, children, footer }: { title: string; childre
             <img src="/favicon.svg" alt="" className="size-7" /> DocStruct
           </div>
           <h1 className="mb-6 text-2xl font-semibold tracking-tight">{title}</h1>
+          {/* The form passed in by the page (login, sign-up or password) goes here. */}
           {children}
           {footer && <div className="mt-6 text-sm text-ink-soft">{footer}</div>}
         </BlurFade>

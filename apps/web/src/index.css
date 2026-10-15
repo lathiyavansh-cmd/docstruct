@@ -1,3 +1,18 @@
+/*
+ * What this file does
+ *   The one global stylesheet of the web app. It loads Tailwind CSS and defines DocStruct's fonts,
+ *   colours, shadows and a few shared CSS classes.
+ *
+ * How it works
+ *   - @import 'tailwindcss' brings in Tailwind v4. The @theme block turns each --color-* and --shadow-*
+ *     variable into Tailwind classes, so --color-primary gives bg-primary, text-primary and so on.
+ *   - @layer base sets page defaults: font, text colour, background and a visible focus outline for keyboard users.
+ *   - Users who ask the system for reduced motion get near-instant animations.
+ *   - Plain classes: .doc-prose (Markdown previews), .tabular, .no-scrollbar, .bg-dots, .skeleton and the dialog backdrop fade.
+ *
+ * Where it fits
+ *   Imported once in main.tsx, so it applies to every page. Module: app shell / shared UI (owner: Vansh).
+ */
 @import 'tailwindcss';
 
 /*
@@ -64,6 +79,7 @@
   body {
     min-height: 100vh;
   }
+  /* A blue outline shows which element has focus when using the keyboard (not on mouse clicks). */
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
@@ -73,6 +89,7 @@
   }
 }
 
+/* Accessibility: if the user's system asks for less motion, animations and transitions finish almost at once. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

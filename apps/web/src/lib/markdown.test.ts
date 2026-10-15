@@ -1,3 +1,15 @@
+/**
+ * What this file does
+ *   Unit tests for the Markdown renderer in markdown.ts, run with Vitest.
+ *
+ * How it works
+ *   - Feeds small Markdown strings to renderMarkdown() and checks the HTML string that comes back.
+ *   - Covers normal formatting, HTML escaping (no <script> or <img> gets through), link rules
+ *     (javascript: links are refused) and fenced code being kept as escaped text.
+ *
+ * Where it fits
+ *   Run by the web app's test command; not part of the running app. Module: M03 documents (owner: Shrut).
+ */
 import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from './markdown';
 
@@ -13,6 +25,7 @@ describe('renderMarkdown', () => {
   });
 
   it('escapes HTML so an uploaded file cannot inject markup', () => {
+    // Two common attack strings: a script tag and an image whose onerror runs code.
     const html = renderMarkdown('<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>');
     expect(html).not.toContain('<script>');
     expect(html).not.toContain('<img');

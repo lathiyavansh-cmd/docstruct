@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Tests background text extraction from uploaded files: Markdown text is extracted, images are
+ *   marked unsupported, a failed extraction keeps the version, and PDFs work through the Python service.
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and creates one project.
+ *   - Each test uploads a file with real HTTP requests (supertest), then extraction() waits for the
+ *     background jobs and reads extraction_status and extracted_text from the database.
+ *   - tinyPdf() builds a small valid PDF by hand. The Python test is skipped if Python is not installed.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers the text extractor (src/extraction/extractor.ts) as used by document upload.
+ *   Module: Text extractor (owner: Shrut).
+ */
 import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
@@ -38,6 +54,7 @@ function tinyPdf(text: string): Buffer {
   return Buffer.from(body, 'latin1');
 }
 
+// Tries each Python command name and checks it really runs, so the PDF test can be skipped otherwise.
 const pythonAvailable = ['py', 'python3', 'python'].some((cmd) => {
   const args = cmd === 'py' ? ['-3', '-c', 'print(1)'] : ['-c', 'print(1)'];
   return spawnSync(cmd, args, { encoding: 'utf8' }).stdout?.trim() === '1';
@@ -48,6 +65,7 @@ describe('text extraction (Version.Text.Extract)', () => {
     const doc = await createDocument(env, owner, projectId, 'notes.md', '# Notes\r\n\r\nSearch covers titles.');
     expect(doc.currentVersion.extractionStatus).toBe('PENDING');
     const row = await extraction(doc.currentVersion.versionId);
+    // Windows line endings (\r\n) in the upload come back as plain \n.
     expect(row).toEqual({ extraction_status: 'DONE', extracted_text: '# Notes\n\nSearch covers titles.' });
   });
 

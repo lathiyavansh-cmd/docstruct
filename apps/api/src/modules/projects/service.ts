@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Holds the business logic and SQL for projects and their members. It creates, reads, renames
+ *   and archives projects, and adds, re-roles and removes members.
+ *
+ * How it works
+ *   - list() and get() join projects with project_members, so a user only sees projects they belong to.
+ *   - create() inserts the project and makes the creator its OWNER in one transaction.
+ *   - changeRole() and removeMember() lock the project row, then refuse to remove the last owner.
+ *   - Every change writes an activity log entry inside the same transaction (recordActivity).
+ *
+ * Where it fits
+ *   Called by projects/routes.ts. Uses the database from AppContext, lib/activity.ts for logging and
+ *   assertNotPendingReviewer from the reviews module. Module: M02 Project Management (owner: Vivan).
+ */
 import type { MemberDto, ProjectDto, ProjectRole } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
@@ -16,6 +31,8 @@ interface ProjectRow {
   member_count: number;
 }
 
+// Shared SELECT list: the caller's own role comes from the joined membership row (m), and a
+// sub-query counts all members of the project.
 const PROJECT_COLUMNS = `
   p.project_id, p.name, p.description, p.created_at, p.updated_at, p.archived_at, m.role AS my_role,
   (SELECT count(*)::int FROM project_members x WHERE x.project_id = p.project_id) AS member_count`;
@@ -41,6 +58,8 @@ export class ProjectService {
 
   /** Project.List: only projects the user is a member of. */
   async list(userId: string): Promise<ProjectDto[]> {
+    // The JOIN on the caller's membership filters out other projects. Ordering puts active projects
+    // first (false sorts before true), then the most recently updated.
     const { rows } = await this.ctx.db.query<ProjectRow>(
       `SELECT ${PROJECT_COLUMNS}
          FROM projects p JOIN project_members m ON m.project_id = p.project_id AND m.user_id = $1
@@ -63,6 +82,7 @@ export class ProjectService {
 
   /** Project.Create, Project.Create.Owner */
   async create(userId: string, name: string, description: string): Promise<ProjectDto> {
+    // One transaction: the project, the creator's OWNER membership and the log entry all save or none do.
     const projectId = await this.ctx.db.tx(async (q) => {
       const { rows } = await q.query<{ project_id: string }>(
         'INSERT INTO projects (name, description, created_by) VALUES ($1, $2, $3) RETURNING project_id',
@@ -79,6 +99,7 @@ export class ProjectService {
   /** Project.Rename */
   async update(projectId: string, userId: string, changes: { name?: string; description?: string }): Promise<ProjectDto> {
     await this.ctx.db.tx(async (q) => {
+      // COALESCE keeps the old value when a field was not sent (null), so this is a partial update.
       const { rows } = await q.query<{ name: string }>(
         `UPDATE projects SET name = COALESCE($2, name), description = COALESCE($3, description), updated_at = now()
           WHERE project_id = $1 RETURNING name`,
@@ -104,6 +125,7 @@ export class ProjectService {
         'UPDATE projects SET archived_at = now(), updated_at = now() WHERE project_id = $1 AND archived_at IS NULL RETURNING name',
         [projectId],
       );
+      // The WHERE clause only matches a project that is not archived yet, so no row back means it already was.
       if (!rows[0]) throw conflict('This project is already archived', 'PROJECT_ARCHIVED');
       await recordActivity(q, { projectId, actorId: userId, action: 'project.archived', entityType: 'project', entityId: projectId, entityLabel: rows[0].name });
     });
@@ -187,6 +209,7 @@ export class ProjectService {
       await this.lockProject(q, projectId);
       const member = await this.memberRow(q, projectId, userId);
       if (member.role === role) return;
+      // Refuse to demote the only owner, otherwise nobody could manage the project.
       if (member.role === 'OWNER' && (await this.ownerCount(q, projectId)) === 1) throw conflict(LAST_OWNER, 'LAST_OWNER');
       await assertNotPendingReviewer(q, projectId, userId, role);
       await q.query('UPDATE project_members SET role = $3 WHERE project_id = $1 AND user_id = $2', [projectId, userId, role]);

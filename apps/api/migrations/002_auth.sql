@@ -1,3 +1,16 @@
+-- What this file does
+--   Creates the tables for DocStruct's own login system.
+--
+-- How it works
+--   - user_credentials stores one password hash per user.
+--   - sessions stores login sessions by token hash. last_seen_at drives the idle timeout and
+--     expires_at the maximum lifetime.
+--   - password_reset_tokens stores one-time reset tokens (hashed).
+--   - mail_outbox queues outgoing e-mails, such as reset links.
+--
+-- Where it fits
+--   Run by src/db/migrate.ts after 001_core. Used by the auth module. Module: auth (owner: Vansh).
+--
 -- 002_auth: credentials, sessions and password-reset tokens for DocStruct's own authentication (M01).
 
 -- SE-4: only a salted scrypt hash of the password is stored.
@@ -20,6 +33,7 @@ CREATE TABLE sessions (
   created_at    timestamptz NOT NULL DEFAULT now(),
   last_seen_at  timestamptz NOT NULL DEFAULT now(),
   expires_at    timestamptz NOT NULL,
+  -- Set on logout or password change; a revoked session no longer authenticates.
   revoked_at    timestamptz
 )
 -- ;;
@@ -34,6 +48,7 @@ CREATE TABLE password_reset_tokens (
   user_id     uuid NOT NULL REFERENCES profiles (user_id) ON DELETE CASCADE,
   created_at  timestamptz NOT NULL DEFAULT now(),
   expires_at  timestamptz NOT NULL,
+  -- Filled when the token is used, which is how "single-use" is enforced.
   used_at     timestamptz
 )
 -- ;;

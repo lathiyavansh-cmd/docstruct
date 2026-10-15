@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Helpers for uploading a file: checking it in the browser first, then sending it to storage
+ *   while reporting how far the upload has got.
+ *
+ * How it works
+ *   - validateFile() checks the file type from its name, the 50 MB limit and that it is not empty.
+ *     It returns an error message, or null when the file is fine.
+ *   - transferFile() asks the API for an upload ticket (POST /projects/:id/uploads), which holds a signed URL.
+ *   - It then PUTs the file to that URL with XMLHttpRequest, because fetch() cannot report upload progress.
+ *   - It returns the upload key; the caller sends that key to the API to create the document or version.
+ *
+ * Where it fits
+ *   Used by UploadDialog; validateFile is tested in upload.test.ts. Module: M03 documents (owner: Shrut).
+ */
 import { MAX_UPLOAD_BYTES, formatBytes, formatForFileName, type UploadTicketDto } from '@docstruct/shared';
 import { ApiError, post } from './api';
 
@@ -19,9 +34,11 @@ export async function transferFile(projectId: string, file: File, onProgress: (f
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', ticket.uploadUrl);
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    // Called many times while bytes go out; loaded / total is a fraction from 0 to 1 for the progress bar.
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      // On failure, try to read the server's error message from the JSON body.
       let message = `Upload failed (${xhr.status})`;
       try {
         message = JSON.parse(xhr.responseText).error.message;
@@ -30,6 +47,7 @@ export async function transferFile(projectId: string, file: File, onProgress: (f
       }
       reject(new ApiError(xhr.status, 'UPLOAD_FAILED', message));
     };
+    // onerror fires when the network drops, not for HTTP error codes.
     xhr.onerror = () => reject(new ApiError(0, 'NETWORK', 'The connection was interrupted during the upload. Nothing was saved; try again.'));
     xhr.send(file);
   });

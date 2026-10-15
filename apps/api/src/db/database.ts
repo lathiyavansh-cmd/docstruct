@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Gives the rest of the API one simple database interface that works with either an
+ *   embedded database (PGlite) or a real PostgreSQL server. See the interface comment below.
+ *
+ * How it works
+ *   - EmbeddedDatabase wraps PGlite, a PostgreSQL engine that runs inside Node.
+ *   - PostgresDatabase wraps a pg connection pool and runs transactions with BEGIN/COMMIT/ROLLBACK.
+ *   - openDatabase() picks one based on DATABASE_URL (postgres URL, 'memory://', or empty).
+ *
+ * Where it fits
+ *   Called by bootstrap.ts and migrate-cli.ts. Every module service uses query() and tx().
+ *   Module: server core (owner: Vansh).
+ */
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
@@ -32,6 +46,7 @@ class EmbeddedDatabase implements Database {
   }
 
   tx<T>(fn: (q: Queryable) => Promise<T>): Promise<T> {
+    // PGlite handles BEGIN/COMMIT itself; we only hand fn a query function bound to the transaction.
     return this.pglite.transaction(async (tx) =>
       fn({
         query: async <R>(sql: string, params: unknown[] = []) => ({ rows: (await tx.query<R>(sql, params)).rows }),
@@ -54,6 +69,7 @@ class PostgresDatabase implements Database {
   }
 
   async tx<T>(fn: (q: Queryable) => Promise<T>): Promise<T> {
+    // A transaction must run on one connection, so we borrow a single client from the pool.
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -63,9 +79,11 @@ class PostgresDatabase implements Database {
       await client.query('COMMIT');
       return value;
     } catch (error) {
+      // Undo every statement in this transaction, then pass the error on.
       await client.query('ROLLBACK');
       throw error;
     } finally {
+      // Always give the connection back to the pool, even after an error.
       client.release();
     }
   }
@@ -80,11 +98,14 @@ export async function openDatabase(databaseUrl: string, dataDir: string): Promis
     const pool = new pg.Pool({
       connectionString: databaseUrl,
       max: 20,
+      // Local servers run without SSL; hosted servers (like Supabase) need an SSL connection.
       ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1') ? undefined : { rejectUnauthorized: false },
     });
     return new PostgresDatabase(pool);
   }
 
+  // No location means PGlite keeps everything in memory (used by tests).
+  // Otherwise the data is saved on disk in dataDir/pgdata. The pg_trgm extension is loaded for the title search index.
   let location: string | undefined;
   if (databaseUrl !== 'memory://') {
     location = path.join(dataDir, 'pgdata');

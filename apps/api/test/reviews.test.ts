@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Tests the review workflow: the status state machine, submitting to a reviewer, the one-open-review
+ *   rule, who may decide or cancel, the request-changes and resubmit loop, history, locks while a
+ *   review is open, archiving and activity logging.
+ *
+ * How it works
+ *   - The first block calls canTransition() directly to check the state machine table.
+ *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and send real HTTP requests with supertest as different users.
+ *   - Small helpers submit() and newVersion() keep the tests short.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers reviews/routes.ts, reviews/service.ts and the shared workflow rules.
+ *   Module: M05 Review & Approval (owner: Vivan).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ALLOWED_TRANSITIONS, canTransition } from '@docstruct/shared';
 import { createDocument, createProject, createTestEnv, signUp, uploadFile, type TestEnv, type TestUser } from './helpers.js';
@@ -89,6 +105,7 @@ describe('M05 review workflow', () => {
   it('lets only the designated reviewer decide, once (Review.Decision.Authority, SE-9)', async () => {
     const doc = await createDocument(env, editor, projectId, 'decide.txt', 'v1');
     const review = (await submit(editor, doc.documentId, { reviewerId: reviewer.userId }).expect(201)).body;
+    // Even the owner cannot decide: only the reviewer named on the review may.
     await env.http.post(`/api/reviews/${review.reviewId}/approve`).set(owner.auth).send({}).expect(403);
     await env.http.post(`/api/reviews/${review.reviewId}/approve`).set(editor.auth).send({}).expect(403);
 
@@ -111,6 +128,7 @@ describe('M05 review workflow', () => {
     const changes = await env.http.post(`/api/reviews/${first.reviewId}/request-changes`).set(reviewer.auth).send({ note: 'Add the log section' }).expect(200);
     expect(changes.body.status).toBe('CHANGES_REQUESTED');
 
+    // Resubmitting the same version is refused; a new version must be uploaded first.
     const same = await submit(editor, doc.documentId, { reviewerId: reviewer.userId }).expect(409);
     expect(same.body.error.code).toBe('REVISION_REQUIRED');
 

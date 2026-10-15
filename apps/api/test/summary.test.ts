@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Tests document summarisation: the summarising algorithm itself and the summary API endpoint.
+ *
+ * How it works
+ *   - The first block calls summarise.ts functions directly on a sample report (REPORT) and small inputs.
+ *   - The "summary API" block uses createTestEnv() from helpers.ts, which boots the whole API on an
+ *     in-memory PGlite database, and sends real HTTP requests with supertest.
+ *   - It checks caching, that outsiders get 404, and that images are reported as unavailable.
+ *
+ * Where it fits
+ *   Run by vitest. Covers modules/summary. Module: Document summarisation, extends F3.6 (owner: Vansh).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { cleanSentence, keyTerms, sentenceUnits, summariseDocument, textRank } from '../src/modules/summary/summarise.js';
 import { createDocument, createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
@@ -49,6 +62,7 @@ describe('summarisation engine', () => {
   it('keeps the central sentences, drops the off-topic one and preserves reading order', () => {
     const result = summariseDocument(REPORT)!;
     const detailed = result.levels.detailed.map((s) => s.text);
+    // The kettle sentence shares no words with the rest of the report, so TextRank should score it low.
     expect(detailed.join(' ')).not.toContain('kettle');
     const positions = result.levels.detailed.map((s) => s.position);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
@@ -114,6 +128,7 @@ describe('summary API', () => {
     expect(first.body.levels.short).toHaveLength(3);
     expect(first.body.engine).toMatch(/^docstruct-summariser/);
 
+    // A second request returns the saved row (same generatedAt), not a fresh computation.
     const second = await env.http.get(url).set(viewer.auth).expect(200);
     expect(second.body.generatedAt).toBe(first.body.generatedAt);
     const rows = await env.ctx.db.query<{ n: number }>('SELECT count(*)::int AS n FROM version_summaries WHERE version_id = $1', [doc.currentVersion.versionId]);

@@ -1,3 +1,20 @@
+/**
+ * What this file does
+ *   The folder sidebar of a project's Documents page. It shows folders as a tree you can expand, and lets
+ *   allowed users create, rename, move and delete folders.
+ *
+ * How it works
+ *   - The tree comes in as a prop; WorkspacePage loads it (query key ['folders', projectId], GET /projects/:id/folders).
+ *     canEdit and canDelete come from the user's role and hide the menu items.
+ *   - Clicking a folder is a link to /p/:projectId/documents?folder=<id>; the page reads the folder from the URL.
+ *   - FolderDialog runs one useMutation that calls the right endpoint: POST /projects/:id/folders (create),
+ *     PATCH /folders/:id (rename), POST /folders/:id/move (move) or DELETE /folders/:id (delete).
+ *   - Every folder endpoint returns the whole new tree, which is written straight into the cache with setQueryData.
+ *   - Deleting a non-empty folder first fails with FOLDER_NOT_EMPTY; the dialog then shows the counts and asks again with confirm=true.
+ *
+ * Where it fits
+ *   Used by WorkspacePage (project Documents page). Module: M03 documents and folders (owner: Shrut).
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +26,7 @@ import { ApiError, del, errorMessage, patch, post } from '../lib/api';
 import { useToast } from './toast';
 import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, cx, IconButton } from './ui';
 
+// Turns the nested tree into one flat list (parent before its children), remembering how deep each folder is.
 function flatten(nodes: FolderNodeDto[], depth = 0): Array<FolderNodeDto & { depth: number }> {
   return nodes.flatMap((n) => [{ ...n, depth }, ...flatten(n.children, depth + 1)]);
 }
@@ -29,10 +47,12 @@ export function FolderTree({
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [dialog, setDialog] = useState<{ kind: 'create' | 'rename' | 'move' | 'delete'; folder: FolderNodeDto | null } | null>(null);
+  // A folder is open if the user expanded it, or if the selected folder is somewhere inside it.
   const isOpen = (id: string) => expanded.has(id) || flatten(tree).some((f) => f.folderId === selected && f.depth > 0 && isAncestor(tree, id, selected!));
   const toggle = (id: string) => setExpanded((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set([...s, id])));
   const link = (folderId: string | null) => `/p/${projectId}/documents${folderId ? `?folder=${folderId}` : ''}`;
 
+  // Draws one level of folders and calls itself for the children of open folders (recursion).
   const render = (nodes: FolderNodeDto[], depth: number) =>
     nodes.map((f) => (
       <li key={f.folderId}>
@@ -113,6 +133,7 @@ function isAncestor(tree: FolderNodeDto[], ancestorId: string, id: string): bool
 function FolderMenu({ name, canEdit, canDelete, onPick }: { name: string; canEdit: boolean; canDelete: boolean; onPick: (kind: 'create' | 'rename' | 'move' | 'delete') => void }) {
   const [open, setOpen] = useState(false);
   const item = 'block w-full rounded-lg px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-primary-wash hover:text-primary';
+  // The menu closes on blur after a short delay, and items use onMouseDown, so a click on an item lands before the menu closes.
   return (
     <div className="relative">
       <button
@@ -179,12 +200,15 @@ function FolderDialog({
       return del<FolderNodeDto[]>(`/folders/${folder!.folderId}`, confirmed ? { confirm: 'true' } : undefined);
     },
     onSuccess: (newTree) => {
+      // The reply is the new tree, so we put it in the cache directly instead of fetching it again.
       queryClient.setQueryData(['folders', projectId], newTree);
+      // Document lists show folder names and can lose documents on delete, so they are reloaded.
       queryClient.invalidateQueries({ queryKey: ['documents', projectId] });
       toast(kind === 'create' ? `Created ${name}` : kind === 'rename' ? `Renamed to ${name}` : kind === 'move' ? `Moved ${folder!.name}` : `Deleted ${folder!.name}`);
       onClose();
     },
     onError: (err) => {
+      // Remember what is inside, so the confirm dialog can show it and the next click sends confirm=true.
       if (err instanceof ApiError && err.code === 'FOLDER_NOT_EMPTY') setNotEmpty(err.details as { documents: number; subfolders: number });
     },
   });

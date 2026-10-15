@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   The Share tab of a document. It lets an owner make public read-only links for people without an
+ *   account, see the existing links and revoke them.
+ *
+ * How it works
+ *   - Loads the links: query key ['shares', documentId], GET /documents/:id/shares.
+ *   - Creating a link: useMutation POST /documents/:id/shares with a label and an optional expiry date.
+ *     The full URL comes back only in this reply, so it is kept in "created" state and shown once.
+ *   - Revoking: useMutation POST /shares/:id/revoke, after a confirm dialog.
+ *   - Both actions invalidate ['shares', documentId] so the list reloads with the new status.
+ *
+ * Where it fits
+ *   Used by DocumentPage. People who open a link see SharedDocumentPage. Module: M07 sharing (owner: Shrut).
+ */
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CreatedShareLinkDto, ShareLinkDto } from '@docstruct/shared';
@@ -14,7 +29,9 @@ export function SharePanel({ documentId }: { documentId: string }) {
   const links = useQuery({ queryKey: ['shares', documentId], queryFn: () => get<ShareLinkDto[]>(`/documents/${documentId}/shares`) });
   const [label, setLabel] = useState('');
   const [expires, setExpires] = useState('');
+  // The link just made, with its full URL. The list from the server never contains the URL again.
   const [created, setCreated] = useState<CreatedShareLinkDto | null>(null);
+  // The link waiting for "Revoke?" confirmation; null means the dialog is closed.
   const [revoking, setRevoking] = useState<ShareLinkDto | null>(null);
 
   const create = useMutation({
@@ -28,6 +45,7 @@ export function SharePanel({ documentId }: { documentId: string }) {
       setCreated(link);
       setLabel('');
       setExpires('');
+      // Reload the list so the new link appears in it.
       queryClient.invalidateQueries({ queryKey: ['shares', documentId] });
     },
   });
@@ -40,6 +58,7 @@ export function SharePanel({ documentId }: { documentId: string }) {
     },
   });
 
+  // The clipboard API can be blocked (for example on plain http), so there is a fallback message.
   const copy = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);

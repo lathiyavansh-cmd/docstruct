@@ -1,4 +1,17 @@
 #!/bin/sh
+# What this file does
+#   Git hook that checks every new commit message before the commit is saved.
+#
+# How it works
+#   - Git runs this file and passes the path of the message file as $1.
+#   - It runs scripts/verify-commit-msg.mjs on that file.
+#   - If the script exits with an error, git cancels the commit.
+#
+# Where it fits
+#   Enabled by scripts/setup.mjs (core.hooksPath). Module: repository tooling (owner: Vansh).
+#
 # Enforces the DocStruct commit convention locally.
 # Enabled once per clone with:  git config core.hooksPath .githooks
+# exec replaces the shell with node, so node's exit code becomes the hook's exit code.
+# git rev-parse --show-toplevel gives the repository root, so the hook works from any folder.
 exec node "$(git rev-parse --show-toplevel)/scripts/verify-commit-msg.mjs" "$1"

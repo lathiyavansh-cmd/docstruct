@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   The collapsible Summary card at the top of a document page. It shows a summary of the version
+ *   being viewed in three lengths, plus key terms and reading statistics.
+ *
+ * How it works
+ *   - Loads the summary: query key ['summary', versionId], GET /versions/:id/summary.
+ *   - While status is PENDING (text still being read) the query re-runs every 1.5 seconds.
+ *   - "level" state (short, medium, detailed) picks which list of sentences to show; all three come in one reply.
+ *   - The Detailed level also shows a section-by-section outline. The copy button puts the chosen sentences on the clipboard.
+ *   - It always shows the "Machine-generated, advisory only" label. The motion animations only affect looks.
+ *
+ * Where it fits
+ *   Used by DocumentPage. Module: summarisation (owner: Vansh).
+ */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
@@ -20,6 +35,7 @@ const LEVELS: Array<[Level, string]> = [
  */
 export function SummaryCard({ versionId, versionNo }: { versionId: string; versionNo: number }) {
   const [level, setLevel] = useState<Level>('short');
+  // Whether the card body is expanded; the header button toggles it.
   const [open, setOpen] = useState(true);
   const toast = useToast();
   const summary = useQuery({
@@ -29,6 +45,7 @@ export function SummaryCard({ versionId, versionNo }: { versionId: string; versi
     refetchInterval: (q) => (q.state.data?.status === 'PENDING' ? 1500 : false),
   });
   const s = summary.data;
+  // The sentences for the chosen length. Switching length needs no new request.
   const chosen = s?.levels?.[level] ?? [];
 
   const copy = async () => {
@@ -87,6 +104,7 @@ export function SummaryCard({ versionId, versionNo }: { versionId: string; versi
             className="overflow-hidden"
           >
             <div className="border-t border-rule/70 px-4 pb-4 pt-3">
+              {/* One block per state: loading, request failed, text still being read, no summary possible, or ready. */}
               {summary.isLoading && <Spinner label="Summarising" />}
               {summary.error && <ErrorNote>{errorMessage(summary.error)}</ErrorNote>}
               {s?.status === 'PENDING' && <Spinner label="Reading the text of this version" />}

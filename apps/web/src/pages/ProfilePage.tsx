@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the profile screen. The logged-in user can change their display name and their password.
+ *
+ * How it works
+ *   - Reads the current user from useAuth() (no useQuery here; the user is already loaded at login).
+ *   - Save name calls patch('/auth/me') and puts the updated profile back into useAuth with setUser, so the new name shows everywhere.
+ *   - Change password calls post('/auth/password/change') with the current and new password. The server logs out the user's other sessions.
+ *   - Each form has its own error message, and a toast confirms success.
+ *
+ * Where it fits
+ *   Route /profile in App.tsx, inside AppLayout (login required). Module: M01 Authentication (owner: Vansh).
+ */
 import { useState, type FormEvent } from 'react';
 import { PASSWORD_MIN_LENGTH, type ProfileDto } from '@docstruct/shared';
 import { useToast } from '../components/toast';
@@ -15,6 +28,7 @@ export function ProfilePage() {
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '' });
   const [error, setError] = useState<string | null>(null);
   const [pwError, setPwError] = useState<string | null>(null);
+  // Which form is saving right now, so only that button shows a spinner.
   const [busy, setBusy] = useState<'name' | 'pw' | null>(null);
   if (!user) return null;
 
@@ -23,6 +37,7 @@ export function ProfilePage() {
     setBusy('name');
     setError(null);
     try {
+      // Save the new name on the server, then update the user kept in useAuth.
       setUser(await patch<ProfileDto>('/auth/me', { displayName: name }));
       toast('Name saved');
     } catch (err) {
@@ -37,7 +52,9 @@ export function ProfilePage() {
     setBusy('pw');
     setPwError(null);
     try {
+      // The server checks the current password before saving the new one.
       await post('/auth/password/change', pw);
+      // Clear both password boxes after success.
       setPw({ currentPassword: '', newPassword: '' });
       toast('Password changed. Other sessions were logged out.');
     } catch (err) {
@@ -54,6 +71,7 @@ export function ProfilePage() {
       </PageHeader>
       <form onSubmit={saveName} className="space-y-4 border-b border-rule pb-8">
         {error && <ErrorNote>{error}</ErrorNote>}
+        {/* The Save button stays disabled until the name is different from the saved one. */}
         <Field label="Display name" hint="Other members see this name next to your uploads, reviews and comments.">
           {(id) => <Input id={id} required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />}
         </Field>

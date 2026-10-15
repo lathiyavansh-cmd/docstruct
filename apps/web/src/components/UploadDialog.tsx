@@ -1,3 +1,21 @@
+/**
+ * What this file does
+ *   The upload pop-up. It is used both to add a new document to a project and to add a new version
+ *   to an existing document.
+ *
+ * How it works
+ *   - "mode" prop: { kind: 'document' } for a new document, { kind: 'version', documentId, title } for a new version.
+ *   - The file can be dropped on the box or picked with a hidden <input type="file">. validateFile() from lib/upload.ts
+ *     checks type and size before anything is sent.
+ *   - One useMutation does the upload in two steps: transferFile() sends the bytes to storage and updates
+ *     "progress", then POST /projects/:id/documents (new document) or POST /documents/:id/versions (new version)
+ *     saves it using the returned upload key.
+ *   - On success it calls onDone(doc). The parent page then invalidates its own queries: WorkspacePage opens the
+ *     new document, DocumentPage closes the dialog and shows the new current version.
+ *
+ * Where it fits
+ *   Used by WorkspacePage (upload a document) and DocumentPage (upload a new version). Module: M03 documents (owner: Shrut).
+ */
 import { useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
@@ -38,6 +56,7 @@ export function UploadDialog({
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState(folderId ?? '');
   const [note, setNote] = useState('');
+  // Upload progress from 0 to 1; null means no upload is running, so the progress bar is hidden.
   const [progress, setProgress] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -46,13 +65,16 @@ export function UploadDialog({
     const problem = validateFile(f);
     setFileError(problem);
     setFile(problem ? null : f);
+    // For a new document, suggest a title from the file name: drop the extension and turn _ and - into spaces.
     if (!problem && mode.kind === 'document' && !title) setTitle(f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '));
   };
 
   const upload = useMutation({
     mutationFn: async () => {
       setProgress(0);
+      // Step 1: send the file to storage. setProgress is called as bytes go out, which moves the bar.
       const uploadKey = await transferFile(projectId, file!, setProgress);
+      // Step 2: tell the API to create the document or version from the uploaded file.
       if (mode.kind === 'document') {
         return post<DocumentDto>(`/projects/${projectId}/documents`, { uploadKey, title: title.trim() || undefined, folderId: target || null, changeNote: note });
       }
@@ -62,6 +84,7 @@ export function UploadDialog({
     onSettled: () => setProgress(null),
   });
 
+  // While an upload is running, the Escape key and the X button do nothing, and the Cancel button is disabled.
   return (
     <Modal
       title={mode.kind === 'document' ? 'Upload a document' : `Upload a new version of ${mode.title}`}

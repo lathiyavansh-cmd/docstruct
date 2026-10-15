@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Holds the logic for share links: secret links that let someone outside the project view one
+ *   document read-only. Links can expire and can be revoked.
+ *
+ * How it works
+ *   - createShareToken() makes a random 32-byte token; only its SHA-256 hash is stored in the database.
+ *   - create() saves the link and returns the raw token once, inside the URL.
+ *   - revoke() sets revoked_at so the link stops working for everyone.
+ *   - open() hashes the token from the URL, finds the link, rejects revoked, expired or deleted ones,
+ *     counts the visit and returns signed file links.
+ *
+ * Where it fits
+ *   Called by shares/routes.ts. Uses DocumentService.fileLink() for the file URLs. Module: M07 Sharing
+ *   & Annotation (owner: Shrut).
+ */
 import { createHash, randomBytes } from 'node:crypto';
 import type { CreatedShareLinkDto, ShareLinkDto, SharedDocumentDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
@@ -34,12 +50,14 @@ function toDto(r: ShareRow): ShareLinkDto {
     revokedAt: r.revoked_at?.toISOString() ?? null,
     lastAccessedAt: r.last_accessed_at?.toISOString() ?? null,
     accessCount: r.access_count,
+    // A link is active when it is not revoked and either has no expiry or expires in the future.
     active: !r.revoked_at && (!r.expires_at || r.expires_at.getTime() > Date.now()),
   };
 }
 
 /** Algorithm K - share-link token generation. The raw token exists only in the link given to the user. */
 export function createShareToken(): { token: string; tokenHash: string } {
+  // 32 random bytes (256 bits) cannot be guessed; base64url makes it safe to put in a URL.
   const token = randomBytes(32).toString('base64url');
   return { token, tokenHash: hashShareToken(token) };
 }
@@ -67,6 +85,8 @@ export class ShareService {
     if (expiresAt && expiresAt.getTime() <= Date.now()) throw badRequest('The expiry must be in the future');
     const { token, tokenHash } = createShareToken();
     const shareId = await this.ctx.db.tx(async (q) => {
+      // Only the hash is stored, never the raw token. The sub-queries in RETURNING fetch the project and
+      // title for the activity log in the same statement.
       const { rows } = await q.query<{ share_id: string; project_id: string; title: string }>(
         `INSERT INTO share_links (document_id, token_hash, label, created_by, expires_at)
          SELECT $1, $2, $3, $4, $5 FROM documents d WHERE d.document_id = $1
@@ -120,6 +140,7 @@ export class ShareService {
    * document, read-only, at its current version (Share.Scope, Share.Create.ViewOnly).
    */
   async open(token: string): Promise<SharedDocumentDto> {
+    // Quick shape check: anything that cannot be a real token gets 404 without touching the database.
     if (!/^[\w-]{20,100}$/.test(token)) throw notFound('Shared document');
     const { rows } = await this.ctx.db.query<{
       share_id: string;
@@ -143,6 +164,7 @@ export class ShareService {
     );
     const share = rows[0];
     if (!share || share.deleted_at) throw notFound('Shared document');
+    // 410 Gone tells the visitor the link existed but no longer works (revoked or expired).
     if (share.revoked_at) throw new HttpError(410, 'LINK_REVOKED', 'This link has been revoked by the document owner');
     if (share.expires_at && share.expires_at.getTime() <= Date.now()) throw new HttpError(410, 'LINK_EXPIRED', 'This link has expired');
 

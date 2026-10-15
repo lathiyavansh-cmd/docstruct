@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   The quick "jump to" box that opens with Ctrl+K. The user types to filter pages and projects,
+ *   or picks "Search documents for ..." to run a full-text search.
+ *
+ * How it works
+ *   - Props: open, onClose and the projects list (AppLayout passes the list it already loaded; nothing is fetched here).
+ *   - "commands" is a fixed list of pages plus one entry per project. "items" filters it by the typed text.
+ *   - When text is typed, a search entry is added at the top that goes to /search?q=<text>.
+ *   - "index" is the highlighted row. Arrow keys move it, Enter runs it, Escape closes the palette.
+ *   - Running a command closes the palette and navigates to its route with React Router.
+ *
+ * Where it fits
+ *   Used only by AppLayout. Module: app shell (owner: Vansh).
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
@@ -27,6 +42,7 @@ export function CommandPalette({ open, onClose, projects }: { open: boolean; onC
 
   useEffect(() => {
     if (!open) return;
+    // Each time the palette opens, start empty and put the cursor in the input (after the first paint).
     setQuery('');
     setIndex(0);
     const t = setTimeout(() => inputRef.current?.focus(), 0);
@@ -53,6 +69,7 @@ export function CommandPalette({ open, onClose, projects }: { open: boolean; onC
 
   const q = query.trim();
   const items = useMemo<Command[]>(() => {
+    // Case-insensitive "contains" match on the label. encodeURIComponent keeps the search text safe inside the URL.
     const needle = q.toLowerCase();
     const matches = commands.filter((c) => !needle || c.label.toLowerCase().includes(needle));
     return q
@@ -60,7 +77,9 @@ export function CommandPalette({ open, onClose, projects }: { open: boolean; onC
       : matches;
   }, [commands, q]);
 
+  // New text means a new list, so the highlight goes back to the first row.
   useEffect(() => setIndex(0), [q]);
+  // Keep the highlighted row visible when arrow keys move past the bottom of the list.
   useEffect(() => {
     listRef.current?.querySelector<HTMLElement>(`[data-index="${index}"]`)?.scrollIntoView({ block: 'nearest' });
   }, [index]);
@@ -129,6 +148,7 @@ export function CommandPalette({ open, onClose, projects }: { open: boolean; onC
               {items.map((c, i) => {
                 const selected = i === index;
                 const Icon = c.icon;
+                // A group heading ("Go to", "Projects", "Search") is shown above the first row of each group.
                 return (
                   <li key={c.id} role="presentation">
                     {(i === 0 || items[i - 1].group !== c.group) && (

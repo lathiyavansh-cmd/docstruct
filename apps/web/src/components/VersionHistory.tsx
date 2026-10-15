@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   The Versions tab of a document. It lists every version, newest first, and lets the user view,
+ *   download, compare or restore an older version.
+ *
+ * How it works
+ *   - The versions come in as a prop; DocumentPage loads them (query key ['versions', documentId],
+ *     GET /documents/:id/versions). canRestore comes from the user's role and the document status.
+ *   - View calls onView(versionId); DocumentPage puts ?v=<id> in the URL and shows that version.
+ *   - Download uses downloadVersion() from DocumentPreview. Compare links to /d/:id/compare?from=..&to=.. with the version before it.
+ *   - Restore asks for confirmation, then useMutation POST /documents/:id/versions/:versionId/restore makes a new version
+ *     with the old content. Old versions are never changed.
+ *
+ * Where it fits
+ *   Used by DocumentPage. Module: M04 version control (owner: Vansh).
+ */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,13 +69,16 @@ export function VersionHistory({
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
+  // The version waiting for "Restore?" confirmation; null means the dialog is closed.
   const [restoring, setRestoring] = useState<VersionDto | null>(null);
   const restore = useMutation({
     mutationFn: (v: VersionDto) => post<DocumentDto>(`/documents/${documentId}/versions/${v.versionId}/restore`),
     onSuccess: (doc) => {
+      // A restore adds a new current version, so the document, its version list, the project list and the dashboard all reload.
       for (const key of [['document', documentId], ['versions', documentId], ['documents', projectId], ['dashboard', projectId]]) queryClient.invalidateQueries({ queryKey: key });
       toast(`Restored as version ${doc.currentVersion.versionNo}`);
       setRestoring(null);
+      // null means "show the current version", which is now the restored copy.
       onView(null);
     },
   });
@@ -71,7 +90,9 @@ export function VersionHistory({
       {restore.error && <ErrorNote className="mb-3">{errorMessage(restore.error)}</ErrorNote>}
       <ol className="relative">
         {versions.map((v, i) => {
+          // The list is newest first, so the next item is the older version this one is compared with.
           const previous = versions[i + 1];
+          // The highlighted row: the version picked with View, or the current version if none was picked.
           const viewing = viewingId ? viewingId === v.versionId : v.isCurrent;
           return (
             <motion.li

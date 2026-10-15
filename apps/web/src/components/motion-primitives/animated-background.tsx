@@ -1,4 +1,10 @@
 // Source: motion-primitives (ibelick), https://motion-primitives.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   A highlight box that slides smoothly behind whichever item in a list is hovered (or clicked).
+ *   Used by: pages/SearchPage.tsx, pages/project/DashboardPage.tsx and pages/project/WorkspacePage.tsx.
+ *   It only affects appearance; no feature logic.
+ */
 import { cn } from '@/lib/utils';
 import { AnimatePresence, type Transition, motion } from 'motion/react';
 import {

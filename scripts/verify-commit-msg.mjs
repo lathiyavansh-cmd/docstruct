@@ -1,4 +1,19 @@
 #!/usr/bin/env node
+/**
+ * What this file does
+ *   Checks that commit messages follow the team's format, like "feat(auth): add login".
+ *   Usage is described in the comment below.
+ *
+ * How it works
+ *   - TYPES and SCOPES list the allowed words before and inside the brackets.
+ *   - HEADER is a regex that splits the first line into type, scope, "!" and subject.
+ *   - validate() returns a list of problems (empty list means the message is fine).
+ *   - main() reads messages from a file, a --message flag, or a git --range, and exits 1 on failure.
+ *
+ * Where it fits
+ *   Called by .githooks/commit-msg, by the CI "Commit message lint" job and by `npm run commit:check`.
+ *   Module: repository scripts (owner: Vansh).
+ */
 // Validates a commit message against the DocStruct commit convention
 // (Conventional Commits 1.0.0 with a fixed scope list). See docs/GIT_WORKFLOW.md.
 //
@@ -19,10 +34,12 @@ export const SCOPES = [
   'api', 'web', 'shared', 'db', 'storage', 'ci', 'docs', 'repo', 'deps', 'release',
 ];
 
+// type in lower case, optional (scope), optional "!" for a breaking change, then ": " and the subject.
 const HEADER = /^(?<type>[a-z]+)(?:\((?<scope>[a-z0-9-]+)\))?(?<breaking>!)?: (?<subject>.+)$/;
 
 /** Returns a list of problems; an empty list means the message is valid. */
 export function validate(message) {
+  // Lines starting with '#' are git's own comment lines in the editor, so they are ignored.
   const lines = message.replace(/\r\n/g, '\n').split('\n').filter((l) => !l.startsWith('#'));
   const header = lines[0] ?? '';
 
@@ -49,6 +66,8 @@ function main(argv) {
   if (argv[0] === '--message') {
     messages = [{ ref: 'message', text: argv[1] ?? '' }];
   } else if (argv[0] === '--range') {
+    // Print each commit as hash, NUL byte, message, then a \x01 byte, so messages can be split safely
+    // even when they contain blank lines.
     const out = execFileSync('git', ['log', '--format=%H%x00%B%x01', argv[1]], { encoding: 'utf8' });
     messages = out.split('\x01').map((s) => s.trim()).filter(Boolean).map((entry) => {
       const [hash, text] = entry.split('\x00');
@@ -76,6 +95,7 @@ function main(argv) {
   }
 }
 
+// Run main() only when executed as a script, so another file could import validate() without side effects.
 if (process.argv[1]?.endsWith('verify-commit-msg.mjs')) {
   main(process.argv.slice(2));
 }

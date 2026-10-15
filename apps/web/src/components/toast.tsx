@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Small pop-up messages ("toasts") in the bottom-right corner, such as "Comment added" or an error.
+ *   Any component can show one by calling the function from useToast().
+ *
+ * How it works
+ *   - ToastProvider keeps a list of open toasts in state and shares a push(text, kind) function through React context.
+ *   - push() adds a toast with a unique id and sets a timer to remove it: 3.5 s for 'ok', 7 s for 'error'.
+ *   - The user can also close a toast early with the x button. A thin bar shows the time left.
+ *   - aria-live="polite" makes screen readers read new messages aloud. motion only animates them in and out.
+ *
+ * Where it fits
+ *   ToastProvider wraps the app in main.tsx. useToast() is used by most components and pages that perform actions.
+ *   Module: shared UI (owner: Vansh).
+ */
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { CircleCheck } from './animate-ui/icons/circle-check';
@@ -9,8 +24,10 @@ interface Toast {
   text: string;
 }
 
+// The context holds only the push function. The default does nothing, so a component outside the provider will not crash.
 const ToastContext = createContext<(text: string, kind?: Toast['kind']) => void>(() => {});
 
+// How long each kind stays on screen, in milliseconds. Errors stay longer so there is time to read them.
 const DURATION = { ok: 3500, error: 7000 } as const;
 
 /** UI-12: confirmation after every action, in the same words the action used ("Published" for "Publish"). */
@@ -19,6 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const dismiss = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
   const push = useCallback(
     (text: string, kind: Toast['kind'] = 'ok') => {
+      // Time plus a random part gives each toast its own id, even if two are shown in the same millisecond.
       const id = Date.now() + Math.random();
       setToasts((t) => [...t, { id, kind, text }]);
       setTimeout(() => dismiss(id), DURATION[kind]);

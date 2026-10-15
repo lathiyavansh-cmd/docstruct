@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Holds the business logic for folders: show the tree, create, rename, move and delete, with checks
+ *   for depth, loops and duplicate names.
+ *
+ * How it works
+ *   - Each change runs in a transaction and first locks the project row (FOR UPDATE) so changes
+ *     happen one at a time per project.
+ *   - parentMap() loads every folder's parent; the pure helpers in tree.ts then check depth and cycles.
+ *   - A unique index on sibling names makes the database reject duplicates; we turn that into a 409.
+ *   - remove() soft-deletes the documents inside, then deletes the folder row.
+ *
+ * Where it fits
+ *   Called by folders/routes.ts. documents/service.ts uses assertInProject(). Uses tree.ts and
+ *   assertNoOpenReview from reviews. Module: M03 Document & Folder Management (owner: Shrut).
+ */
 import { MAX_FOLDER_DEPTH, type FolderNodeDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
@@ -52,6 +68,7 @@ export class FolderService {
         await this.lockFolders(q, projectId);
         if (parentId) {
           await this.assertInProject(q, projectId, parentId);
+          // The new folder sits one level below its parent, so parent depth + 1 must stay within the limit.
           if (depthOf(await this.parentMap(q, projectId), parentId) + 1 > MAX_FOLDER_DEPTH) {
             throw badRequest(`Folders can be nested at most ${MAX_FOLDER_DEPTH} levels deep`);
           }
@@ -63,6 +80,8 @@ export class FolderService {
         await recordActivity(q, { projectId, actorId: userId, action: 'folder.created', entityType: 'folder', entityId: rows[0].folder_id, entityLabel: name });
       });
     } catch (error) {
+      // The folders_sibling_name_key index rejects a second folder with the same name (ignoring case)
+      // under one parent.
       if (isUniqueViolation(error)) throw conflict(DUPLICATE, 'DUPLICATE_NAME');
       throw error;
     }
@@ -73,6 +92,7 @@ export class FolderService {
   async rename(projectId: string, folderId: string, userId: string, name: string): Promise<FolderNodeDto[]> {
     try {
       await this.ctx.db.tx(async (q) => {
+        // The sub-query reads the old name before the update, so the log can record "from" and "to".
         const { rows } = await q.query<{ old: string }>(
           `UPDATE folders f SET name = $2, updated_at = now()
              FROM (SELECT name AS old FROM folders WHERE folder_id = $1) prev
@@ -98,6 +118,7 @@ export class FolderService {
         if (wouldCreateCycle(parents, folderId, newParentId)) {
           throw new HttpError(409, 'FOLDER_CYCLE', 'A folder cannot be moved into itself or into one of its own subfolders');
         }
+        // The whole subtree moves with the folder, so the new parent's depth plus the subtree's height must fit.
         if (depthOf(parents, newParentId) + subtreeHeight(parents, folderId) > MAX_FOLDER_DEPTH) {
           throw badRequest(`Folders can be nested at most ${MAX_FOLDER_DEPTH} levels deep`);
         }
@@ -135,6 +156,7 @@ export class FolderService {
         [subtree],
       );
       await assertNoOpenReview(q, docs.map((d) => d.document_id), 'delete this folder');
+      // "Empty" means no documents and no subfolders (the subtree list only holds the folder itself).
       const empty = docs.length === 0 && subtree.length === 1;
       if (!empty && !confirmed) {
         throw new HttpError(409, 'FOLDER_NOT_EMPTY', 'This folder is not empty. Confirm to delete it with its contents.', {
@@ -148,6 +170,8 @@ export class FolderService {
         await q.query('UPDATE documents SET deleted_at = now(), deleted_by = $2, folder_id = NULL WHERE document_id = $1', [doc.document_id, userId]);
         await recordActivity(q, { projectId, actorId: userId, action: 'document.deleted', entityType: 'document', entityId: doc.document_id, entityLabel: doc.title, detail: { viaFolder: folderId } });
       }
+      // Only the top folder is deleted here. parent_id is ON DELETE CASCADE in the migration, so the
+      // database removes all subfolders too. Documents were already detached above (folder_id = NULL).
       await q.query('DELETE FROM folders WHERE folder_id = $1', [folderId]);
       await recordActivity(q, {
         projectId,

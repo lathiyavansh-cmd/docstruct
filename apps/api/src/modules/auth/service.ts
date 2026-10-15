@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Holds all account logic: creating users, logging in, checking sessions, logging out, profiles and passwords.
+ *
+ * How it works
+ *   - signUp() and login() check the input against the database and then call createSession() to issue a token.
+ *   - authenticate() turns a bearer token back into a user and enforces session expiry rules.
+ *   - changePassword(), requestPasswordReset() and resetPassword() update the stored hash and revoke sessions.
+ *   - Writes that must happen together run inside ctx.db.tx() (a database transaction).
+ *
+ * Where it fits
+ *   Called by routes.ts and by the requireAuth middleware. Uses password.ts for hashing and tokens.ts for
+ *   session and reset tokens. Tables: profiles, user_credentials, sessions, password_reset_tokens, mail_outbox.
+ *   Module: M01 Authentication (owner: Vansh).
+ */
 import type { ProfileDto, SessionDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
@@ -24,11 +39,13 @@ const FAILURE_LIMIT = 5;
 const FAILURE_WINDOW_MS = 15 * 60 * 1000;
 
 export class AuthService {
+  // In-memory list of recent failed login times per e-mail. It is not stored in the database.
   private readonly failures = new Map<string, number[]>();
 
   constructor(private readonly ctx: AppContext) {}
 
   private async createSession(q: Queryable, profile: ProfileRow): Promise<SessionDto> {
+    // Only the SHA-256 hash of the token is saved. The plain token goes back to the client once.
     const token = newToken();
     const expiresAt = new Date(Date.now() + this.ctx.config.sessionMaxHours * 3600_000);
     await q.query('INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)', [
@@ -59,6 +76,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<SessionDto> {
     const key = email.trim().toLowerCase();
     const now = Date.now();
+    // Keep only failures from the last 15 minutes; if there are 5 or more, refuse with 429 before checking the password.
     const recent = (this.failures.get(key) ?? []).filter((t) => now - t < FAILURE_WINDOW_MS);
     if (recent.length >= FAILURE_LIMIT) {
       throw new HttpError(429, 'TOO_MANY_ATTEMPTS', 'Too many failed attempts. Try again in a few minutes.');
@@ -71,6 +89,7 @@ export class AuthService {
       [key],
     );
     const row = rows[0];
+    // If the e-mail is unknown we still run scrypt on a decoy hash, so the response time looks the same.
     const ok = await verifyPassword(password, row?.password_hash ?? (await decoyHash()));
     if (!row || !ok) {
       this.failures.set(key, [...recent, now]);
@@ -166,6 +185,8 @@ export class AuthService {
     const token = newToken();
     const minutes = this.ctx.config.resetTokenMinutes;
     const link = `${this.ctx.config.appUrl}/reset-password?token=${token}`;
+    // The token row and the e-mail are saved together. The e-mail goes into the mail_outbox table and the link is
+    // also printed to the server log; no code in the API sends the e-mail itself.
     await this.ctx.db.tx(async (q) => {
       await q.query(
         `INSERT INTO password_reset_tokens (token_hash, user_id, expires_at) VALUES ($1, $2, now() + make_interval(mins => $3))`,
@@ -185,6 +206,7 @@ export class AuthService {
   async resetPassword(token: string, password: string): Promise<void> {
     const hash = await hashPassword(password);
     await this.ctx.db.tx(async (q) => {
+      // Marking the token used and checking it in one UPDATE means two requests cannot both use the same link.
       const { rows } = await q.query<{ user_id: string }>(
         `UPDATE password_reset_tokens SET used_at = now()
           WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()

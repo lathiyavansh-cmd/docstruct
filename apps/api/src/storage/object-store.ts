@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Stores uploaded files on disk and creates signed, short-lived links to upload or download them.
+ *   The design rules are in the block comment below.
+ *
+ * How it works
+ *   - pathFor() turns a key into a safe file path; signature() makes an HMAC over the link fields.
+ *   - createUploadUrl() / createDownloadUrl() build signed links; verify() checks them.
+ *   - write() streams a file to a temp file with a size limit, then renames it into place.
+ *   - read(), stream(), checksum() and removeOrphan() are used by services and the extractor.
+ *
+ * Where it fits
+ *   Created in bootstrap.ts. Used by storage/routes.ts, the document and version services,
+ *   and the extractor. Module: storage, shared core (owner: Vansh).
+ */
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
@@ -38,11 +53,14 @@ export class ObjectStore {
   ) {}
 
   private pathFor(key: string): string {
+    // Security check: only safe characters and no '..', so a key can never point outside root
+    // (this blocks path traversal attacks like "../../etc/passwd").
     if (!/^[a-zA-Z0-9/_.-]+$/.test(key) || key.includes('..')) throw new Error(`invalid object key: ${key}`);
     return path.join(this.root, ...key.split('/'));
   }
 
   private signature(p: SignedParams): string {
+    // Every field of the link is signed, so changing any of them (key, expiry, size) breaks the signature.
     const canonical = [p.op, p.key, p.exp, p.max ?? '', p.ct ?? '', p.fn ?? '', p.disp ?? ''].join('\n');
     return createHmac('sha256', this.secret).update(canonical).digest('base64url');
   }
@@ -72,6 +90,8 @@ export class ObjectStore {
   verify(params: SignedParams, sig: string): 'ok' | 'expired' | 'invalid' {
     const expected = Buffer.from(this.signature(params));
     const given = Buffer.from(sig ?? '');
+    // timingSafeEqual takes the same time whether the first or last byte differs,
+    // so an attacker cannot guess the signature by measuring response times.
     if (expected.length !== given.length || !timingSafeEqual(expected, given)) return 'invalid';
     if (params.exp < Math.floor(Date.now() / 1000)) return 'expired';
     return 'ok';
@@ -104,6 +124,8 @@ export class ObjectStore {
     try {
       await pipeline(
         body,
+        // Counts bytes as they arrive and aborts as soon as the limit is passed,
+        // instead of trusting the size the client claimed.
         async function* limit(source: AsyncIterable<Buffer>) {
           for await (const chunk of source) {
             received += chunk.length;
@@ -113,10 +135,12 @@ export class ObjectStore {
         },
         createWriteStream(temp, { flags: 'wx' }),
       );
+      // Check again: another upload with the same key may have finished while we were writing.
       if (await this.exists(key)) throw new ObjectExistsError(key);
       await rename(temp, target);
       return received;
     } catch (error) {
+      // On any failure delete the half-written temp file so no partial object is left behind.
       await rm(temp, { force: true });
       throw error;
     }

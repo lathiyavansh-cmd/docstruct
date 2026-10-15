@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Tests the project dashboard (status counts, my pending reviews, my documents needing changes,
+ *   review progress, open annotations, recent activity) and the activity log (order, paging, filter).
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and creates a project with an owner, editor, reviewer and viewer.
+ *   - Tests set up documents and reviews through real HTTP requests with supertest, then read the
+ *     dashboard or activity endpoint and check the JSON.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers dashboard/routes.ts, dashboard/service.ts and activity/service.ts.
+ *   Module: M09 Activity Logs & Dashboard (owner: Vivan).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
 
@@ -42,6 +57,7 @@ describe('M09 dashboard', () => {
     expect(forReviewer.openAnnotations).toBe(1);
     expect(forReviewer.recentActivity[0].action).toBe('annotation.created');
 
+    // The same dashboard looks different per user: the editor sees their own document needing changes.
     const forEditor = (await env.http.get(`/api/projects/${projectId}/dashboard`).set(editor.auth).expect(200)).body;
     expect(forEditor.myChangesRequested.map((d: { documentId: string }) => d.documentId)).toEqual([b.documentId]);
     expect(forEditor.awaitingMyReview).toEqual([]);
@@ -73,6 +89,7 @@ describe('M09 activity log', () => {
 
   it('pages with a cursor and filters by document', async () => {
     const page1 = (await env.http.get(`/api/projects/${projectId}/activity?limit=3`).set(viewer.auth).expect(200)).body;
+    // Page 2 asks for entries older than the last entry of page 1 (keyset paging with "before").
     const page2 = (await env.http.get(`/api/projects/${projectId}/activity?limit=3&before=${page1[2].logId}`).set(viewer.auth).expect(200)).body;
     expect(Number(page2[0].logId)).toBeLessThan(Number(page1[2].logId));
 

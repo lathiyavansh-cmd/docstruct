@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the route table of the app. It decides which page to show for each URL, and blocks pages that need a login.
+ *
+ * How it works
+ *   - RequireAuth checks useAuth(). If nobody is logged in, it sends the user to /login and remembers where they wanted to go.
+ *   - GuestOnly does the opposite: a logged-in user who opens /login or /signup is sent to the home page.
+ *   - Logged-in pages sit inside AppLayout (the sidebar and top bar). Project pages also sit inside ProjectLayout (the project tabs).
+ *   - The share link page (/s/:token) and the password pages are public, so they are outside RequireAuth.
+ *
+ * Where it fits
+ *   Rendered by main.tsx. Every page component in src/pages is connected here. Module: app shell (owner: Vansh).
+ */
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
@@ -24,11 +37,14 @@ import { SharedDocumentPage } from './pages/SharedDocumentPage';
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  // While the saved session is still being checked, show a spinner instead of a page.
   if (loading) return <Spinner label="Opening DocStruct" />;
+  // Not logged in: go to /login, and pass the current URL so login can bring the user back here.
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <>{children}</>;
 }
 
+/** Only for logged-out visitors: a logged-in user who opens /login or /signup goes to the home page. */
 function GuestOnly({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -42,9 +58,12 @@ export function App() {
       <Route path="/signup" element={<GuestOnly><SignUpPage /></GuestOnly>} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      {/* Public page: anyone with a share link can open it, no login needed. */}
       <Route path="/s/:token" element={<SharedDocumentPage />} />
+      {/* Everything below needs a login and is drawn inside AppLayout (sidebar and top bar). */}
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<ProjectsPage />} />
+        {/* Project pages share ProjectLayout, which loads the project and shows its tabs. */}
         <Route path="reviews" element={<ReviewQueuePage />} />
         <Route path="p/:projectId" element={<ProjectLayout />}>
           <Route index element={<DashboardPage />} />

@@ -1,4 +1,17 @@
 /**
+ * What this file does
+ *   The core matching algorithm behind version comparison. It finds which parts of two sequences are equal.
+ *
+ * How it works
+ *   - The constructor indexes sequence b (b2j: element to positions) and drops "popular" elements.
+ *   - findLongestMatch() finds the longest equal run in a given range.
+ *   - getMatchingBlocks() repeats that on the left and right leftovers; getOpcodes() and ratio() are built on it.
+ *
+ * Where it fits
+ *   Used by compare.ts for paragraphs, words and paragraph similarity. Module: F3.6 Version Comparison &
+ *   Pre-Review (owner: Vansh).
+ */
+/**
  * A TypeScript implementation of the Ratcliff/Obershelp "gestalt pattern matching" algorithm, following the
  * behaviour of Python's difflib.SequenceMatcher that the team's algorithm design (Algorithm F) is written
  * against, including its "autojunk" heuristic. Works on any sequence of comparable primitives: an array of
@@ -46,6 +59,7 @@ export class SequenceMatcher<T extends string | number> {
     let j2len = new Map<number, number>();
     for (let i = alo; i < ahi; i++) {
       const next = new Map<number, number>();
+      // j2len[j] = length of the equal run ending at a[i-1], b[j]. If a[i] also equals b[j], that run grows by 1.
       for (const j of this.b2j.get(a[i]) ?? []) {
         if (j < blo) continue;
         if (j >= bhi) break;
@@ -76,6 +90,7 @@ export class SequenceMatcher<T extends string | number> {
     if (this.blocks) return this.blocks;
     const la = this.a.length;
     const lb = this.b.length;
+    // A stack of ranges still to search, used instead of recursion. It starts with the whole of a and b.
     const queue: Array<[number, number, number, number]> = [[0, la, 0, lb]];
     const found: Match[] = [];
     while (queue.length) {
@@ -92,6 +107,7 @@ export class SequenceMatcher<T extends string | number> {
 
     const merged: Match[] = [];
     let [i1, j1, k1] = [0, 0, 0];
+    // Join blocks that touch each other into one longer block.
     for (const [i2, j2, k2] of found) {
       if (i1 + k1 === i2 && j1 + k1 === j2) {
         k1 += k2;
@@ -112,6 +128,7 @@ export class SequenceMatcher<T extends string | number> {
     let j = 0;
     const answer: Opcode[] = [];
     for (const [ai, bj, size] of this.getMatchingBlocks()) {
+      // The gap before each matching block: items skipped in both = replace, only in a = delete, only in b = insert.
       const tag = i < ai && j < bj ? 'replace' : i < ai ? 'delete' : j < bj ? 'insert' : null;
       if (tag) answer.push([tag, i, ai, j, bj]);
       i = ai + size;

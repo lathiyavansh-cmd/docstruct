@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Tests annotations (PDF page and region anchors, permissions, replies, resolving, version scope)
+ *   and share links (create, open without login, token hashing, revoke, expiry, logging).
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and creates a project with an owner, editor, reviewer and viewer.
+ *   - Tests send real HTTP requests with supertest. The public share endpoint is called with no auth header.
+ *   - Some tests write to the database directly, e.g. to force a link to expire or to break a database rule.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers the annotations and shares modules. Module: M07 Sharing & Annotation
+ *   (owner: Shrut).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, relative, signUp, uploadFile, type TestEnv, type TestUser } from './helpers.js';
 
@@ -44,6 +59,7 @@ describe('M07 annotations', () => {
     await env.http
       .post(`/api/documents/${doc.documentId}/annotations`)
       .set(reviewer.auth)
+      // x + width = 1.4, so the box goes past the right edge of the page and must be rejected.
       .send({ body: 'bad', pageNumber: 1, region: { x: 0.9, y: 0, width: 0.5, height: 0.1 } })
       .expect(400);
   });
@@ -123,6 +139,7 @@ describe('M07 share links', () => {
     const soon = new Date(Date.now() + 60_000).toISOString();
     const expiring = (await env.http.post(`/api/documents/${doc.documentId}/shares`).set(owner.auth).send({ expiresAt: soon }).expect(201)).body;
     await env.http.get(`/api/public/shares/${expiring.token}`).expect(200);
+    // Instead of waiting a minute, move the expiry into the past directly in the database.
     await env.ctx.db.query(`UPDATE share_links SET expires_at = now() - interval '1 second' WHERE share_id = $1`, [expiring.shareId]);
     expect((await env.http.get(`/api/public/shares/${expiring.token}`).expect(410)).body.error.code).toBe('LINK_EXPIRED');
 

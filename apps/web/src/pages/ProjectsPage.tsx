@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the home page after login. It lists every project the user belongs to and lets them create a new project.
+ *
+ * How it works
+ *   - useQuery ['projects'] loads the user's projects from GET /projects.
+ *   - useQuery ['review-queue'] loads GET /reviews/queue only to show how many reviews are waiting.
+ *   - ProjectCard shows one project (name, your role, member count, last update) and links to /p/:projectId.
+ *   - CreateProjectDialog uses useMutation to POST /projects, then refreshes the list and opens the new project.
+ *
+ * Where it fits
+ *   Route "/" (index route) in App.tsx, inside AppLayout. Module: M02 Project Management (owner: Vivan).
+ */
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +24,7 @@ import { errorMessage, get, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { plural, timeAgo } from '../lib/format';
 
+// Picks "Good morning/afternoon/evening" from the current hour on the user's computer.
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -19,9 +33,13 @@ function greeting() {
 /** Project.List and Project.Create (UI-3). */
 export function ProjectsPage() {
   const { user } = useAuth();
+  // All projects the logged-in user is a member of (GET /projects).
   const projects = useQuery({ queryKey: ['projects'], queryFn: () => get<ProjectDto[]>('/projects') });
+  // Reviews assigned to this user (GET /reviews/queue); used only for the "waiting" counter.
   const queue = useQuery({ queryKey: ['review-queue'], queryFn: () => get<ReviewDto[]>('/reviews/queue') });
+  // true while the "New project" dialog is open.
   const [creating, setCreating] = useState(false);
+  // Archived projects are not counted as active.
   const active = projects.data?.filter((p) => !p.archivedAt).length ?? 0;
   const waiting = queue.data?.length ?? 0;
 
@@ -57,6 +75,7 @@ export function ProjectsPage() {
         </section>
       </BlurFade>
 
+      {/* Show loading, error, empty or the grid of project cards, depending on the query state. */}
       {projects.isLoading && <Skeleton rows={3} />}
       {projects.error && <ErrorNote>{errorMessage(projects.error)}</ErrorNote>}
       {projects.data?.length === 0 && (
@@ -103,6 +122,7 @@ export function ProjectsPage() {
   );
 }
 
+/** One clickable card in the grid. It opens the project's dashboard at /p/:projectId. */
 function ProjectCard({ project: p }: { project: ProjectDto }) {
   return (
     <AnimateIcon animateOnHover asChild>
@@ -136,15 +156,18 @@ function ProjectCard({ project: p }: { project: ProjectDto }) {
   );
 }
 
+/** Popup form for a new project. The creator becomes the project owner on the server. */
 function CreateProjectDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
+  // Creates the project with POST /projects.
   const create = useMutation({
     mutationFn: () => post<ProjectDto>('/projects', { name, description }),
     onSuccess: (project) => {
+      // Mark the cached project list as old so it reloads and includes the new project.
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast(`Created ${project.name}`);
       navigate(`/p/${project.projectId}`);

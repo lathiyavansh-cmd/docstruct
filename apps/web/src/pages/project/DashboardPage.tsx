@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   This is the Overview tab of a project. It shows counts of documents by status, what is waiting on the logged-in user, documents under review with their due dates, and recent activity.
+ *
+ * How it works
+ *   - Gets the project from ProjectLayout with useCurrentProject().
+ *   - useQuery ['dashboard', projectId] loads everything in one call: GET /projects/:projectId/dashboard.
+ *   - StatCard shows one number with a link; the status bar and status boxes link to the Documents tab filtered by ?status=.
+ *   - PendingCard lists reviews assigned to the user and the user's documents that need changes.
+ *   - ActivityFeed shows the latest log entries, with a link to the full Activity tab.
+ *
+ * Where it fits
+ *   Index route of /p/:projectId in App.tsx, drawn inside ProjectLayout. Module: M09 Activity & Dashboard (owner: Vivan).
+ */
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
@@ -25,6 +39,7 @@ import { errorMessage, get } from '../../lib/api';
 import { formatDate, plural, timeAgo } from '../../lib/format';
 import { useCurrentProject } from '../../lib/hooks';
 
+/** One number tile at the top of the dashboard. The whole tile is a link. */
 function StatCard({ icon: Icon, label, value, note, tone, to, delay, beam }: {
   icon: AnimatedIcon;
   label: string;
@@ -78,6 +93,8 @@ function SectionTitle({ id, icon: Icon, children, action }: { id: string; icon: 
 /** M09 dashboard (UI-10): status of every document, what is waiting on you, review progress, recent activity. */
 export function DashboardPage() {
   const project = useCurrentProject();
+  // All dashboard numbers and lists come from one request (GET /projects/:projectId/dashboard).
+  // Other pages invalidate ['dashboard', projectId] after a change, so this reloads with fresh numbers.
   const dash = useQuery({ queryKey: ['dashboard', project.projectId], queryFn: () => get<DashboardDto>(`/projects/${project.projectId}/dashboard`) });
 
   if (dash.isLoading)
@@ -91,7 +108,9 @@ export function DashboardPage() {
     );
   if (dash.error || !dash.data) return <div className="p-8"><ErrorNote>{errorMessage(dash.error)}</ErrorNote></div>;
   const d = dash.data;
+  // Link to the Documents tab, optionally filtered to one status (for example ?status=APPROVED).
   const docsLink = (status?: DocumentStatus) => `/p/${project.projectId}/documents${status ? `?status=${status}` : ''}`;
+  // "Waiting on you" = reviews you must do + your documents sent back with changes requested.
   const waiting = d.awaitingMyReview.length + d.myChangesRequested.length;
   const overdue = d.underReview.filter((u) => u.overdue).length;
 
@@ -156,6 +175,7 @@ export function DashboardPage() {
                 />
               ) : (
                 <>
+                  {/* A stacked bar: each coloured part's width is that status's share of all documents. */}
                   <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-paper" role="img" aria-label="Share of documents in each status">
                     {DOCUMENT_STATUSES.filter((s) => d.statusCounts[s]).map((s, i) => (
                       <motion.div
@@ -301,6 +321,7 @@ export function DashboardPage() {
   );
 }
 
+/** One row in "Waiting on you": a review to do or a document to revise. */
 function PendingCard({ to, icon: Icon, tone, title, detail, status }: {
   to: string;
   icon: AnimatedIcon;
