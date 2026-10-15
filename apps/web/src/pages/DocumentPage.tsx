@@ -21,6 +21,7 @@ import {
 } from '../components/icons';
 import { ReviewPanel } from '../components/ReviewPanel';
 import { SharePanel } from '../components/SharePanel';
+import { SummaryCard } from '../components/SummaryCard';
 import { useToast } from '../components/toast';
 import { UploadDialog } from '../components/UploadDialog';
 import { VersionHistory } from '../components/VersionHistory';
@@ -175,6 +176,7 @@ export function DocumentPage() {
               <button type="button" className="text-primary hover:underline" onClick={() => setPlacing(false)}>Cancel</button>
             </Notice>
           )}
+          {shownVersion && <SummaryCard versionId={shownVersion.versionId} versionNo={shownVersion.versionNo} />}
           {shownVersion && (
             <DocumentPreview
               versionId={shownVersion.versionId}

@@ -2,6 +2,12 @@
 
 All notable changes, following [Keep a Changelog](https://keepachangelog.com/) and Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- Document summarisation: every version gets an extractive summary (short, medium, detailed), key terms and a section outline,
+  computed once by DocStruct's own TextRank summariser and shown on the document page.
+
 ## [1.0.2] - 2026-10-10
 
 ### Fixed

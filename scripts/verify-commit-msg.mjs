@@ -14,7 +14,7 @@ export const TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test'
 export const SCOPES = [
   // modules (see docs/TEAM.md)
   'auth', 'project', 'document', 'folder', 'version', 'review', 'rbac',
-  'annotation', 'share', 'search', 'activity', 'dashboard', 'diff', 'extractor',
+  'annotation', 'share', 'search', 'activity', 'dashboard', 'diff', 'summary', 'extractor',
   // layers / cross-cutting
   'api', 'web', 'shared', 'db', 'storage', 'ci', 'docs', 'repo', 'deps', 'release',
 ];
