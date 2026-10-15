@@ -1,3 +1,19 @@
+"""Unit tests for the DocStruct text extractor.
+
+What this file does
+    Checks that plain text, Markdown, DOCX and PDF files come out as the expected paragraphs, that bad
+    input is reported as a failure, and that extract.py prints the agreed JSON.
+
+How it works
+    - Uses Python's built-in unittest; test inputs are generated in memory by fixtures.py.
+    - PlainTextTests, DocxTests and PdfTests call extract() with a file's bytes and compare the text.
+    - LowLevelTests check pieces of pdf.py directly (tokeniser, CMap parser, LZW decoder).
+    - CliTests run extract.py as a separate process, the same way the API does, and read its JSON.
+
+Where it fits
+    Run with `npm run test:extractor` and in CI (python -m unittest discover -s services/extractor/tests).
+    Module: text extractor (owner: Shrut).
+"""
 import json
 import os
 import subprocess
@@ -8,6 +24,7 @@ import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+# Make both the package (in services/extractor) and fixtures.py (in tests/) importable.
 sys.path.insert(0, ROOT)
 sys.path.insert(0, HERE)
 
@@ -59,6 +76,7 @@ class PdfTests(unittest.TestCase):
         self.assertEqual(extract(build_pdf([page]), "application/pdf"), "Costs (INR) £ 100")
 
     def test_tj_kerning_gaps_become_spaces(self):
+        # -20 is a small kerning shift (no space); -400 is a wide gap, which must become a space.
         page = b"BT /F1 12 Tf 72 720 Td [(Doc)-20(Struct)-400(platform)] TJ ET"
         self.assertEqual(extract(build_pdf([page]), "application/pdf"), "DocStruct platform")
 
@@ -88,12 +106,14 @@ class PdfTests(unittest.TestCase):
         self.assertEqual(extract(pdf, "application/pdf"), "Packed font")
 
     def test_differences_encoding(self):
+        # Code 65 ("A") is redefined as a bullet and 66 ("B") as a right quote.
         font = b"<< /Type /Font /Subtype /Type1 /Encoding << /Differences [65 /bullet /quoteright] >> >>"
         page = b"BT /F3 12 Tf 72 720 Td (A Docs B) Tj ET"
         pdf = build_pdf([page], fonts=b"<< /F3 6 0 R >>", extra_objects=[font])
         self.assertEqual(extract(pdf, "application/pdf"), "• Docs ’")
 
     def test_pdf_without_text_reports_failure(self):
+        # The page only draws (q ... cm Q) and shows no text, like a scanned page.
         with self.assertRaises(ExtractionError):
             extract(build_pdf([b"q 100 0 0 100 0 0 cm Q"]), "application/pdf")
 
@@ -122,6 +142,7 @@ class LowLevelTests(unittest.TestCase):
 
 class CliTests(unittest.TestCase):
     def run_cli(self, data: bytes, mime: str):
+        # delete=False: the file must be closed before the child process opens it (required on Windows).
         with tempfile.NamedTemporaryFile(delete=False) as fh:
             fh.write(data)
             path = fh.name
