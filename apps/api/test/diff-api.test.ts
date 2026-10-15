@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Tests the version comparison and pre-review endpoints end to end: comparing two versions, caching the
+ *   result, refusing versions of another document, the "unavailable" case, and the automatic pre-review.
+ *
+ * How it works
+ *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
+ *   - twoVersions() uploads a document with two versions (V1 and V2) and waits for text extraction.
+ *   - Tests call /compare and /pre-review with supertest and check the stats, changes, findings and summary.
+ *
+ * Where it fits
+ *   Run by vitest. Covers modules/diff through the HTTP API. Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, signUp, uploadFile, type TestEnv, type TestUser } from './helpers.js';
 
@@ -29,6 +42,7 @@ async function twoVersions(name: string, second = V2, firstFile = 'spec.md') {
   const doc = await createDocument(env, editor, projectId, firstFile, V1);
   const uploadKey = await uploadFile(env, editor, projectId, 'spec.md', second);
   const res = await env.http.post(`/api/documents/${doc.documentId}/versions`).set(editor.auth).send({ uploadKey }).expect(201);
+  // Wait for background text extraction, otherwise the comparison would come back PENDING.
   await env.ctx.jobs.idle();
   return { documentId: doc.documentId, v1: doc.currentVersion.versionId, v2: res.body.currentVersion.versionId as string, name };
 }
@@ -62,6 +76,7 @@ describe('F3.6 version comparison', () => {
   });
 
   it('reports a comparison as unavailable when text could not be extracted (Diff.Unavailable)', async () => {
+    // A minimal PNG (just the file signature plus zero bytes): an image has no text to compare.
     const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(16)]);
     const doc = await createDocument(env, editor, projectId, 'pic.png', png);
     const uploadKey = await uploadFile(env, editor, projectId, 'pic.png', Buffer.concat([png, Buffer.alloc(4)]));

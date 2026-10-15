@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Runs a comparison between two versions of a document, stores the result, and serves the pre-review for a review.
+ *
+ * How it works
+ *   - compare() loads both versions' extracted text and returns a saved result from version_diffs if one exists.
+ *   - Otherwise it runs compare.ts and prereview.ts, then saves the result so it is computed only once.
+ *   - preReview() finds the version just before the reviewed one and compares the two.
+ *   - schedulePreReview() runs preReview() as a background job right after a review is submitted.
+ *
+ * Where it fits
+ *   Called by routes.ts and by the reviews module (ReviewService on submit). Uses compare.ts and prereview.ts.
+ *   Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import type { DiffDto, ExtractionStatus, PreReviewDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import { badRequest, notFound } from '../../lib/errors.js';
@@ -78,6 +92,7 @@ export class DiffService {
     );
     if (stored.rows[0]) return this.dto(documentId, from, to, stored.rows[0]);
 
+    // Not stored while pending, so a later request can compute the real result once the text is ready.
     if (from.extraction_status === 'PENDING' || to.extraction_status === 'PENDING') {
       return this.dto(documentId, from, to, null, 'Text extraction is still running for one of the versions.');
     }
@@ -97,6 +112,7 @@ export class DiffService {
     } else {
       const textA = from.extracted_text!;
       const textB = to.extracted_text!;
+      // The pipeline: find changes, mark substantive or cosmetic, add sections and word diffs, count, find issues, summarise.
       const changes = annotateChanges(classifySubstantive(compareVersions(textA, textB)), textA, textB);
       const stats = changeStatistics(changes, segmentParagraphs(textA).length, segmentParagraphs(textB).length);
       const findings = findIssues(changes, textB);
@@ -104,6 +120,8 @@ export class DiffService {
       row = { status: 'READY', reason: null, stats, changes, summary, findings, engine: ENGINE };
     }
 
+    // If two requests compute the same pair at once, ON CONFLICT keeps the first saved row (the update changes nothing)
+    // and RETURNING gives that row back, so both callers see the same result.
     const inserted = await this.ctx.db.query<DiffRow>(
       `INSERT INTO version_diffs (document_id, from_version_id, to_version_id, status, reason, stats, changes, summary, findings, engine)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -127,6 +145,7 @@ export class DiffService {
 
   /** Diff.PreReview.Run / Diff.FirstVersion: the reviewed version against its immediate predecessor. */
   async preReview(reviewId: string): Promise<PreReviewDto> {
+    // The subquery finds the previous version (version_no - 1). If there is none, this is the first version.
     const { rows } = await this.ctx.db.query<{ document_id: string; version_id: string; prev_id: string | null }>(
       `SELECT r.document_id, r.version_id,
               (SELECT p.version_id FROM document_versions p
@@ -149,6 +168,7 @@ export class DiffService {
   schedulePreReview(reviewId: string): void {
     this.ctx.jobs.run(`pre-review ${reviewId}`, async () => {
       const deadline = Date.now() + this.ctx.config.extractor.timeoutMs + 5000;
+      // Retry every 250 ms until the result is no longer PENDING or the deadline passes.
       for (;;) {
         const result = await this.preReview(reviewId);
         if (!result.diff || result.diff.status !== 'PENDING' || Date.now() > deadline) return;

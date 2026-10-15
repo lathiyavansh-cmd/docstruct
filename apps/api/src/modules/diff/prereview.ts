@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Looks at the changes between two versions and produces (1) a list of warnings ("findings") for the
+ *   reviewer and (2) a short written summary of what changed.
+ *
+ * How it works
+ *   - Regex patterns detect requirement words (shall/should), negations, placeholders, dates, numbers and references.
+ *   - rulesFor() applies every rule to one change; findIssues() runs it over all substantive changes and sorts by severity.
+ *   - summarise() ranks changes by TF-IDF salience plus finding severity and describes the top ones in plain sentences.
+ *
+ * Where it fits
+ *   Called by DiffService (service.ts) after compare.ts has produced the change list. Uses nlp.ts for scoring.
+ *   Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import type { PreReviewFinding } from '@docstruct/shared';
 import { normalise, segmentParagraphs, isHeading, headingText, type Change, type ChangeStats } from './compare.js';
 import { clip, idfTable, keySentence, salience } from './nlp.js';
@@ -15,6 +29,8 @@ export const ENGINE = 'docstruct-prereview/1.0';
 const MAX_FINDINGS = 60;
 const MAX_SUMMARY_POINTS = 6;
 
+// Rule patterns. STRONG = mandatory wording, WEAK = optional wording; the rest spot negations, unfinished text,
+// dates, numbers with units or currency, and cross-references like "Section 3.2".
 const STRONG = /\b(shall|must|will|is required to|are required to|required)\b/i;
 const WEAK = /\b(should|may|can|could|might|optional|optionally|where possible|if possible)\b/i;
 const NEGATION = /\b(not|no|never|none|cannot|can't|won't|without|neither|nor)\b/gi;
@@ -32,6 +48,7 @@ function values(text: string, pattern: RegExp): string[] {
   return (text.match(pattern) ?? []).map((v) => v.toLowerCase().replace(/\s+/g, ' ').trim());
 }
 
+// Dates are blanked out first so their digits are not also reported as changed numbers.
 function numbersOf(text: string): string[] {
   return values(text.replace(DATE, ' '), NUMBER);
 }
@@ -79,6 +96,7 @@ function rulesFor(change: Change, ctx: Context): Omit<PreReviewFinding, 'id'>[] 
   if (change.kind === 'MODIFIED') {
     const wasStrong = STRONG.test(change.oldText);
     const isStrong = STRONG.test(change.newText);
+    // "shall" turning into "should" is the most serious edit, so it is rated high.
     if (wasStrong && !isStrong && WEAK.test(change.newText)) {
       add('high', 'requirement-weakened', 'Requirement weakened', 'A mandatory statement ("shall/must") now uses optional wording ("should/may"). Confirm the obligation was meant to be relaxed.');
     } else if (!wasStrong && isStrong) {
@@ -154,6 +172,7 @@ export function findIssues(changes: Change[], textAfter: string): PreReviewFindi
   };
   const findings: Omit<PreReviewFinding, 'id'>[] = [];
   for (const change of changes) {
+    // Cosmetic changes never produce findings. A substantive change with no rule hit still gets a plain "info" entry.
     if (!change.isSubstantive) continue;
     const hits = rulesFor(change, ctx);
     if (hits.length) findings.push(...hits);
@@ -170,6 +189,7 @@ export function findIssues(changes: Change[], textAfter: string): PreReviewFindi
       });
     }
   }
+  // High first, then medium, then info; within a level, in document order. At most 60 are kept and numbered F1, F2, ...
   return findings
     .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.position - b.position)
     .slice(0, MAX_FINDINGS)
@@ -248,6 +268,7 @@ export function summarise(changes: Change[], stats: ChangeStats, findings: PreRe
   const idf = idfTable([...segmentParagraphs(textBefore), ...segmentParagraphs(textAfter)]);
   const parts: string[] = [];
   if (stats.added) parts.push(`${stats.added} added`);
+  // Only modifications can be cosmetic, so modified minus cosmetic is the number of real edits.
   if (stats.modified - stats.cosmetic > 0) parts.push(`${stats.modified - stats.cosmetic} modified`);
   if (stats.deleted) parts.push(`${stats.deleted} removed`);
   let overview = `Compared with version ${labels.from}, version ${labels.to} changes ${stats.substantive} paragraph(s): ${parts.join(', ')}.`;
@@ -255,6 +276,7 @@ export function summarise(changes: Change[], stats: ChangeStats, findings: PreRe
   const high = findings.filter((f) => f.severity === 'high').length;
   if (high) overview += ` ${high} finding(s) need particular attention.`;
 
+  // Changes that raised a high or medium finding get extra points so they are more likely to be in the summary.
   const severityBonus = new Map<number, number>();
   for (const f of findings) {
     const bonus = f.severity === 'high' ? 3 : f.severity === 'medium' ? 1.5 : 0;

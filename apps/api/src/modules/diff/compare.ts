@@ -1,8 +1,25 @@
+/**
+ * What this file does
+ *   Compares the text of two document versions paragraph by paragraph and lists what was added, deleted or
+ *   modified. It also marks each change as substantive or only cosmetic, and finds the section it is in.
+ *
+ * How it works
+ *   - segmentParagraphs() splits text on blank lines; normalise() makes a case and spacing free form.
+ *   - compareVersions() runs SequenceMatcher over the paragraph lists and pairs replaced paragraphs by similarity.
+ *   - classifySubstantive() and changeStatistics() label and count the changes.
+ *   - annotateChanges() adds the section heading and a word-level diff for display.
+ *
+ * Where it fits
+ *   Used by DiffService (service.ts) and prereview.ts; summary/summarise.ts reuses the paragraph and heading
+ *   helpers. Relies on sequence-matcher.ts. Module: F3.6 Version Comparison & Pre-Review (owner: Vansh).
+ */
 import type { ChangeKind } from '@docstruct/shared';
 import { SequenceMatcher } from './sequence-matcher.js';
 
 /** Algorithm F - paragraph-level version comparison; Algorithm G - substantive vs cosmetic classification. */
 
+// Two paragraphs at least 55% similar count as one "modified" paragraph. Below that they are reported as a
+// deletion plus a separate addition.
 export const MODIFY_SIMILARITY_THRESHOLD = 0.55;
 
 export interface WordSegment {
@@ -86,6 +103,7 @@ export function compareVersions(textA: string, textB: string): Change[] {
     } else if (tag === 'delete') {
       for (let i = i1; i < i2; i++) changes.push({ ...base, kind: 'DELETED', position: i, oldText: oldParas[i] });
     } else {
+      // "replace" block: for each old paragraph, find the most similar new paragraph not yet paired with another.
       const paired = new Set<number>();
       for (let i = i1; i < i2; i++) {
         let bestJ = -1;
@@ -112,6 +130,7 @@ export function compareVersions(textA: string, textB: string): Change[] {
           changes.push({ ...base, kind: 'DELETED', position: i, oldText: oldParas[i] });
         }
       }
+      // New paragraphs that nothing was paired with are genuine additions.
       for (let j = j1; j < j2; j++) {
         if (!paired.has(j)) changes.push({ ...base, kind: 'ADDED', position: j, newText: newParas[j] });
       }
@@ -146,6 +165,8 @@ export function changeStatistics(changes: Change[], before: number, after: numbe
 
 // ---- display helpers --------------------------------------------------------------------------------------
 
+// Splits text into whitespace runs, words (letters, digits, _, apostrophes, hyphens) and single punctuation marks.
+// Keeping the spaces as tokens means joining the pieces gives back the exact original text.
 export function tokenizeWords(text: string): string[] {
   return text.match(/\s+|[\p{L}\p{N}_'’-]+|[^\s\p{L}\p{N}]/gu) ?? [];
 }
@@ -161,6 +182,7 @@ export function wordDiff(oldText: string, newText: string): WordSegment[] {
     if (last && last.op === op) last.text += text;
     else out.push({ op, text });
   };
+  // autojunk is off here: in a long paragraph, common words like "the" must still be matched.
   for (const [tag, i1, i2, j1, j2] of new SequenceMatcher<string>(a, b, false).getOpcodes()) {
     if (tag === 'equal') push('equal', a.slice(i1, i2).join(''));
     if (tag === 'delete' || tag === 'replace') push('delete', a.slice(i1, i2).join(''));
