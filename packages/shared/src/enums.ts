@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Lists the fixed sets of values the app uses: project roles, document statuses, review statuses,
+ *   change kinds and text-extraction statuses, plus the human-readable labels shown on screen.
+ *
+ * How it works
+ *   - Each set is a plain object marked `as const`, so it works both as a value and as a TypeScript type.
+ *   - The type line under each object turns its values into a union, e.g. 'OWNER' | 'EDITOR' | ...
+ *   - STATUS_LABEL and ROLE_LABEL map each stored value to the text the user sees.
+ *
+ * Where it fits
+ *   Imported by almost every server module and page through @docstruct/shared, and by permissions.ts
+ *   and workflow.ts in this package. Module: shared core (owner: Vansh).
+ */
 // Domain enumerations (SRS Appendix A). Values are stored verbatim in the database.
 
 export const ProjectRole = {
@@ -6,6 +20,7 @@ export const ProjectRole = {
   REVIEWER: 'REVIEWER',
   VIEWER: 'VIEWER',
 } as const;
+// Same name as the object above: TypeScript keeps values and types apart, so ProjectRole is both.
 export type ProjectRole = (typeof ProjectRole)[keyof typeof ProjectRole];
 export const PROJECT_ROLES: ProjectRole[] = ['OWNER', 'EDITOR', 'REVIEWER', 'VIEWER'];
 
@@ -43,6 +58,7 @@ export const ExtractionStatus = {
 } as const;
 export type ExtractionStatus = (typeof ExtractionStatus)[keyof typeof ExtractionStatus];
 
+// One label table for both document and review statuses; shared names like APPROVED appear once.
 export const STATUS_LABEL: Record<DocumentStatus | ReviewStatus, string> = {
   DRAFT: 'Draft',
   UNDER_REVIEW: 'Under Review',

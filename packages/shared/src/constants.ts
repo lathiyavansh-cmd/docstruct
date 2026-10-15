@@ -1,7 +1,21 @@
+/**
+ * What this file does
+ *   Keeps the fixed limits and the list of accepted file formats in one place,
+ *   so the server and the website always agree on them.
+ *
+ * How it works
+ *   - MAX_UPLOAD_BYTES and MAX_FOLDER_DEPTH are plain number limits.
+ *   - FILE_FORMATS lists each allowed type with its MIME type, extensions, and whether it can be previewed or text-extracted.
+ *   - formatForFileName() and formatForMime() look up a format; formatBytes() turns a byte count into "1.2 MB".
+ *
+ * Where it fits
+ *   Used by the upload checks in apps/api (documents/uploads.ts, folders) and by the upload dialog and
+ *   file views in apps/web. Module: shared core (owner: Vansh).
+ */
 // Limits and formats fixed by the SRS (CO-8, Doc.Upload.Format, Doc.Preview).
 
 /** CO-8 / Doc.Upload.Size: 50 MB per uploaded file. */
-export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 x 1024 x 1024 = 52,428,800 bytes
 
 /** Appendix C TBD resolved: maximum folder nesting depth. */
 export const MAX_FOLDER_DEPTH = 32;
@@ -32,6 +46,8 @@ export const FILE_FORMATS: FileFormat[] = [
   { label: 'JPEG image', mime: 'image/jpeg', extensions: ['.jpg', '.jpeg'], previewable: true, extractable: false },
 ];
 
+// Builds the value for an HTML <input type="file" accept="..."> as one comma-separated list,
+// e.g. "application/pdf,.pdf,text/plain,.txt,...", so the file picker only offers allowed files.
 export const ACCEPT_ATTRIBUTE = FILE_FORMATS.flatMap((f) => [f.mime, ...f.extensions]).join(',');
 
 /**
@@ -41,8 +57,8 @@ export const ACCEPT_ATTRIBUTE = FILE_FORMATS.flatMap((f) => [f.mime, ...f.extens
 export function formatForFileName(fileName: string): FileFormat | undefined {
   const lower = fileName.toLowerCase();
   const dot = lower.lastIndexOf('.');
-  if (dot < 0) return undefined;
-  const ext = lower.slice(dot);
+  if (dot < 0) return undefined; // no dot means no extension
+  const ext = lower.slice(dot); // the part from the last dot, e.g. ".pdf"
   return FILE_FORMATS.find((f) => f.extensions.includes(ext));
 }
 
