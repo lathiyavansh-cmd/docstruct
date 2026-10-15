@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Pure helper functions for the folder tree. They take a list or map of folders and never touch
+ *   the database, which makes them easy to unit test.
+ *
+ * How it works
+ *   - buildFolderTree() turns a flat list into a nested tree using one Map lookup per folder.
+ *   - wouldCreateCycle() walks up from the new parent to see if the moved folder is above it.
+ *   - depthOf(), subtreeHeight() and descendantsOf() measure the tree for depth limits and deletes.
+ *
+ * Where it fits
+ *   Used by folders/service.ts and tested directly in test/folders.test.ts. Module: M03 Document &
+ *   Folder Management (owner: Shrut).
+ */
 import { MAX_FOLDER_DEPTH } from '@docstruct/shared';
 
 /** Algorithm B - folder tree construction and cycle prevention. */
@@ -19,6 +33,7 @@ export interface FolderNode extends FlatFolder {
  * still shows every folder. Siblings are sorted by name.
  */
 export function buildFolderTree(folders: FlatFolder[]): FolderNode[] {
+  // Pass 1: index every folder by id. Pass 2 (below): attach each one to its parent's children list.
   const index = new Map<string, FolderNode>();
   for (const f of folders) index.set(f.folderId, { ...f, children: [] });
 
@@ -52,6 +67,7 @@ export function wouldCreateCycle(
   let depth = 0;
   while (cursor) {
     if (++depth > MAX_FOLDER_DEPTH * 4) return true;
+    // If we reach the folder being moved while climbing up, the new parent is inside it: a cycle.
     if (cursor === folderId) return true;
     cursor = parentOf.get(cursor);
   }
@@ -71,6 +87,7 @@ export function depthOf(parentOf: ReadonlyMap<string, string | null>, folderId: 
 
 /** Height of the subtree rooted at `folderId` (a leaf has height 1). */
 export function subtreeHeight(parentOf: ReadonlyMap<string, string | null>, folderId: string): number {
+  // Flip the parent map into a children map, then recursively take 1 + the tallest child.
   const children = new Map<string, string[]>();
   for (const [id, parent] of parentOf) {
     if (parent) children.set(parent, [...(children.get(parent) ?? []), id]);
@@ -82,6 +99,7 @@ export function subtreeHeight(parentOf: ReadonlyMap<string, string | null>, fold
 
 /** Ids of `folderId` and every folder below it. */
 export function descendantsOf(parentOf: ReadonlyMap<string, string | null>, folderId: string): string[] {
+  // Breadth-first: the list grows while we loop, so each newly found child is scanned for its own children.
   const result = [folderId];
   for (let i = 0; i < result.length; i++) {
     for (const [id, parent] of parentOf) if (parent === result[i]) result.push(id);

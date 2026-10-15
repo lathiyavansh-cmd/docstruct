@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Defines the HTTP endpoints for folders: get the folder tree, create, rename, move and delete.
+ *
+ * How it works
+ *   - A Zod schema checks folder names (1 to 120 characters, no / or \).
+ *   - authorize(...) checks the caller's project role. byFolder() finds the project from the folder id.
+ *   - Each handler calls one FolderService method, which returns the updated tree.
+ *
+ * Where it fits
+ *   Registered in modules/index.ts and mounted under /api by app.ts. Uses FolderService (service.ts)
+ *   and the auth and rbac middleware. Module: M03 Document & Folder Management (owner: Shrut).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import type { AppContext } from '../../context.js';
@@ -34,11 +47,13 @@ export function folderRoutes(ctx: AppContext): Router {
   });
 
   router.post('/folders/:folderId/move', auth, authorize(ctx, 'folder.update', byFolder()), async (req, res) => {
+    // parentId null means "move to the project root".
     const body = parse(z.object({ parentId: uuid.nullable() }), req.body);
     res.json(await service.move(membershipOf(req).projectId, req.params.folderId as string, currentUser(req).userId, body.parentId));
   });
 
   router.delete('/folders/:folderId', auth, authorize(ctx, 'folder.delete', byFolder()), async (req, res) => {
+    // ?confirm=true is required to delete a folder that still has documents or subfolders.
     const { confirm } = parse(z.object({ confirm: z.enum(['true', 'false']).optional() }), req.query);
     res.json(await service.remove(membershipOf(req).projectId, req.params.folderId as string, currentUser(req).userId, confirm === 'true'));
   });

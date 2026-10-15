@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Tests folders: the pure tree helpers (building the tree, detecting cycles) and the folder API
+ *   (create, case-insensitive duplicate names, permissions, rename, move, delete with confirmation).
+ *
+ * How it works
+ *   - The first block calls buildFolderTree() and wouldCreateCycle() from tree.ts directly with small maps.
+ *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and send real HTTP requests with supertest.
+ *   - findFolder() searches the returned nested tree for a folder by name.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers folders/tree.ts, folders/service.ts and folders/routes.ts. Module: M03
+ *   Document & Folder Management (owner: Shrut).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildFolderTree, wouldCreateCycle } from '../src/modules/folders/tree.js';
 import { createDocument, createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
@@ -89,6 +104,7 @@ describe('M03 folders', () => {
     const reports = findFolder(tree, 'Reports')!;
     const weekly = findFolder(tree, 'Weekly')!;
 
+    // Weekly is inside Reports, so moving Reports under Weekly would create a loop.
     const cycle = await env.http.post(`/api/folders/${reports.folderId}/move`).set(editor.auth).send({ parentId: weekly.folderId }).expect(409);
     expect(cycle.body.error.code).toBe('FOLDER_CYCLE');
 
@@ -108,6 +124,7 @@ describe('M03 folders', () => {
 
     await env.http.delete(`/api/folders/${old.folderId}?confirm=true`).set(owner.auth).expect(200);
     await env.http.get(`/api/documents/${doc.documentId}`).set(owner.auth).expect(404);
+    // The document is hidden, but its version row is still in the database (soft delete).
     const kept = await env.ctx.db.query('SELECT 1 FROM document_versions WHERE document_id = $1', [doc.documentId]);
     expect(kept.rows.length).toBe(1);
   });
