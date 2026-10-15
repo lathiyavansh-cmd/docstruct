@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   The Review section of a document page. It shows the open review, lets the assigned reviewer approve
+ *   or request changes, lets members send the document for review, and lists past reviews.
+ *
+ * How it works
+ *   - Loads all reviews of the document: query key ['reviews', documentId], GET /documents/:id/reviews.
+ *     The one with status PENDING is the open review.
+ *   - Decision buttons show only for the assigned reviewer. Cancel shows for the sender or anyone with 'review.cancel.any'.
+ *   - One useMutation handles approve, request changes and cancel (POST /reviews/:id/approve, /request-changes, /cancel).
+ *   - SubmitDialog picks a reviewer from members with a reviewer role and calls POST /documents/:id/reviews.
+ *   - After any action, refresh() invalidates the reviews, document, review queue, dashboard and document list queries.
+ *
+ * Where it fits
+ *   Used by DocumentPage. Shows PreReviewPanel from PreReview.tsx inside the open review. Module: M05 review workflow (owner: Vivan).
+ */
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { REVIEWER_ROLES, ROLE_LABEL, canTransition, type DocumentDetailDto, type ProjectDto, type ReviewDto } from '@docstruct/shared';
@@ -21,16 +37,20 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
   const [note, setNote] = useState('');
 
   const history = useQuery({ queryKey: ['reviews', doc.documentId], queryFn: () => get<ReviewDto[]>(`/documents/${doc.documentId}/reviews`) });
+  // A document has at most one PENDING review at a time; that is the "open" one.
   const open = history.data?.find((r) => r.status === 'PENDING') ?? null;
+  // Only the person picked as reviewer can decide. These checks only hide buttons; the API checks again.
   const isReviewer = !!open && open.reviewer.userId === user?.userId;
   const canCancel = !!open && (open.submittedBy.userId === user?.userId || allowed('review.cancel.any'));
 
+  // A review changes the document status, so every screen that shows status or the queue must reload.
   const refresh = () => {
     for (const key of [['reviews', doc.documentId], ['document', doc.documentId], ['review-queue'], ['dashboard', project.projectId], ['documents', project.projectId]]) {
       queryClient.invalidateQueries({ queryKey: key });
     }
   };
 
+  // kind picks the endpoint. Approve and request changes send the decision note; cancel sends nothing.
   const act = useMutation({
     mutationFn: (kind: 'approve' | 'changes' | 'cancel') =>
       kind === 'approve'
@@ -47,6 +67,7 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
     onError: () => setConfirm(null),
   });
 
+  // Can send for review if the role allows it, nothing is open, and the status rules allow moving to UNDER_REVIEW.
   const canSubmit = allowed('review.submit') && !open && canTransition(doc.status, 'UNDER_REVIEW');
 
   return (
@@ -156,6 +177,7 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
 function SubmitDialog({ document: doc, project, onClose, onDone }: { document: DocumentDetailDto; project: ProjectDto; onClose: () => void; onDone: () => void }) {
   const members = useMembers(project.projectId);
   const toast = useToast();
+  // Only members whose role can review appear in the reviewer drop-down.
   const eligible = members.data?.filter((m) => REVIEWER_ROLES.includes(m.role)) ?? [];
   const [reviewerId, setReviewerId] = useState('');
   const [dueDate, setDueDate] = useState('');
