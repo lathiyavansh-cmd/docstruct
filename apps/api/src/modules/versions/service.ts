@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Holds the version control logic: listing a document's versions, adding a new uploaded version, and
+ *   restoring an older version as a new one.
+ *
+ * How it works
+ *   - history() returns all versions of a document, newest first.
+ *   - upload() locks the document, consumes the upload ticket, gets the next number from allocate.ts,
+ *     inserts the version, makes it current and logs an activity, all in one transaction.
+ *   - restore() copies an old version's file and extracted text into a brand new version record.
+ *   - statusAfterNewVersion() resets an approved document back to Draft when its content changes.
+ *
+ * Where it fits
+ *   Called by routes.ts. Uses the documents module (queries, upload tickets), the extraction worker and the
+ *   activity log. Module: M04 Version Control (owner: Vansh).
+ */
 import type { DocumentDto, DocumentStatus, VersionDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
@@ -47,6 +63,7 @@ export class VersionService {
   /** Locks the document row and checks that a new version may be added. */
   private async lockForNewVersion(q: Queryable, documentId: string): Promise<LockedDocument> {
     const { rows } = await q.query<LockedDocument>(
+      // FOR UPDATE locks this document row until the transaction ends, so its status cannot change mid-upload.
       'SELECT project_id, title, status, current_version_id FROM documents WHERE document_id = $1 AND deleted_at IS NULL FOR UPDATE',
       [documentId],
     );
@@ -75,6 +92,7 @@ export class VersionService {
     try {
       await this.ctx.db.tx(async (q) => {
         const doc = await this.lockForNewVersion(q, documentId);
+        // The upload ticket can be used once, only by the user who started it, and only for this project.
         upload = await this.uploads.consume(q, uploadKey, doc.project_id, userId);
         const versionNo = await allocateVersionNumber(q, documentId);
         const { rows } = await q.query<{ version_id: string }>(
@@ -91,6 +109,7 @@ export class VersionService {
             upload.checksum,
             changeNote,
             userId,
+            // Text extraction is queued only for formats the extractor can read.
             upload.format.extractable ? 'PENDING' : 'UNSUPPORTED',
           ],
         );
@@ -106,10 +125,12 @@ export class VersionService {
         });
       });
     } catch (error) {
+      // The transaction rolled back, so delete the stored file too; otherwise it would sit in storage with no version.
       if (upload) await this.ctx.storage.removeOrphan(upload.storageKey);
       throw error;
     }
     const doc = (await findDocument(this.ctx.db, documentId))!;
+    // Extraction starts only after commit, so the worker can see the new version row.
     if (doc.currentVersion.extractionStatus === 'PENDING') scheduleExtraction(this.ctx, doc.currentVersion.versionId);
     return doc;
   }
@@ -139,6 +160,7 @@ export class VersionService {
       );
       const source = rows[0];
       if (!source) throw notFound('Version');
+      // Restoring the current version would only create an identical copy, so it is refused.
       if (source.version_id === doc.current_version_id) throw badRequest('That version is already the current version');
 
       const versionNo = await allocateVersionNumber(q, documentId);

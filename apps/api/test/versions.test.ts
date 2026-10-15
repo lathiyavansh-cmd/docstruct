@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   Tests version control: adding versions, numbering under concurrent uploads, downloading old versions,
+ *   restoring, role checks, status reset after approval, and activity logging.
+ *
+ * How it works
+ *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
+ *   - beforeAll signs up an owner, editor, reviewer and viewer and puts them in one project.
+ *   - Each test sends real HTTP requests with supertest and checks the responses or the database.
+ *
+ * Where it fits
+ *   Run by vitest. Covers modules/versions. Module: M04 Version Control (owner: Vansh).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, relative, signUp, uploadFile, type TestEnv, type TestUser } from './helpers.js';
 
@@ -43,6 +56,7 @@ describe('M04 version management', () => {
   it('allocates distinct numbers for concurrent uploads and loses none (Version.Number.Concurrent, PE-8)', async () => {
     const doc = await createDocument(env, editor, projectId, 'busy.txt', 'base');
     const keys = await Promise.all([1, 2, 3, 4, 5].map((i) => uploadFile(env, editor, projectId, 'busy.txt', `edit ${i}`)));
+    // Five uploads sent at the same time; the advisory lock must still give numbers 2 to 6 with no gaps or repeats.
     const results = await Promise.all(
       keys.map((uploadKey) => env.http.post(`/api/documents/${doc.documentId}/versions`).set(editor.auth).send({ uploadKey })),
     );
@@ -67,6 +81,7 @@ describe('M04 version management', () => {
       .set(editor.auth)
       .expect(201);
     expect(restored.body.currentVersion).toMatchObject({ versionNo: 3, restoredFromVersionNo: 1, changeNote: 'Restored from version 1' });
+    // Same checksum proves the restored version reuses the original file.
     expect(restored.body.currentVersion.checksum).toBe(doc.currentVersion.checksum);
 
     const history = await env.http.get(`/api/documents/${doc.documentId}/versions`).set(editor.auth).expect(200);
