@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the search screen. The user types a word or phrase and sees matching documents from every project they belong to.
+ *
+ * How it works
+ *   - The search term lives in the URL as ?q=..., so a search can be bookmarked or shared, and the back button works.
+ *   - useQuery ['search', q] calls GET /search?q=... only when q is not empty. The server checks titles and document text and returns best matches first.
+ *   - Each result shows title, status, project, version, where it matched, and a snippet with the matched words highlighted.
+ *   - Clicking a result opens the document page /d/:documentId.
+ *
+ * Where it fits
+ *   Route /search in App.tsx, inside AppLayout. Module: M08 Search (owner: Shrut).
+ */
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -12,9 +25,13 @@ import { timeAgo } from '../lib/format';
 /** Search across all of the user's projects - and only those (Search.Scope). */
 export function SearchPage() {
   const [params, setParams] = useSearchParams();
+  // q is the search that was submitted (read from the URL).
   const q = params.get('q') ?? '';
+  // term is what is typed in the box right now; it only becomes q when the form is submitted.
   const [term, setTerm] = useState(q);
+  // If the URL changes (for example, a search from the command palette or the back button), copy the new q into the box.
   useEffect(() => setTerm(q), [q]);
+  // Run the search with GET /search?q=...; enabled: !!q means no request is sent for an empty search.
   const results = useQuery({ queryKey: ['search', q], queryFn: () => get<SearchResultDto[]>('/search', { q }), enabled: !!q });
 
   return (
@@ -61,6 +78,7 @@ export function SearchPage() {
                       <span className="block text-[13px] text-ink-soft">
                         {r.projectName}, version {r.document.currentVersion.versionNo}, updated {timeAgo(r.document.updatedAt)}, matched in {r.matchedIn.join(' and ')}
                       </span>
+                      {/* The server wraps matched words in [[ ]]. We split on those markers and draw each match inside <mark>. */}
                       {r.snippet && (
                         <span className="mt-1.5 block font-serif text-[14px] text-ink-soft">
                           {r.snippet.split(/(\[\[.*?\]\])/g).map((part, i) =>

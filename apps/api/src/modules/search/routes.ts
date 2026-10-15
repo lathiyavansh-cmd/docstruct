@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Defines the two search endpoints: search inside one project, and search across every project
+ *   the user is a member of.
+ *
+ * How it works
+ *   - searchQuery (Zod) checks the optional term and filters: status, folder, reviewer and a date range.
+ *   - The project search uses authorize(...) so only members can search that project.
+ *   - The global search first looks up the user's projects and passes only those to the service.
+ *
+ * Where it fits
+ *   Registered in modules/index.ts and mounted under /api by app.ts. Uses SearchService (service.ts).
+ *   Module: M08 Search & Filtering (owner: Shrut).
+ */
 import { Router } from 'express';
 import { z } from 'zod';
 import { DOCUMENT_STATUSES } from '@docstruct/shared';
@@ -31,8 +45,10 @@ export function searchRoutes(ctx: AppContext): Router {
 
   /** Search across every project the user belongs to - and only those (Search.Scope). */
   router.get('/search', auth, async (req, res) => {
+    // Unlike the project search, the global search requires a search term (filters alone are not enough).
     const query = parse(searchQuery.extend({ q: z.string().trim().min(1, 'Enter a search term').max(200) }), req.query);
     const projects = await service.memberProjects(currentUser(req).userId);
+    // A user with no projects gets an empty list without running the search query.
     res.json(projects.length ? await service.search(projects, query as Parameters<SearchService['search']>[1]) : []);
   });
 

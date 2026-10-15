@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Searches and filters documents, then ranks the results by how well they match. All work is done
+ *   in one SQL query on PostgreSQL.
+ *
+ * How it works
+ *   - search() builds a WHERE list step by step: project scope first, then each filter that was given.
+ *   - With a search term, the title is matched with trigram similarity and the extracted text with
+ *     full-text search; the score adds the weighted title, content and recency parts.
+ *   - Without a term, results are just filtered and sorted by last update.
+ *   - memberProjects() lists the projects a user belongs to, for the global search.
+ *
+ * Where it fits
+ *   Called by search/routes.ts. Builds on documentSelect() from documents/queries.ts and reads text
+ *   saved by the extractor. Module: M08 Search & Filtering (owner: Shrut).
+ */
 import type { SearchQuery, SearchResultDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import { documentSelect, toDocumentDto, type DocumentRow } from '../documents/queries.js';
@@ -34,6 +50,8 @@ export class SearchService {
   constructor(private readonly ctx: AppContext) {}
 
   async search(projectIds: string[], query: SearchQuery): Promise<SearchResultDto[]> {
+    // User values always go into params and are referenced as $1, $2, ... so they are never pasted into
+    // the SQL text (this prevents SQL injection). $1 is the list of allowed projects.
     const params: unknown[] = [projectIds];
     const where = ['d.project_id = ANY($1::uuid[])', 'd.deleted_at IS NULL'];
     const q = query.q?.trim() ?? '';
@@ -60,6 +78,7 @@ export class SearchService {
     }
     if (query.updatedTo) {
       params.push(query.updatedTo);
+      // "< date + 1" includes the whole of the "to" day, up to midnight.
       where.push(`d.updated_at < ($${params.length}::date + 1)`);
     }
 
@@ -72,6 +91,8 @@ export class SearchService {
     if (q) {
       params.push(q);
       const p = `$${params.length}`;
+      // title: 1.0 if the term appears inside the title, else the trigram word similarity (handles typos).
+      // content: full-text match on the extracted text; its rank is scaled by 10 and capped at 3 below.
       const title = `GREATEST(CASE WHEN lower(d.title) LIKE '%' || lower(${p}) || '%' THEN 1.0 ELSE 0 END, word_similarity(lower(${p}), lower(d.title)))`;
       const tsv = `to_tsvector('english', COALESCE(v.extracted_text, ''))`;
       const tsq = `websearch_to_tsquery('english', ${p})`;
@@ -86,10 +107,13 @@ export class SearchService {
         CASE WHEN ${tsv} @@ ${tsq}
              THEN ts_headline('english', v.extracted_text, ${tsq}, 'StartSel=[[, StopSel=]], MaxWords=30, MinWords=12, MaxFragments=1')
         END AS snippet`;
+      // A document is only returned if the title is similar enough or the text matches.
       where.push(`(${title} >= ${TITLE_SIMILARITY} OR ${tsv} @@ ${tsq})`);
       order = 'score DESC, d.updated_at DESC';
     }
 
+    // The inner query computes the score; the outer query can then sort by it. The outer query does not
+    // know the "d." alias, so it is removed from the ORDER BY text.
     const { rows } = await this.ctx.db.query<SearchRow>(
       `SELECT * FROM (${documentSelect(scoreColumns)} WHERE ${where.join(' AND ')}) results ORDER BY ${order.replace(/d\./g, '')} LIMIT ${LIMIT}`,
       params,

@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   Tests search and filters: fuzzy title matching, full-text content search with snippets, ranking,
+ *   project scope, and the status, reviewer, folder and date filters on their own and combined.
+ *
+ * How it works
+ *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, then creates folders, documents and one review, plus a second project the editor is not in.
+ *   - It waits for background text extraction (jobs.idle()) so content search has text to match.
+ *   - Tests send real HTTP requests with supertest and compare the returned titles.
+ *
+ * Where it fits
+ *   Run by Vitest. Covers search/routes.ts and search/service.ts. Module: M08 Search & Filtering
+ *   (owner: Shrut).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDocument, createProject, createTestEnv, signUp, type TestEnv, type TestUser } from './helpers.js';
 
@@ -43,6 +58,7 @@ const titles = (body: Array<{ document: { title: string } }>) => body.map((r) =>
 
 describe('M08 search', () => {
   it('finds titles despite a spelling mistake (Search.Title)', async () => {
+    // "specifcation" is misspelt on purpose; trigram similarity should still find the title.
     const res = await search('q=specifcation');
     expect(titles(res.body)).toEqual(['Software Requirements Specification']);
     expect(res.body[0].matchedIn).toContain('title');
@@ -64,6 +80,7 @@ describe('M08 search', () => {
   });
 
   it('never returns documents from projects the user is not in (Search.Scope)', async () => {
+    // The outsider's "Secret project" also contains "immutable", but it must never show up for the editor.
     const global = await env.http.get('/api/search?q=immutable').set(editor.auth).expect(200);
     expect(global.body.every((r: { projectName: string }) => r.projectName === 'Test Project')).toBe(true);
     await env.http.get(`/api/projects/${otherProject}/search?q=immutable`).set(editor.auth).expect(404);
