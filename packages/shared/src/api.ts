@@ -257,6 +257,35 @@ export interface PreReviewDto {
   diff: DiffDto | null;
 }
 
+// ---- Document summarisation ------------------------------------------------------------------
+
+export interface SummarySentenceDto {
+  text: string;
+  /** Heading of the section the sentence comes from, if any. */
+  section: string | null;
+  /** Index of the sentence in the document, so the summary keeps reading order. */
+  position: number;
+}
+
+export interface DocumentSummaryDto {
+  /** PENDING while text extraction is still running; UNAVAILABLE when the version has no readable text. */
+  status: 'PENDING' | 'READY' | 'UNAVAILABLE';
+  reason: string | null;
+  documentId: string;
+  versionId: string;
+  versionNo: number;
+  /** Each longer level contains every sentence of the shorter ones. */
+  levels: { short: SummarySentenceDto[]; medium: SummarySentenceDto[]; detailed: SummarySentenceDto[] } | null;
+  keyTerms: string[];
+  /** The most representative sentence of each section, for documents with at least two headings. */
+  outline: Array<{ heading: string; sentence: string }>;
+  stats: { words: number; sentences: number; sections: number; readingMinutes: number } | null;
+  /** Machine-generated, advisory only. */
+  machineGenerated: true;
+  engine: string;
+  generatedAt: string | null;
+}
+
 // ---- M07 annotations and share links ---------------------------------------------------------
 
 /** Region of a PDF page as fractions of its width and height (0..1, origin top-left). */
