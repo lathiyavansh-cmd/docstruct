@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This is the sign-up screen. A new user enters a name, email and password to create an account.
+ *
+ * How it works
+ *   - Keeps the three fields in one form state object.
+ *   - On submit it calls post('/auth/signup') with the form and gets back a session (token and user).
+ *   - signIn() from useAuth saves the token, so the user is logged in straight away, then it goes to "/".
+ *   - The password must be at least PASSWORD_MIN_LENGTH characters (shared rule, also checked on the server).
+ *
+ * Where it fits
+ *   Route /signup in App.tsx, wrapped in GuestOnly and drawn inside AuthLayout. Module: M01 Authentication (owner: Vansh).
+ */
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PASSWORD_MIN_LENGTH, type SessionDto } from '@docstruct/shared';
@@ -13,6 +26,7 @@ export function SignUpPage() {
   const [form, setForm] = useState({ displayName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // set('email') returns an onChange handler that updates only that one field.
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [key]: e.target.value });
 
   async function submit(e: FormEvent) {
@@ -20,6 +34,7 @@ export function SignUpPage() {
     setBusy(true);
     setError(null);
     try {
+      // Create the account; the server replies with a session, so we log the user in at once.
       signIn(await post<SessionDto>('/auth/signup', form));
       navigate('/', { replace: true });
     } catch (err) {

@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   This file holds the two "forgot password" screens. Step 1 asks for an email and sends a reset link. Step 2 is opened from that link and sets a new password.
+ *
+ * How it works
+ *   - ForgotPasswordPage calls post('/auth/password/forgot') with the email, then shows a "check your email" notice.
+ *   - ResetPasswordPage reads ?token= from the URL and calls post('/auth/password/reset') with the token and new password.
+ *   - After a successful reset it sends the user to /login to log in with the new password.
+ *   - Both pages use AuthLayout for the frame and show server errors with ErrorNote.
+ *
+ * Where it fits
+ *   Routes /forgot-password and /reset-password in App.tsx (public, no login needed). Module: M01 Authentication (owner: Vansh).
+ */
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { PASSWORD_MIN_LENGTH } from '@docstruct/shared';
@@ -9,6 +22,7 @@ import { LockIcon, SendIcon } from '../../components/icons';
 /** Account.PasswordReset, step 1. */
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  // sent switches the page from the form to the "link sent" message.
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -18,6 +32,7 @@ export function ForgotPasswordPage() {
     setBusy(true);
     setError(null);
     try {
+      // Ask the server to e-mail a one-time reset link to this address.
       await post('/auth/password/forgot', { email });
       setSent(true);
     } catch (err) {
@@ -55,6 +70,7 @@ export function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The reset link in the e-mail looks like /reset-password?token=...; we read that token here.
   const token = params.get('token') ?? '';
 
   async function submit(e: FormEvent) {
@@ -62,6 +78,7 @@ export function ResetPasswordPage() {
     setBusy(true);
     setError(null);
     try {
+      // Send the token and new password; the server checks the token is valid and unused.
       await post('/auth/password/reset', { token, password });
       navigate('/login', { replace: true });
     } catch (err) {

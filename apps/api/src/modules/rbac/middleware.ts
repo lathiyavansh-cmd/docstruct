@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   Decides whether the logged-in user may perform an action inside a project, based on their project role.
+ *
+ * How it works
+ *   - Resolver helpers (byProject, byDocument, byVersion, ...) find which project a URL id belongs to.
+ *   - loadMembership() reads the user's role in that project from project_members.
+ *   - authorize(ctx, permission, resolver) is the middleware: it runs the resolver, loads the role, and
+ *     checks the permission with can() from the shared package.
+ *   - membershipOf(req) lets a route read the membership that authorize() attached.
+ *
+ * Where it fits
+ *   Placed after requireAuth on every project-scoped route (documents, versions, diff, summary, reviews and
+ *   more). The role-to-permission table lives in packages/shared/src/permissions.ts.
+ *   Module: M06 Role-Based Access Control (owner: Vansh).
+ */
 import type { Request, RequestHandler } from 'express';
 import { READ_ONLY_PERMISSIONS, can, type Permission, type ProjectRole } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
@@ -18,6 +34,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function lookup(sql: string, param: string, what: string): ProjectResolver {
   return async (q, req) => {
     const id = req.params[param];
+    // A malformed id is treated as "not found" straight away, so it never reaches the SQL query.
     if (typeof id !== 'string' || !UUID.test(id)) throw notFound(what);
     const { rows } = await q.query<{ project_id: string }>(sql, [id]);
     return rows[0] ? { projectId: rows[0].project_id, label: what } : null;
@@ -30,6 +47,7 @@ export const byFolder = (param = 'folderId'): ProjectResolver =>
   lookup('SELECT project_id FROM folders WHERE folder_id = $1', param, 'Folder');
 export const byDocument = (param = 'documentId'): ProjectResolver =>
   lookup('SELECT project_id FROM documents WHERE document_id = $1 AND deleted_at IS NULL', param, 'Document');
+// A version has no project column, so we join through its document. Deleted documents count as missing.
 export const byVersion = (param = 'versionId'): ProjectResolver =>
   lookup(
     `SELECT d.project_id FROM document_versions v JOIN documents d ON d.document_id = v.document_id
@@ -62,6 +80,7 @@ export const byShare = (param = 'shareId'): ProjectResolver =>
 
 /** Loads the caller's membership in a project, or null if they hold none. */
 export async function loadMembership(q: Queryable, projectId: string, userId: string): Promise<MembershipContext | null> {
+  // One query returns both the role and whether the project is archived.
   const { rows } = await q.query<{ role: ProjectRole; archived: boolean }>(
     `SELECT m.role, p.archived_at IS NOT NULL AS archived
        FROM project_members m JOIN projects p ON p.project_id = m.project_id
@@ -86,6 +105,7 @@ export function authorize(ctx: AppContext, permission: Permission, resolve: Proj
       if (!target) throw notFound(permissionSubject(permission));
       const membership = await loadMembership(ctx.db, target.projectId, user.userId);
       if (!membership) throw notFound(target.label);
+      // can() expands the role through the inheritance graph (OWNER gets EDITOR and REVIEWER rights, and so on).
       if (!can(membership.role, permission)) throw forbidden(`Your role (${membership.role.toLowerCase()}) does not allow this action`);
       if (membership.archived && !READ_ONLY_PERMISSIONS.has(permission)) {
         throw new HttpError(409, 'PROJECT_ARCHIVED', 'This project is archived and is now read-only');
@@ -98,6 +118,7 @@ export function authorize(ctx: AppContext, permission: Permission, resolve: Proj
   };
 }
 
+// Turns a permission like "document.read" into "Document" for the 404 message.
 function permissionSubject(permission: Permission): string {
   const noun = permission.split('.')[0];
   return noun.charAt(0).toUpperCase() + noun.slice(1);

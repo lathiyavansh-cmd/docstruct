@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Tests account features: password hashing, sign-up, duplicate e-mails, login, throttling, logout, idle
+ *   session expiry, profile edit, password reset and password change.
+ *
+ * How it works
+ *   - The first block calls hashPassword() and verifyPassword() directly.
+ *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
+ *     database, and send real HTTP requests to /api/auth/... with supertest.
+ *   - Some tests edit the database directly (for example to age a session) and then check the API's reaction.
+ *
+ * Where it fits
+ *   Run by vitest. Covers modules/auth. Module: M01 Authentication (owner: Vansh).
+ */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { hashPassword, verifyPassword } from '../src/modules/auth/password.js';
 import { createTestEnv, signUp, type TestEnv } from './helpers.js';
@@ -61,6 +75,7 @@ describe('M01 authentication', () => {
 
   it('throttles repeated failures for one account', async () => {
     const user = await signUp(env, 'Throttle');
+    // After 5 failures even the correct password is refused with 429.
     for (let i = 0; i < 5; i++) await env.http.post('/api/auth/login').send({ email: user.email, password: 'bad-password' }).expect(401);
     await env.http.post('/api/auth/login').send({ email: user.email, password: 'correct-horse-1' }).expect(429);
   });
@@ -90,6 +105,7 @@ describe('M01 authentication', () => {
     // Unknown addresses get the same answer.
     await env.http.post('/api/auth/password/forgot').send({ email: 'nobody@example.test' }).expect(202);
 
+    // No real e-mail is sent, so the test reads the reset link from the mail_outbox table.
     const { rows } = await env.ctx.db.query<{ body: string }>('SELECT body FROM mail_outbox WHERE to_email = $1', [user.email]);
     const token = /token=([\w-]+)/.exec(rows[0].body)![1];
 

@@ -1,3 +1,17 @@
+/**
+ * What this file does
+ *   Tests the role-to-permission rules: what OWNER, EDITOR, REVIEWER and VIEWER may and may not do.
+ *
+ * How it works
+ *   - This is a plain unit test. It does not start the API; it calls can() and resolvePermissions() from
+ *     the shared package directly.
+ *   - It checks separation of duties, that viewers are read-only, that owner-only actions stay with owners,
+ *     and which permissions remain in an archived project.
+ *
+ * Where it fits
+ *   Run by vitest. Covers packages/shared/src/permissions.ts, which modules/rbac/middleware.ts relies on.
+ *   Module: M06 Role-Based Access Control (owner: Vansh).
+ */
 import { describe, expect, it } from 'vitest';
 import { PERMISSIONS, READ_ONLY_PERMISSIONS, can, resolvePermissions } from '@docstruct/shared';
 
@@ -26,6 +40,7 @@ describe('Algorithm C - role permission resolution', () => {
   });
 
   it('gives the owner every permission through inheritance (SRS 2.3: holds every permission)', () => {
+    // OWNER inherits from EDITOR and REVIEWER (and through them VIEWER), so it should end up with all permissions.
     const owner = resolvePermissions('OWNER');
     for (const p of PERMISSIONS) expect(owner.has(p), p).toBe(true);
   });
