@@ -1,3 +1,19 @@
+/**
+ * What this file does
+ *   The shared building blocks of the DocStruct interface: buttons, form fields, status badges, loading
+ *   and error boxes, cards, pop-up dialogs, page headers, avatars and the machine-output label.
+ *
+ * How it works
+ *   - Each export is a small React component that only takes props; nothing here loads data or calls the API.
+ *   - Styling is done with Tailwind classes. cx() joins class names and lets later classes win.
+ *   - Modal uses the browser's own <dialog> element (showModal), so focus stays inside and Escape closes it.
+ *   - ConfirmDialog wraps Modal for any action that cannot be undone.
+ *   - The motion, animate-ui and Magic UI pieces only add animation and glow; they do not change behaviour.
+ *
+ * Where it fits
+ *   Imported by nearly every page and component (App.tsx, all pages, and the other files in components/).
+ *   Module: app shell / shared UI (owner: Vansh).
+ */
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type ComponentType, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { motion } from 'motion/react';
 import { Loader2 } from 'lucide-react';
@@ -38,6 +54,7 @@ export function Button({
   children,
   ...rest
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: 'sm' | 'md'; busy?: boolean; icon?: AnimatedIcon }) {
+  // While busy, the button is disabled and shows a spinner, so a slow action cannot be sent twice.
   const button = (
     <button
       type="button"
@@ -84,6 +101,7 @@ export function IconButton({ icon: Icon, label, className, ...rest }: ButtonHTML
 }
 
 export function Field({ label, hint, error, children }: { label: string; hint?: ReactNode; error?: string | null; children: (id: string) => ReactNode }) {
+  // A unique id links the <label> to the input. children is a function so the caller can put this id on its input.
   const id = useId();
   return (
     <div className="space-y-1.5">
@@ -232,6 +250,7 @@ export function GlowCard({ children, className, strong }: { children: ReactNode;
 
 export function Modal({ title, onClose, children, footer, wide }: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // Open the dialog when the Modal appears and close it when the Modal is removed from the page.
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
@@ -239,6 +258,7 @@ export function Modal({ title, onClose, children, footer, wide }: { title: strin
     dialog?.querySelector<HTMLElement>('input, textarea, select')?.focus();
     return () => dialog?.close();
   }, []);
+  // Pressing Escape fires "cancel". We stop the browser closing it on its own and call onClose, so the parent stays in control.
   return (
     <dialog
       ref={ref}
@@ -319,6 +339,7 @@ export function PageHeader({ title, children, actions }: { title: ReactNode; chi
 }
 
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) {
+  // Up to two initials, for example "Asha Rao" gives "AR".
   const initials = name
     .split(/\s+/)
     .slice(0, 2)

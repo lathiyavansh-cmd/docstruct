@@ -1,4 +1,17 @@
 <!doctype html>
+<!--
+  What this file does
+    The single HTML page of the web client. React draws the whole app inside it.
+
+  How it works
+    - Sets the character set, mobile viewport, icon and page title.
+    - Provides an empty <div id="root"> for React to fill.
+    - Loads src/main.tsx, which starts the React app.
+
+  Where it fits
+    Served by Vite (vite.config.ts) in development and turned into dist/index.html by the build.
+    Module: web client setup (owner: Vansh).
+-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -8,6 +21,7 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- type="module" lets the browser load modern ES imports; Vite compiles the .tsx file. -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

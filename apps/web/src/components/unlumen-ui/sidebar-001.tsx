@@ -1,4 +1,11 @@
 // Source: 21st.dev Animated Sidebar by unlumen, https://21st.dev/@unlumen/components/sidebar-001. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   The left navigation sidebar: sections of link items with icons and count badges, a highlight that
+ *   slides to the hovered item, and a handle on the right edge to drag the sidebar wider or narrower.
+ *   Used by: components/AppLayout.tsx, which decides which links and counts to show.
+ *   It only affects appearance and layout; no feature logic.
+ */
 import * as React from "react";
 import {
   createContext,

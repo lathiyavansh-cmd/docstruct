@@ -1,4 +1,5 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+// In DocStruct: the animated "square-plus" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

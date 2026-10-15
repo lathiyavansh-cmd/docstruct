@@ -1,3 +1,16 @@
+/**
+ * What this file does
+ *   A "barrel" file: it collects all the animated icons in one place and re-exports them.
+ *
+ * How it works
+ *   - Each line re-exports one icon component from its own file in animate-ui/icons/.
+ *   - AnimateIcon (last line) is the wrapper that starts an icon's animation on hover.
+ *   - Pages write `import { SearchIcon, PlusIcon } from '../components/icons'` instead of 40 separate imports.
+ *
+ * Where it fits
+ *   Used by most pages and components, e.g. AppLayout.tsx, ReviewPanel.tsx, UploadDialog.tsx and
+ *   pages/project/DashboardPage.tsx. Appearance only. Module: shared core, web interface (owner: Vansh).
+ */
 // Animated icons (animate-ui, published on 21st.dev). Each plays when its own AnimateIcon parent is hovered.
 export { ActivityIcon } from './animate-ui/icons/activity';
 export { ArrowRightIcon } from './animate-ui/icons/arrow-right';

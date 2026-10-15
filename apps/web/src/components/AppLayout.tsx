@@ -1,3 +1,18 @@
+/**
+ * What this file does
+ *   The frame around every logged-in page: the left sidebar (logo, search, main links, your projects,
+ *   user box) on desktop, a top bar with a slide-in menu on phones, and the Ctrl+K command palette.
+ *
+ * How it works
+ *   - Loads the project list (query key ['projects'], GET /projects) for the sidebar and the palette.
+ *   - Loads the review queue (query key ['review-queue'], GET /reviews/queue) to show a count badge on "Review queue".
+ *   - State: "drawer" opens the phone menu, "palette" opens the command palette. A keydown listener toggles the palette on Ctrl+K / Cmd+K.
+ *   - The current page is drawn in <Outlet /> from React Router. Log out calls signOut() from lib/auth.tsx, then goes to /login.
+ *   - The unlumen sidebar, animate-ui tooltips, Magic UI number ticker and motion only affect looks.
+ *
+ * Where it fits
+ *   Used in App.tsx as the layout route for all pages behind RequireAuth. Module: app shell (owner: Vansh).
+ */
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -56,6 +71,7 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const [drawer, setDrawer] = useState(false);
   const [palette, setPalette] = useState(false);
+  // Same query keys as ProjectsPage and ReviewQueuePage use, so the data is shared through the cache and refreshed when they are invalidated.
   const projects = useQuery({ queryKey: ['projects'], queryFn: () => get<ProjectDto[]>('/projects') });
   const queue = useQuery({ queryKey: ['review-queue'], queryFn: () => get<ReviewDto[]>('/reviews/queue') });
 
@@ -71,12 +87,15 @@ export function AppLayout() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Close the phone menu whenever the user moves to another page.
   useEffect(() => setDrawer(false), [pathname]);
 
   const queueCount = queue.data?.length ?? 0;
+  // True when the current URL is this section or a page inside it; used to highlight the active sidebar link.
   const at = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
   const logOut = () => signOut().then(() => navigate('/login'));
 
+  // The sidebar is built by a function so the same content is used twice: fixed on desktop and inside the phone drawer.
   const sidebar = (width: number) => (
     <Sidebar001 className="bg-paper" defaultWidth={width} minWidth={216} maxWidth={340}>
       <Sidebar001Header className="px-4 pt-5">

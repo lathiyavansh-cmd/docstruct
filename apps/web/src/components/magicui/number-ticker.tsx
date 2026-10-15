@@ -1,4 +1,10 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   Shows a number that counts up smoothly to its final value when it scrolls into view (e.g. dashboard counts).
+ *   Used by: components/AppLayout.tsx, pages/ComparePage.tsx, pages/ProjectsPage.tsx and
+ *   pages/project/DashboardPage.tsx. It only affects appearance; no feature logic.
+ */
 import { useEffect, useRef, type ComponentPropsWithoutRef } from "react"
 import { useInView, useMotionValue, useSpring } from "motion/react"
 

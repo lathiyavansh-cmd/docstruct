@@ -1,4 +1,11 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   The shared base for every animated icon. AnimateIcon starts an icon's small animation when the user
+ *   hovers, taps or scrolls it into view; IconWrapper is what each individual icon file builds on.
+ *   Used by: every icon file in components/animate-ui/icons/, components/icons.ts, components/ui.tsx and
+ *   components/unlumen-ui/sidebar-001.tsx. It only affects appearance; no feature logic.
+ */
 import * as React from 'react';
 import {
   motion,

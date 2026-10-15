@@ -1,4 +1,10 @@
 // Source: motion-primitives (ibelick), https://motion-primitives.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
+/**
+ * In DocStruct
+ *   Draws a glowing dot that runs around the border of a box in a loop.
+ *   Used by: components/UploadDialog.tsx (shown while a file is dragged over the drop zone).
+ *   It only affects appearance; no feature logic.
+ */
 import { cn } from '@/lib/utils';
 import { motion, type Transition } from 'motion/react';
 
