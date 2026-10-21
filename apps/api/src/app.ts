@@ -13,6 +13,8 @@
  *   Called by server.ts (real server) and test/helpers.ts (tests) with the context from bootstrap.ts.
  *   Module: server core (owner: Vansh).
  */
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import cors from 'cors';
 import express, { type ErrorRequestHandler } from 'express';
 import helmet from 'helmet';
@@ -41,6 +43,17 @@ export function createApp(ctx: AppContext) {
   api.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', 'No such endpoint')));
 
   app.use('/api', api);
+
+  // Production: the same server also serves the built website, so one URL hosts the whole app.
+  const dist = ctx.config.webDist;
+  if (dist && existsSync(path.join(dist, 'index.html'))) {
+    // Files under /assets have a content hash in their name, so browsers may cache them for a long time.
+    app.use('/assets', express.static(path.join(dist, 'assets'), { immutable: true, maxAge: '365d' }));
+    app.use(express.static(dist, { index: false }));
+    // Any other page address (such as /p/123 or /d/456) is a route inside the React app: send index.html.
+    app.use((req, res, next) => (req.method === 'GET' ? res.sendFile(path.join(dist, 'index.html')) : next()));
+  }
+
   app.use(errorHandler(ctx));
   return app;
 }
