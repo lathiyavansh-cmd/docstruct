@@ -63,6 +63,21 @@ npm run test:extractor
 npm run typecheck
 ```
 
+## Deploy (Supabase + Render)
+
+DocStruct runs as one Docker container that serves both the API and the website. Supabase provides only the
+PostgreSQL database; sign-in, file storage and every feature stay DocStruct's own code.
+
+1. **Supabase:** create a project, then copy the **Session pooler** connection string
+   (Connect > Session pooler) with your database password filled in.
+2. **Render:** New > Blueprint, pick this repository and branch. Render reads `render.yaml` and asks for
+   `DATABASE_URL`: paste the Supabase string.
+3. The first start applies the migrations, loads the demo accounts (`SEED_DEMO=true`) and serves the site
+   at `https://<service>.onrender.com`.
+
+Uploaded files are stored in the database (`STORAGE_DRIVER=database`) because Render's free disk is wiped
+on every restart. The free service sleeps after 15 idle minutes, so the first visit afterwards takes about a minute.
+
 ## Repository layout
 
 ```
