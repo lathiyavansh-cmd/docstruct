@@ -67,6 +67,12 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   const env = (process.env.NODE_ENV as AppConfig['env']) ?? 'development';
   const dataDir = path.resolve(overrides.dataDir ?? process.env.DATA_DIR ?? '.data');
 
+  // The embedded database is for development and tests only: it needs far more memory than a small
+  // production server has, so production must point DATABASE_URL at a real PostgreSQL server.
+  if (env === 'production' && !(overrides.databaseUrl ?? process.env.DATABASE_URL)) {
+    throw new Error('DATABASE_URL is required in production (for example a Supabase session pooler connection string)');
+  }
+
   let signingSecret = overrides.signingSecret ?? process.env.SIGNING_SECRET ?? '';
   if (!signingSecret) {
     // Production must set a real secret; otherwise anyone could forge signed download links.

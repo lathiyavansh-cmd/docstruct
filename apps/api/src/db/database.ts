@@ -15,8 +15,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { PGlite } from '@electric-sql/pglite';
-import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm';
+import type { PGlite } from '@electric-sql/pglite';
 import pg from 'pg';
 
 /**
@@ -120,6 +119,9 @@ export async function openDatabase(databaseUrl: string, dataDir: string, poolMax
     location = path.join(dataDir, 'pgdata');
     mkdirSync(location, { recursive: true });
   }
-  const pglite = await PGlite.create(location, { extensions: { pg_trgm } });
+  // Loaded only when needed: the embedded database is large, and a server using PostgreSQL never needs it.
+  const { PGlite: EmbeddedPGlite } = await import('@electric-sql/pglite');
+  const { pg_trgm } = await import('@electric-sql/pglite/contrib/pg_trgm');
+  const pglite = await EmbeddedPGlite.create(location, { extensions: { pg_trgm } });
   return new EmbeddedDatabase(pglite);
 }
