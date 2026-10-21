@@ -12,6 +12,7 @@
  *   Called by bootstrap.ts and migrate-cli.ts. Every module service uses query() and tx().
  *   Module: server core (owner: Vansh).
  */
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
@@ -38,20 +39,28 @@ export interface Database extends Queryable {
 
 class EmbeddedDatabase implements Database {
   readonly kind = 'embedded' as const;
+  /** The transaction the current async call chain is running inside, if any. */
+  private readonly current = new AsyncLocalStorage<Queryable>();
   constructor(private readonly pglite: PGlite) {}
 
   async query<T>(sql: string, params: unknown[] = []) {
+    // PGlite runs one statement at a time. A plain query issued while a transaction is open (for example the
+    // file store reading an upload inside the upload transaction) would wait for that transaction forever,
+    // so it joins the open transaction instead.
+    const inTx = this.current.getStore();
+    if (inTx) return inTx.query<T>(sql, params);
     const result = await this.pglite.query<T>(sql, params);
     return { rows: result.rows };
   }
 
   tx<T>(fn: (q: Queryable) => Promise<T>): Promise<T> {
     // PGlite handles BEGIN/COMMIT itself; we only hand fn a query function bound to the transaction.
-    return this.pglite.transaction(async (tx) =>
-      fn({
+    return this.pglite.transaction(async (tx) => {
+      const q: Queryable = {
         query: async <R>(sql: string, params: unknown[] = []) => ({ rows: (await tx.query<R>(sql, params)).rows }),
-      }),
-    );
+      };
+      return this.current.run(q, () => fn(q));
+    });
   }
 
   close() {
@@ -93,11 +102,11 @@ class PostgresDatabase implements Database {
   }
 }
 
-export async function openDatabase(databaseUrl: string, dataDir: string): Promise<Database> {
+export async function openDatabase(databaseUrl: string, dataDir: string, poolMax = 10): Promise<Database> {
   if (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://')) {
     const pool = new pg.Pool({
       connectionString: databaseUrl,
-      max: 20,
+      max: poolMax,
       // Local servers run without SSL; hosted servers (like Supabase) need an SSL connection.
       ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1') ? undefined : { rejectUnauthorized: false },
     });
