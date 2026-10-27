@@ -5,7 +5,8 @@
  *
  * How it works
  *   - Loads the project list (query key ['projects'], GET /projects) for the sidebar and the palette.
- *   - Loads the review queue (query key ['review-queue'], GET /reviews/queue) to show a count badge on "Review queue".
+ *   - Loads the review queue (query key ['review-queue'], GET /reviews/queue) to show a count badge on "Review queue",
+ *     and the reminders (['reminders'], GET /me/reminders, refreshed every minute) for the badge on "Reminders".
  *   - State: "drawer" opens the phone menu, "palette" opens the command palette. A keydown listener toggles the palette on Ctrl+K / Cmd+K.
  *   - The current page is drawn in <Outlet /> from React Router. Log out calls signOut() from lib/auth.tsx, then goes to /login.
  *   - The unlumen sidebar, animate-ui tooltips, Magic UI number ticker and motion only affect looks.
@@ -18,12 +19,12 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { Menu } from 'lucide-react';
-import type { ProjectDto, ReviewDto, SharedWithMeDto } from '@docstruct/shared';
+import type { ProjectDto, RemindersDto, ReviewDto, SharedWithMeDto } from '@docstruct/shared';
 import { get } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './animate-ui/components/animate/tooltip';
 import { CommandPalette } from './CommandPalette';
-import { ClipboardCheckIcon, KanbanIcon, LayersIcon, LogOutIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon, XIcon, SendIcon } from './icons';
+import { BellIcon, ClipboardCheckIcon, KanbanIcon, LayersIcon, LogOutIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon, XIcon, SendIcon } from './icons';
 import { NumberTicker } from './magicui/number-ticker';
 import { Avatar, IconButton, cx, type AnimatedIcon } from './ui';
 import { Sidebar001, Sidebar001Content, Sidebar001Footer, Sidebar001Header, Sidebar001Item, Sidebar001Section } from './unlumen-ui/sidebar-001';
@@ -76,6 +77,9 @@ export function AppLayout() {
   const queue = useQuery({ queryKey: ['review-queue'], queryFn: () => get<ReviewDto[]>('/reviews/queue') });
   // Documents project owners sent to me; the unread ones give the badge on "Shared with me".
   const shared = useQuery({ queryKey: ['shared-with-me'], queryFn: () => get<SharedWithMeDto[]>('/me/shared') });
+  // Overdue and soon-due reviews, nudges and recent decisions; the attention count is the badge on "Reminders".
+  const reminders = useQuery({ queryKey: ['reminders'], queryFn: () => get<RemindersDto>('/me/reminders'), refetchInterval: 60_000 });
+  const attention = reminders.data?.attention ?? 0;
 
   // Ctrl+K / Cmd+K opens the palette from anywhere in the app.
   useEffect(() => {
@@ -118,6 +122,19 @@ export function AppLayout() {
                 queueCount > 0 && (
                   <span className="inline-flex min-w-5 justify-center rounded-full bg-st-review-wash px-1.5 text-xs font-semibold text-st-review">
                     <NumberTicker value={queueCount} className="tracking-normal text-st-review" />
+                  </span>
+                )
+              }
+            />
+            <Sidebar001Item
+              to="/reminders"
+              label="Reminders"
+              icon={BellIcon}
+              isActive={at('/reminders')}
+              badge={
+                attention > 0 && (
+                  <span className="inline-flex min-w-5 justify-center rounded-full bg-st-changes-wash px-1.5 text-xs font-semibold text-st-changes">
+                    <NumberTicker value={attention} className="tracking-normal text-st-changes" />
                   </span>
                 )
               }

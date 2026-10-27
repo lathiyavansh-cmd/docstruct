@@ -43,6 +43,15 @@ export function timeAgo(iso: string): string {
   return formatDate(iso);
 }
 
+/** Plain words for a review's due date: "Overdue by 2 days", "Due today", "Due in 3 days (12 Nov 2026)". */
+export function dueLabel(dueDate: string | null, daysUntilDue: number | null): string {
+  if (!dueDate || daysUntilDue === null) return 'No due date';
+  if (daysUntilDue < 0) return `Overdue by ${-daysUntilDue} day${daysUntilDue === -1 ? '' : 's'}`;
+  if (daysUntilDue === 0) return 'Due today';
+  if (daysUntilDue === 1) return 'Due tomorrow';
+  return `Due in ${daysUntilDue} days (${formatDate(dueDate)})`;
+}
+
 export function plural(n: number, one: string, many = `${one}s`) {
   return `${n} ${n === 1 ? one : many}`;
 }
