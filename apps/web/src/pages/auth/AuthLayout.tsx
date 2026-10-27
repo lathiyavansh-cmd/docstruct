@@ -7,11 +7,13 @@
  *   - Makes no API calls. It only arranges the layout.
  *   - The left panel is hidden on small screens (hidden ... lg:flex), so phones only see the form.
  *   - Spotlight, BlurFade, BorderBeam and motion are animations for looks only.
+ *   - The DocStruct logo links back to the overview page at "/".
  *
  * Where it fits
  *   Used by LoginPage, SignUpPage, ForgotPasswordPage and ResetPasswordPage (/login, /signup, /forgot-password, /reset-password). Module: M01 Authentication (owner: Vansh).
  */
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { BlurFade } from '../../components/magicui/blur-fade';
 import { BorderBeam } from '../../components/magicui/border-beam';
@@ -38,8 +40,10 @@ export function AuthLayout({ title, children, footer }: { title: string; childre
           aria-hidden
         />
 
-        <motion.span initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative flex items-center gap-2 font-semibold">
-          <motion.img src="/favicon.svg" alt="" className="size-8" whileHover={{ rotate: -10, scale: 1.1 }} /> DocStruct
+        <motion.span initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative">
+          <Link to="/" className="flex w-fit items-center gap-2 font-semibold" aria-label="DocStruct overview">
+            <motion.img src="/favicon.svg" alt="" className="size-8" whileHover={{ rotate: -10, scale: 1.1 }} /> DocStruct
+          </Link>
         </motion.span>
         <div className="relative max-w-md">
           <BlurFade delay={0.1}>
@@ -70,9 +74,9 @@ export function AuthLayout({ title, children, footer }: { title: string; childre
       <section className="relative flex items-center justify-center overflow-hidden px-5 py-12">
         <div className="bg-dots pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_60%)]" aria-hidden />
         <BlurFade delay={0.05} className="relative w-full max-w-sm">
-          <div className="mb-6 flex items-center gap-2 font-semibold lg:hidden">
+          <Link to="/" className="mb-6 flex w-fit items-center gap-2 font-semibold lg:hidden" aria-label="DocStruct overview">
             <img src="/favicon.svg" alt="" className="size-7" /> DocStruct
-          </div>
+          </Link>
           <h1 className="mb-6 text-2xl font-semibold tracking-tight">{title}</h1>
           {/* The form passed in by the page (login, sign-up or password) goes here. */}
           {children}
