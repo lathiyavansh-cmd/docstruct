@@ -3,7 +3,8 @@
  *   Creates the demo accounts, project, folders and documents used for presentations and manual testing.
  *
  * How it works
- *   - seedDemoData() returns false straight away if the demo user already exists, so it is safe to call twice.
+ *   - seedDemoData() runs two parts, each skipped when its first account already exists, so it is safe to call
+ *     twice and it tops up a database seeded by an older version. It then resets every demo password.
  *   - It uses the real service classes, so the same rules and activity logging apply as in the app.
  *   - store() uploads a file the way the web client does; pdf() writes a small text-layer PDF by hand.
  *
@@ -14,9 +15,9 @@
 /**
  * Demo data for presentations and manual testing:  npm run db:seed
  *
- * Creates four local accounts (password: docstruct-demo), one project with folders, and documents in every
- * review state - including a two-version requirements document under review, so the change summary and
- * pre-review findings can be shown immediately. Safe to run twice: it stops if the demo users exist.
+ * Creates ten accounts (password: demo1234) and two projects with folders and documents in every review
+ * state - including requirements documents under review, so the change summary and pre-review findings can be
+ * shown immediately, and a password-protected contract sent to all members. Safe to run twice.
  */
 import type { AppContext } from '../context.js';
 import { AuthService } from '../modules/auth/service.js';
@@ -28,12 +29,17 @@ import { AnnotationService } from '../modules/annotations/service.js';
 import { VersionService } from '../modules/versions/service.js';
 import { UploadService } from '../modules/documents/uploads.js';
 import type { FolderNodeDto } from '@docstruct/shared';
+import { recordActivity } from '../lib/activity.js';
+import { hashPassword } from '../modules/auth/password.js';
+import { RecipientService } from '../modules/recipients/service.js';
+import { CANTEEN_CHANGE_NOTES, CANTEEN_SRS, VENDOR_CONTRACT, WATER_REPORT } from './demo-content.js';
 
-export const DEMO_PASSWORD = 'docstruct-demo';
+/** One simple password for every demo account. */
+export const DEMO_PASSWORD = 'demo1234';
 const PASSWORD = DEMO_PASSWORD;
 
-/** Loads the demo data into an empty database. Returns false (and changes nothing) if it is already there. */
-export async function seedDemoData(ctx: AppContext): Promise<boolean> {
+/** Part 1: the team's project. Skipped when the first demo user already exists. */
+async function seedCore(ctx: AppContext): Promise<boolean> {
   // Running the seed twice would fail on duplicate emails, so stop if the first demo user exists.
   const existing = await ctx.db.query(`SELECT 1 FROM profiles WHERE email = 'vansh@docstruct.test'`);
   if (existing.rows.length) return false;
@@ -217,7 +223,155 @@ export async function seedDemoData(ctx: AppContext): Promise<boolean> {
 
   await ctx.jobs.idle();
   console.log(`Seeded project "${project.name}" with 5 documents (one under review: ${srsReview.documentTitle}).`);
-  console.log('Accounts (password docstruct-demo):');
-  for (const u of [vansh, vivan, shrut, reviewer]) console.log(`  ${u.email.padEnd(26)} ${u.displayName}`);
   return true;
+}
+
+/** The ten demo accounts, in the order the login page lists them. */
+export const DEMO_ACCOUNTS: Array<{ email: string; name: string; role: string; tryThis: string }> = [
+  { email: 'vansh@docstruct.test', name: 'Vansh Lathiya', role: 'Owner', tryThis: 'Manage members, send a document to all, protect a document' },
+  { email: 'vivan@docstruct.test', name: 'Vivan Dhoka', role: 'Editor', tryThis: 'Upload a revised version of the weekly report' },
+  { email: 'shrut@docstruct.test', name: 'Shrut Diwakar', role: 'Editor', tryThis: 'Create folders, upload documents, comment' },
+  { email: 'reviewer@docstruct.test', name: 'Faculty Reviewer', role: 'Reviewer', tryThis: 'Review the SRS waiting in the review queue' },
+  { email: 'ananya@docstruct.test', name: 'Ananya Sharma', role: 'Reviewer', tryThis: 'Read documents and add comments' },
+  { email: 'rohan@docstruct.test', name: 'Rohan Mehta', role: 'Viewer', tryThis: 'Read-only access in both projects' },
+  { email: 'priya@docstruct.test', name: 'Priya Nair', role: 'Owner, second project', tryThis: 'Campus Canteen App: versions, sharing, passwords' },
+  { email: 'kabir@docstruct.test', name: 'Kabir Singh', role: 'Editor, second project', tryThis: 'Compare the four versions of the canteen SRS' },
+  { email: 'isha@docstruct.test', name: 'Isha Patel', role: 'Reviewer, second project', tryThis: 'Review the canteen SRS with its pre-review findings' },
+  { email: 'arjun@docstruct.test', name: 'Arjun Rao', role: 'New user', tryThis: 'Start from an empty account and create a project' },
+];
+
+/** The password of the protected contract in the second demo project. */
+export const DEMO_DOCUMENT_PASSWORD = 'canteen123';
+
+/**
+ * Part 2: six more accounts and a second project (Campus Canteen App) with a four-version requirements
+ * document under review, a report for the summary, and a password-protected contract sent to all members.
+ * Skipped when the account it creates first (priya@) already exists, so it also tops up older demo databases.
+ */
+async function seedExtras(ctx: AppContext): Promise<boolean> {
+  const exists = await ctx.db.query(`SELECT 1 FROM profiles WHERE email = 'priya@docstruct.test'`);
+  if (exists.rows.length) return false;
+  const auth = new AuthService(ctx);
+  const projects = new ProjectService(ctx);
+  const folders = new FolderService(ctx);
+  const documents = new DocumentService(ctx);
+  const versions = new VersionService(ctx);
+  const reviews = new ReviewService(ctx);
+  const annotations = new AnnotationService(ctx);
+  const uploads = new UploadService(ctx);
+  const recipients = new RecipientService(ctx);
+
+  const make = async (email: string, name: string) => (await auth.signUp(email, PASSWORD, name)).user;
+  const ananya = await make('ananya@docstruct.test', 'Ananya Sharma');
+  const rohan = await make('rohan@docstruct.test', 'Rohan Mehta');
+  const priya = await make('priya@docstruct.test', 'Priya Nair');
+  const kabir = await make('kabir@docstruct.test', 'Kabir Singh');
+  const isha = await make('isha@docstruct.test', 'Isha Patel');
+  // Arjun is deliberately in no project, to show a brand-new account.
+  await make('arjun@docstruct.test', 'Arjun Rao');
+
+  // The new people join the team's project as a second reviewer and a read-only viewer.
+  const team = await ctx.db.query<{ project_id: string; owner: string }>(
+    `SELECT p.project_id, m.user_id AS owner FROM projects p
+       JOIN project_members m ON m.project_id = p.project_id AND m.role = 'OWNER'
+       JOIN profiles u ON u.user_id = m.user_id
+      WHERE p.name = 'DocStruct Mini Project' AND u.email = 'vansh@docstruct.test' LIMIT 1`,
+  );
+  if (team.rows[0]) {
+    await projects.addMember(team.rows[0].project_id, team.rows[0].owner, ananya.email, 'REVIEWER');
+    await projects.addMember(team.rows[0].project_id, team.rows[0].owner, rohan.email, 'VIEWER');
+  }
+
+  // Second project, owned by Priya.
+  const project = await projects.create(priya.userId, 'Campus Canteen App', 'Requirements, reports and vendor documents for the canteen pre-order system.');
+  const pid = project.projectId;
+  await projects.addMember(pid, priya.userId, kabir.email, 'EDITOR');
+  await projects.addMember(pid, priya.userId, isha.email, 'REVIEWER');
+  await projects.addMember(pid, priya.userId, 'vansh@docstruct.test', 'EDITOR');
+  await projects.addMember(pid, priya.userId, rohan.email, 'VIEWER');
+  let tree = await folders.create(pid, priya.userId, 'Requirements', null);
+  tree = await folders.create(pid, priya.userId, 'Reports', null);
+  tree = await folders.create(pid, priya.userId, 'Vendor', null);
+  const folder = (name: string) => tree.find((f) => f.name === name)!.folderId;
+
+  const store = async (userId: string, fileName: string, content: string) => {
+    const data = Buffer.from(content, 'utf8');
+    const ticket = await uploads.issue(pid, userId, fileName, data.length);
+    await ctx.storage.writeBuffer(ticket.uploadKey, data);
+    return ticket.uploadKey;
+  };
+
+  // 1. Requirements in four versions (Kabir and Priya take turns), the last one sent to Isha for review.
+  const srs = await documents.create(pid, kabir.userId, {
+    uploadKey: await store(kabir.userId, 'Canteen_SRS.md', CANTEEN_SRS[0]),
+    title: 'Canteen Pre-Order SRS',
+    description: 'Software requirements for ordering canteen food ahead of the lunch break.',
+    folderId: folder('Requirements'),
+    changeNote: 'First draft',
+  });
+  for (let v = 1; v < CANTEEN_SRS.length; v++) {
+    const by = v % 2 ? priya : kabir;
+    await versions.upload(srs.documentId, by.userId, await store(by.userId, 'Canteen_SRS.md', CANTEEN_SRS[v]), CANTEEN_CHANGE_NOTES[v]);
+  }
+  await ctx.jobs.idle();
+  const due = new Date(Date.now() + 5 * 86400_000).toISOString().slice(0, 10);
+  await reviews.submit(srs.documentId, kabir.userId, { reviewerId: isha.userId, dueDate: due, note: 'Please check the new acceptance criteria and the payments section.' });
+  await annotations.create(srs.documentId, isha.userId, { body: 'Who approves refunds when the manager is away?' });
+
+  // 2. A report that summarises well, reviewed and approved.
+  const report = await documents.create(pid, kabir.userId, {
+    uploadKey: await store(kabir.userId, 'Campus_Water_Report.md', WATER_REPORT),
+    title: 'Campus Water Report',
+    description: 'Where water is wasted on campus and what three low-cost fixes saved.',
+    folderId: folder('Reports'),
+  });
+  await ctx.jobs.idle();
+  const reportReview = await reviews.submit(report.documentId, kabir.userId, { reviewerId: isha.userId });
+  await reviews.decide(reportReview.reviewId, isha.userId, true, 'Clear findings and good recommendations.');
+
+  // 3. A password-protected contract, sent to every member of the project.
+  const contract = await documents.create(pid, priya.userId, {
+    uploadKey: await store(priya.userId, 'Vendor_Contract_Terms.md', VENDOR_CONTRACT),
+    title: 'Vendor Contract Terms',
+    description: 'Commercial terms with the canteen vendor. Ask Priya for the password.',
+    folderId: folder('Vendor'),
+  });
+  await ctx.db.tx(async (q) => {
+    await q.query(
+      `UPDATE documents SET password_hash = $2, protected_at = now(), protected_by = $3, password_version = 1 WHERE document_id = $1`,
+      [contract.documentId, await hashPassword(DEMO_DOCUMENT_PASSWORD), priya.userId],
+    );
+    await recordActivity(q, { projectId: pid, actorId: priya.userId, action: 'document.protected', entityType: 'document', entityId: contract.documentId, entityLabel: contract.title });
+  });
+  await recipients.shareWithMembers(contract.documentId, priya.userId, `Please read before Friday. The password is ${DEMO_DOCUMENT_PASSWORD}.`);
+
+  await ctx.jobs.idle();
+  console.log(`Seeded project "${project.name}" with 3 documents and 6 more demo accounts.`);
+  return true;
+}
+
+/**
+ * Sets every demo account's password back to DEMO_PASSWORD, so the demo always works even after a visitor
+ * changed one. Only the listed demo emails are touched.
+ */
+async function resetDemoPasswords(ctx: AppContext): Promise<void> {
+  await ctx.db.query(
+    `UPDATE user_credentials SET password_hash = $1
+      WHERE user_id IN (SELECT user_id FROM profiles WHERE email = ANY($2::text[]))`,
+    [await hashPassword(PASSWORD), DEMO_ACCOUNTS.map((a) => a.email)],
+  );
+}
+
+/**
+ * Loads the demo data: the team's project, then the second project and the extra accounts, then makes sure
+ * every demo password is DEMO_PASSWORD. Each part is skipped if it already exists, so running it again is
+ * safe. Returns true when anything new was created.
+ */
+export async function seedDemoData(ctx: AppContext): Promise<boolean> {
+  const core = await seedCore(ctx);
+  const extras = await seedExtras(ctx);
+  await resetDemoPasswords(ctx);
+  console.log(`Demo accounts (password ${PASSWORD}):`);
+  for (const a of DEMO_ACCOUNTS) console.log(`  ${a.email.padEnd(26)} ${a.name}, ${a.role}`);
+  return core || extras;
 }

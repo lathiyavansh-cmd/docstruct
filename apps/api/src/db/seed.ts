@@ -13,5 +13,5 @@ import { bootstrap } from '../bootstrap.js';
 import { seedDemoData } from './demo-data.js';
 
 const ctx = await bootstrap();
-if (!(await seedDemoData(ctx))) console.log('Demo data already present. Log in as vansh@docstruct.test / docstruct-demo');
+if (!(await seedDemoData(ctx))) console.log('Demo data was already there; demo passwords were reset to demo1234');
 await ctx.db.close();
