@@ -16,14 +16,14 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { REVIEWER_ROLES, ROLE_LABEL, canTransition, type DocumentDetailDto, type ProjectDto, type ReviewDto } from '@docstruct/shared';
+import { REVIEWER_ROLES, ROLE_LABEL, canTransition, type DocumentDetailDto, type ProjectDto, type ReviewDto, type TemplateCheckDto } from '@docstruct/shared';
 import { errorMessage, get, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { dueLabel, formatDateTime, timeAgo } from '../lib/format';
 import { useCan, useMembers } from '../lib/hooks';
 import { PreReviewPanel } from './PreReview';
 import { useToast } from './toast';
-import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, StatusBadge, TextArea } from './ui';
+import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Notice, Select, StatusBadge, TextArea } from './ui';
 import { BadgeCheckIcon, BellIcon, RotateCcwIcon, SendIcon, XIcon } from './icons';
 
 /** M05 on the document page: the open review, the reviewer's decision, submission and the review history. */
@@ -203,6 +203,9 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
 function SubmitDialog({ document: doc, project, onClose, onDone }: { document: DocumentDetailDto; project: ProjectDto; onClose: () => void; onDone: () => void }) {
   const members = useMembers(project.projectId);
   const toast = useToast();
+  // If the document has a template, warn when sections are still missing (the submitter may still send it).
+  const check = useQuery({ queryKey: ['template-check', doc.documentId], queryFn: () => get<TemplateCheckDto | null>(`/documents/${doc.documentId}/template-check`) });
+  const missing = check.data?.status === 'DONE' ? check.data.items.filter((i) => !i.found).map((i) => i.heading) : [];
   // Only members whose role can review appear in the reviewer drop-down.
   const eligible = members.data?.filter((m) => REVIEWER_ROLES.includes(m.role)) ?? [];
   const [reviewerId, setReviewerId] = useState('');
@@ -230,6 +233,11 @@ function SubmitDialog({ document: doc, project, onClose, onDone }: { document: D
       }
     >
       {submit.error && <ErrorNote>{errorMessage(submit.error)}</ErrorNote>}
+      {missing.length > 0 && (
+        <Notice className="mb-4">
+          Against the {check.data!.template.name} template this version is missing {missing.length === 1 ? 'a section' : `${missing.length} sections`}: {missing.join(', ')}. You can still send it, but the reviewer will see the gap.
+        </Notice>
+      )}
       <Field label="Reviewer" hint="Members with the Reviewer or Owner role can review.">
         {(id) => (
           <Select id={id} value={reviewerId} onChange={(e) => setReviewerId(e.target.value)}>

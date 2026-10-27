@@ -144,7 +144,7 @@ function RotatingWord() {
 
 const STATS = [
   { value: 13, label: 'pre-review rules', note: 'Wording, numbers, dates, placeholders and sections; each finding names its rule' },
-  { value: 155, label: 'automated tests', note: '148 on the server and 7 in the browser, run on every change' },
+  { value: 178, label: 'automated tests', note: '171 on the server and 7 in the browser, run on every change' },
   { value: 4, label: 'project roles', note: 'Owner, editor, reviewer and viewer, checked on every request' },
   { value: 12, label: 'hours per unlock', note: 'A protected document asks for its password again after that' },
 ];
@@ -165,7 +165,7 @@ function Hero() {
           <BlurFade delay={0.05}>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] py-1 pl-1 pr-3 text-xs text-white/75 ring-1 ring-white/15 backdrop-blur">
               <span className="rounded-full bg-gradient-to-r from-primary to-violet px-2 py-0.5 font-medium text-white">New</span>
-              Password-protected documents and send to all
+              Review reminders and document templates
             </span>
           </BlurFade>
           <BlurFade delay={0.12}>
