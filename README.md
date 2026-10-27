@@ -43,14 +43,24 @@ npm run setup -- --seed
 npm run dev
 ```
 
-Open http://localhost:5173 and log in with a demo account (password `docstruct-demo`):
+Open http://localhost:5173 and log in with a demo account. Every account uses the password `demo1234`, and
+the login page lists them all, so one click fills in the form.
 
-| Account | Role in the demo project |
-|---|---|
-| vansh@docstruct.test | Owner |
-| vivan@docstruct.test | Editor |
-| shrut@docstruct.test | Editor |
-| reviewer@docstruct.test | Reviewer, with "SRS Sections 3 and 5" waiting in the review queue |
+| Account | Name | What to try |
+|---|---|---|
+| vansh@docstruct.test | Vansh Lathiya | Owner of DocStruct Mini Project, editor in Campus Canteen App: members, send to all, passwords |
+| vivan@docstruct.test | Vivan Dhoka | Editor: upload a new version of the weekly report |
+| shrut@docstruct.test | Shrut Diwakar | Editor: folders, uploads, comments |
+| reviewer@docstruct.test | Faculty Reviewer | Reviewer, with "SRS Sections 3 and 5" waiting in the review queue |
+| ananya@docstruct.test | Ananya Sharma | Second reviewer in DocStruct Mini Project |
+| rohan@docstruct.test | Rohan Mehta | Viewer (read-only) in both projects |
+| priya@docstruct.test | Priya Nair | Owner of Campus Canteen App |
+| kabir@docstruct.test | Kabir Singh | Editor in Campus Canteen App: compare the four SRS versions |
+| isha@docstruct.test | Isha Patel | Reviewer in Campus Canteen App, with the canteen SRS waiting for review |
+| arjun@docstruct.test | Arjun Rao | Brand-new account with no projects |
+
+"Vendor Contract Terms" in Campus Canteen App is password-protected (password `canteen123`) and has been sent
+to every member of that project, so it appears under **Shared with me**.
 
 No database server is needed: data lives in `apps/api/.data`. To use PostgreSQL or Supabase instead, set
 `DATABASE_URL` in `apps/api/.env` (see `.env.example`) and run `npm run db:migrate`.
@@ -72,7 +82,7 @@ PostgreSQL database; sign-in, file storage and every feature stay DocStruct's ow
    (Connect > Session pooler) with your database password filled in.
 2. **Render:** New > Blueprint, pick this repository and branch. Render reads `render.yaml` and asks for
    `DATABASE_URL`: paste the Supabase string.
-3. The first start applies the migrations, loads the demo accounts (`SEED_DEMO=true`) and serves the site
+3. The first start applies the migrations, loads the demo accounts (`SEED_DEMO=true`; every start also resets their passwords to `demo1234`) and serves the site
    at `https://<service>.onrender.com`.
 
 Uploaded files are stored in the database (`STORAGE_DRIVER=database`) because Render's free disk is wiped
