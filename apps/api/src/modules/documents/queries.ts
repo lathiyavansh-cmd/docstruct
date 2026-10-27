@@ -72,7 +72,7 @@ export function documentSelect(extraColumns = ''): string {
   return `
   SELECT ${extraColumns ? `${extraColumns},` : ''} d.document_id, d.project_id, d.folder_id, d.title, d.description, d.status, d.created_by,
          cb.display_name AS created_by_name, d.created_at AS doc_created_at, d.updated_at,
-         (d.protected_at IS NOT NULL) AS is_protected,
+         (d.protected_at IS NOT NULL) AS is_protected, d.template_id,
          ${VERSION_COLUMNS},
          cr.review_id, cr.reviewer_id, rp.display_name AS reviewer_name, cr.due_date::text AS due_date
     FROM documents d
@@ -96,6 +96,7 @@ export interface DocumentRow extends VersionRow {
   doc_created_at: Date;
   updated_at: Date;
   is_protected: boolean;
+  template_id: string | null;
   review_id: string | null;
   reviewer_id: string | null;
   reviewer_name: string | null;
@@ -124,6 +125,7 @@ export function toDocumentDto(r: DocumentRow): DocumentDto {
       ? { reviewId: r.review_id, reviewer: { userId: r.reviewer_id!, displayName: r.reviewer_name! }, dueDate: isoDate(r.due_date) }
       : null,
     isProtected: r.is_protected,
+    templateId: r.template_id,
   };
 }
 

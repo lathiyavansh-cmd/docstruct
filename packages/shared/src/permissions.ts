@@ -64,6 +64,7 @@ export const PERMISSIONS = [
   'share.revoke',
   'share.list',
   'review.cancel.any',
+  'template.manage',
 ] as const;
 // `as const` keeps each string as its own type, so Permission is a union of exactly these names
 // and a typo like 'document.raed' fails to compile.
@@ -115,6 +116,8 @@ const OWN: Record<ProjectRole, Permission[]> = {
     'share.revoke',
     'share.list',
     'review.cancel.any',
+    // Create, edit and delete the project's document templates (checklists of required headings).
+    'template.manage',
   ],
 };
 
