@@ -20,6 +20,7 @@ import { folderRoutes } from './folders/routes.js';
 import { healthRoutes } from './health.js';
 import { projectRoutes } from './projects/routes.js';
 import { protectionRoutes } from './protection/routes.js';
+import { recipientRoutes } from './recipients/routes.js';
 import { reviewRoutes } from './reviews/routes.js';
 import { searchRoutes } from './search/routes.js';
 import { shareRoutes } from './shares/routes.js';
@@ -38,6 +39,7 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   folderRoutes, // M03
   documentRoutes, // M03
   protectionRoutes, // M06: password-protected documents
+  recipientRoutes, // M07: send a document to all members ("Shared with me")
   versionRoutes, // M04
   reviewRoutes, // M05
   diffRoutes, // F3.6

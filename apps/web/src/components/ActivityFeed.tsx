@@ -42,6 +42,11 @@ export function describe(entry: ActivityEntryDto): string {
     case 'document.moved': return 'moved';
     case 'document.deleted': return 'deleted';
     case 'document.archived': return 'archived';
+    case 'document.protected': return 'protected with a password';
+    case 'document.password_changed': return 'changed the password of';
+    case 'document.password_reset': return 'reset the forgotten password of';
+    case 'document.unprotected': return 'removed the password from';
+    case 'document.shared_members': return `sent to ${d.recipients} member${d.recipients === 1 ? '' : 's'}`;
     case 'version.uploaded': return `uploaded version ${d.versionNo} of`;
     case 'version.restored': return `restored version ${d.restoredFrom} as version ${d.versionNo} of`;
     case 'review.submitted': return 'sent for review';

@@ -18,12 +18,12 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import { Menu } from 'lucide-react';
-import type { ProjectDto, ReviewDto } from '@docstruct/shared';
+import type { ProjectDto, ReviewDto, SharedWithMeDto } from '@docstruct/shared';
 import { get } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './animate-ui/components/animate/tooltip';
 import { CommandPalette } from './CommandPalette';
-import { ClipboardCheckIcon, KanbanIcon, LayersIcon, LogOutIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon, XIcon } from './icons';
+import { ClipboardCheckIcon, KanbanIcon, LayersIcon, LogOutIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon, XIcon, SendIcon } from './icons';
 import { NumberTicker } from './magicui/number-ticker';
 import { Avatar, IconButton, cx, type AnimatedIcon } from './ui';
 import { Sidebar001, Sidebar001Content, Sidebar001Footer, Sidebar001Header, Sidebar001Item, Sidebar001Section } from './unlumen-ui/sidebar-001';
@@ -74,6 +74,8 @@ export function AppLayout() {
   // Same query keys as ProjectsPage and ReviewQueuePage use, so the data is shared through the cache and refreshed when they are invalidated.
   const projects = useQuery({ queryKey: ['projects'], queryFn: () => get<ProjectDto[]>('/projects') });
   const queue = useQuery({ queryKey: ['review-queue'], queryFn: () => get<ReviewDto[]>('/reviews/queue') });
+  // Documents project owners sent to me; the unread ones give the badge on "Shared with me".
+  const shared = useQuery({ queryKey: ['shared-with-me'], queryFn: () => get<SharedWithMeDto[]>('/me/shared') });
 
   // Ctrl+K / Cmd+K opens the palette from anywhere in the app.
   useEffect(() => {
@@ -91,6 +93,7 @@ export function AppLayout() {
   useEffect(() => setDrawer(false), [pathname]);
 
   const queueCount = queue.data?.length ?? 0;
+  const unreadShared = shared.data?.filter((s) => !s.readAt).length ?? 0;
   // True when the current URL is this section or a page inside it; used to highlight the active sidebar link.
   const at = (prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
   const logOut = () => signOut().then(() => navigate('/login'));
@@ -115,6 +118,19 @@ export function AppLayout() {
                 queueCount > 0 && (
                   <span className="inline-flex min-w-5 justify-center rounded-full bg-st-review-wash px-1.5 text-xs font-semibold text-st-review">
                     <NumberTicker value={queueCount} className="tracking-normal text-st-review" />
+                  </span>
+                )
+              }
+            />
+            <Sidebar001Item
+              to="/shared"
+              label="Shared with me"
+              icon={SendIcon}
+              isActive={at('/shared')}
+              badge={
+                unreadShared > 0 && (
+                  <span className="inline-flex min-w-5 justify-center rounded-full bg-primary-wash px-1.5 text-xs font-semibold text-primary">
+                    <NumberTicker value={unreadShared} className="tracking-normal text-primary" />
                   </span>
                 )
               }

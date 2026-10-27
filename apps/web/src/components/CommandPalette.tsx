@@ -17,7 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ProjectDto } from '@docstruct/shared';
-import { AnimateIcon, ArrowRightIcon, ClipboardCheckIcon, KanbanIcon, LayersIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon } from './icons';
+import { AnimateIcon, ArrowRightIcon, ClipboardCheckIcon, KanbanIcon, LayersIcon, MessageCircleQuestionIcon, SearchIcon, UserIcon, SendIcon } from './icons';
 import { cx, type AnimatedIcon } from './ui';
 
 interface Command {
@@ -53,6 +53,7 @@ export function CommandPalette({ open, onClose, projects }: { open: boolean; onC
     () => [
       { id: 'projects', group: 'Go to', label: 'Projects', icon: KanbanIcon, to: '/' },
       { id: 'reviews', group: 'Go to', label: 'Review queue', icon: ClipboardCheckIcon, to: '/reviews' },
+      { id: 'shared', group: 'Go to', label: 'Shared with me', icon: SendIcon, to: '/shared' },
       { id: 'help', group: 'Go to', label: 'Help', icon: MessageCircleQuestionIcon, to: '/help' },
       { id: 'profile', group: 'Go to', label: 'Profile', icon: UserIcon, to: '/profile' },
       ...projects.map((p) => ({

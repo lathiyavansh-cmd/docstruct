@@ -30,6 +30,7 @@ import { MembersPage } from './pages/project/MembersPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
 import { WorkspacePage } from './pages/project/WorkspacePage';
 import { ReviewQueuePage } from './pages/ReviewQueuePage';
+import { SharedWithMePage } from './pages/SharedWithMePage';
 import { SearchPage } from './pages/SearchPage';
 import { SharedDocumentPage } from './pages/SharedDocumentPage';
 
@@ -65,6 +66,7 @@ export function App() {
         <Route index element={<ProjectsPage />} />
         {/* Project pages share ProjectLayout, which loads the project and shows its tabs. */}
         <Route path="reviews" element={<ReviewQueuePage />} />
+        <Route path="shared" element={<SharedWithMePage />} />
         <Route path="p/:projectId" element={<ProjectLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="documents" element={<WorkspacePage />} />
