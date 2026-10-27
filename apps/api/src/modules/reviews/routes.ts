@@ -2,6 +2,7 @@
  * What this file does
  *   Defines the HTTP endpoints for the review workflow: the reviewer's queue, submitting a document
  *   for review, viewing review history, approving, requesting changes, cancelling, and archiving a document.
+ *   Also the caller's reminders list and the nudge (remind the reviewer) action.
  *
  * How it works
  *   - Zod schemas check the body (reviewer id, due date as YYYY-MM-DD, optional notes).
@@ -59,6 +60,16 @@ export function reviewRoutes(ctx: AppContext, service = new ReviewService(ctx)):
     // Unlike approve, requesting changes must include a non-empty note explaining what to fix.
     const body = parse(z.object({ note: note.min(1, 'Explain what needs to change') }), req.body);
     res.json(await service.decide(req.params.reviewId as string, currentUser(req).userId, false, body.note));
+  });
+
+  // Reminders: overdue and soon-due reviews, nudges received and recent decisions, across all projects.
+  router.get('/me/reminders', auth, async (req, res) => {
+    res.json(await service.reminders(currentUser(req).userId));
+  });
+
+  // A reminder to the reviewer, by the submitter or an owner (the service checks which).
+  router.post('/reviews/:reviewId/nudge', auth, authorize(ctx, 'review.submit', byReview()), async (req, res) => {
+    res.json(await service.nudge(req.params.reviewId as string, currentUser(req).userId, membershipOf(req).role));
   });
 
   // The caller's role is passed on so the service can let an owner cancel someone else's review.

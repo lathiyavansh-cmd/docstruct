@@ -12,7 +12,7 @@
  * Where it fits
  *   Route /d/:documentId in App.tsx, inside AppLayout. Module: M03 Document & Folder Management, with M04/M05/M07 panels (owner: Shrut).
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
@@ -20,6 +20,7 @@ import { ChevronRight } from 'lucide-react';
 import { formatBytes, type AnnotationDto, type DocumentDetailDto, type FolderNodeDto, type RegionDto, type VersionDto } from '@docstruct/shared';
 import { AnnotationsPanel } from '../components/AnnotationsPanel';
 import { DocumentPreview, downloadVersion } from '../components/DocumentPreview';
+import { ProtectionDialog, UnlockPanel, type ProtectionMode } from '../components/DocumentProtection';
 import {
   AnimateIcon,
   ChevronDownIcon,
@@ -30,12 +31,15 @@ import {
   LinkIcon,
   LockIcon,
   MessageSquareIcon,
+  SendIcon,
   Trash2Icon,
   UploadIcon,
 } from '../components/icons';
 import { ReviewPanel } from '../components/ReviewPanel';
 import { SharePanel } from '../components/SharePanel';
+import { ShareWithMembersDialog } from '../components/ShareWithMembersDialog';
 import { SummaryCard } from '../components/SummaryCard';
+import { TemplateCheckCard } from '../components/TemplateCheckCard';
 import { useToast } from '../components/toast';
 import { UploadDialog } from '../components/UploadDialog';
 import { VersionHistory } from '../components/VersionHistory';
@@ -77,7 +81,8 @@ export function DocumentPage() {
   const annotations = useQuery({
     queryKey: ['annotations', shownVersion?.versionId],
     queryFn: () => get<AnnotationDto[]>(`/versions/${shownVersion!.versionId}/annotations`),
-    enabled: !!shownVersion,
+    // Comments are part of the contents, so they are only loaded once the document is open for this user.
+    enabled: !!shownVersion && !!doc.data?.unlocked,
   });
 
   // Which side panel tab is open. Review is the default.
@@ -86,7 +91,15 @@ export function DocumentPage() {
   const [placing, setPlacing] = useState(false);
   const [anchor, setAnchor] = useState<{ page: number; region: RegionDto } | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [dialog, setDialog] = useState<'upload' | 'edit' | 'move' | 'delete' | 'archive' | null>(null);
+  const [dialog, setDialog] = useState<'upload' | 'edit' | 'move' | 'delete' | 'archive' | 'share-members' | ProtectionMode | null>(null);
+
+  // Opening a document that a project owner sent you marks it as read in "Shared with me".
+  useEffect(() => {
+    if (!doc.data) return;
+    post(`/documents/${documentId}/shared/read`)
+      .then(() => queryClient.invalidateQueries({ queryKey: ['shared-with-me'] }))
+      .catch(() => {});
+  }, [documentId, doc.data?.documentId, queryClient]);
 
   if (doc.isLoading || (doc.data && project.isLoading)) return <div className="px-5 lg:px-8"><Spinner label="Opening the document" /></div>;
   if (doc.error || !doc.data || !project.data) return <div className="p-8"><ErrorNote>{errorMessage(doc.error ?? project.error)}</ErrorNote></div>;
@@ -115,8 +128,10 @@ export function DocumentPage() {
     { id: 'versions', label: 'Versions', icon: LayersIcon, count: d.versionCount },
     ...(allowed('share.list') ? [{ id: 'sharing' as const, label: 'Sharing', icon: LinkIcon }] : []),
   ];
+  // A protected document stays locked for this user until they enter the password (DocumentProtection.tsx).
+  const locked = d.isProtected && !d.unlocked;
   // A new version needs permission, and the document must not be under review or archived.
-  const canUpload = allowed('version.create') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED';
+  const canUpload = allowed('version.create') && d.status !== 'UNDER_REVIEW' && d.status !== 'ARCHIVED' && !locked;
 
   return (
     <div className="px-5 py-6 lg:px-8">
@@ -141,6 +156,11 @@ export function DocumentPage() {
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">{d.title}</h1>
             <StatusBadge status={d.status} />
+            {d.isProtected && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-wash px-2.5 py-0.5 text-[12.5px] font-medium text-primary" title={d.unlockedUntil ? `Open for you until ${formatDateTime(d.unlockedUntil)}` : undefined}>
+                <LockIcon size={12} /> {locked ? 'Password protected' : 'Protected, unlocked for you'}
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-ink-soft">
             <span className="font-medium text-ink tabular">Version {current.versionNo}</span> is current, uploaded by {current.uploadedBy.displayName} on{' '}
@@ -154,14 +174,21 @@ export function DocumentPage() {
               Upload new version
             </Button>
           )}
-          <Button icon={DownloadIcon} onClick={() => downloadVersion(shownVersion!.versionId)}>
-            Download{viewing ? ` v${viewing.versionNo}` : ''}
-          </Button>
+          {!locked && (
+            <Button icon={DownloadIcon} onClick={() => downloadVersion(shownVersion!.versionId)}>
+              Download{viewing ? ` v${viewing.versionNo}` : ''}
+            </Button>
+          )}
           <DocumentMenu
             items={[
               allowed('document.update') && d.status !== 'ARCHIVED' && { label: 'Edit details', icon: ClipboardListIcon, onClick: () => setDialog('edit') },
               allowed('document.move') && { label: 'Move to folder', icon: LayersIcon, onClick: () => setDialog('move') },
               allowed('document.archive') && d.status !== 'ARCHIVED' && d.status !== 'UNDER_REVIEW' && { label: 'Archive', icon: LockIcon, onClick: () => setDialog('archive') },
+              allowed('document.share.members') && { label: 'Send to all members', icon: SendIcon, onClick: () => setDialog('share-members') },
+              allowed('document.protect') && !d.isProtected && { label: 'Protect with password', icon: LockIcon, onClick: () => setDialog('protect') },
+              allowed('document.protect') && d.isProtected && { label: 'Change password', icon: LockIcon, onClick: () => setDialog('change') },
+              allowed('document.protect') && d.isProtected && { label: 'Remove password', icon: LockIcon, onClick: () => setDialog('remove') },
+              allowed('document.protect.reset') && d.isProtected && { label: 'Reset forgotten password', icon: LockIcon, onClick: () => setDialog('reset') },
               allowed('document.delete') && { label: 'Delete', icon: Trash2Icon, onClick: () => setDialog('delete'), danger: true },
             ]}
           />
@@ -172,6 +199,9 @@ export function DocumentPage() {
         <Notice className="mb-4">This document is under review. New versions can be uploaded after the review is completed or cancelled.</Notice>
       )}
 
+      {locked ? (
+        <UnlockPanel documentId={d.documentId} onUnlocked={refresh} />
+      ) : (
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="min-w-0">
           <AnimatePresence>
@@ -200,6 +230,8 @@ export function DocumentPage() {
             </Notice>
           )}
           {shownVersion && <SummaryCard versionId={shownVersion.versionId} versionNo={shownVersion.versionNo} />}
+          {/* Which required sections the current version has (only shown once a template exists or can be chosen). */}
+          <TemplateCheckCard documentId={d.documentId} projectId={p.projectId} canEdit={allowed('document.update')} />
           {shownVersion && (
             <DocumentPreview
               versionId={shownVersion.versionId}
@@ -293,8 +325,21 @@ export function DocumentPage() {
           </AnimatePresence>
         </aside>
       </div>
+      )}
 
       {/* Only one dialog is open at a time; the dialog state says which one. */}
+      {dialog === 'share-members' && (
+        <ShareWithMembersDialog
+          documentId={d.documentId}
+          title={d.title}
+          otherMembers={Math.max(0, p.memberCount - 1)}
+          isProtected={d.isProtected}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {(dialog === 'protect' || dialog === 'change' || dialog === 'remove' || dialog === 'reset') && (
+        <ProtectionDialog documentId={d.documentId} mode={dialog} onClose={() => setDialog(null)} onDone={refresh} />
+      )}
       {dialog === 'upload' && (
         <UploadDialog
           projectId={p.projectId}

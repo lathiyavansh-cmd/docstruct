@@ -20,6 +20,7 @@ import { parse } from '../../lib/validate.js';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { authorize, byAnnotation, byDocument, byVersion } from '../rbac/middleware.js';
 import { AnnotationService } from './service.js';
+import { requireUnlocked } from '../protection/guard.js';
 
 const body = z.string().trim().min(1, 'Write something first').max(4000);
 // A region is a box on the page given as fractions (0 to 1) of the page width and height, so it
@@ -35,22 +36,22 @@ export function annotationRoutes(ctx: AppContext): Router {
   const service = new AnnotationService(ctx);
   const auth = requireAuth(ctx);
 
-  router.get('/versions/:versionId/annotations', auth, authorize(ctx, 'annotation.read', byVersion()), async (req, res) => {
+  router.get('/versions/:versionId/annotations', auth, authorize(ctx, 'annotation.read', byVersion()), requireUnlocked(ctx, 'version'), async (req, res) => {
     res.json(await service.list(req.params.versionId as string));
   });
 
   // New comments are posted on the document, not a version id, so they always land on the current version.
-  router.post('/documents/:documentId/annotations', auth, authorize(ctx, 'annotation.create', byDocument()), async (req, res) => {
+  router.post('/documents/:documentId/annotations', auth, authorize(ctx, 'annotation.create', byDocument()), requireUnlocked(ctx, 'document'), async (req, res) => {
     const input = parse(z.object({ body, pageNumber: z.number().int().min(1).nullable().optional(), region: region.nullable().optional() }), req.body);
     res.status(201).json(await service.create(req.params.documentId as string, currentUser(req).userId, input));
   });
 
-  router.post('/annotations/:annotationId/replies', auth, authorize(ctx, 'annotation.reply', byAnnotation()), async (req, res) => {
+  router.post('/annotations/:annotationId/replies', auth, authorize(ctx, 'annotation.reply', byAnnotation()), requireUnlocked(ctx, 'annotation'), async (req, res) => {
     const input = parse(z.object({ body }), req.body);
     res.status(201).json(await service.reply(req.params.annotationId as string, currentUser(req).userId, input.body));
   });
 
-  router.post('/annotations/:annotationId/resolve', auth, authorize(ctx, 'annotation.resolve', byAnnotation()), async (req, res) => {
+  router.post('/annotations/:annotationId/resolve', auth, authorize(ctx, 'annotation.resolve', byAnnotation()), requireUnlocked(ctx, 'annotation'), async (req, res) => {
     res.json(await service.resolve(req.params.annotationId as string, currentUser(req).userId));
   });
 

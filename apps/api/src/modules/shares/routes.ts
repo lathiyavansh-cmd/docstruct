@@ -47,5 +47,12 @@ export function shareRoutes(ctx: AppContext): Router {
     res.json(await service.open(req.params.token as string));
   });
 
+  /** Public: opens a password-protected shared document when the right password is sent. */
+  router.post('/public/shares/:token/unlock', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const body = parse(z.object({ password: z.string().min(1).max(200) }), req.body);
+    res.json(await service.open(req.params.token as string, body.password));
+  });
+
   return router;
 }

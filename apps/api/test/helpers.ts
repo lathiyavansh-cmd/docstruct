@@ -18,6 +18,7 @@ import path from 'node:path';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { bootstrap } from '../src/bootstrap.js';
+import type { AppConfig } from '../src/config.js';
 import type { AppContext } from '../src/context.js';
 
 export interface TestEnv {
@@ -28,7 +29,7 @@ export interface TestEnv {
 }
 
 /** Boots the whole API against an in-memory database and a throwaway object store. */
-export async function createTestEnv(): Promise<TestEnv> {
+export async function createTestEnv(overrides: Partial<AppConfig> = {}): Promise<TestEnv> {
   process.env.NODE_ENV = 'test';
   const dataDir = mkdtempSync(path.join(tmpdir(), 'docstruct-test-'));
   const ctx = await bootstrap({
@@ -37,6 +38,7 @@ export async function createTestEnv(): Promise<TestEnv> {
     storageDir: path.join(dataDir, 'objects'),
     signingSecret: 'test-secret',
     extractor: { driver: 'builtin', pythonBin: '', timeoutMs: 5000 },
+    ...overrides,
   });
   const app = createApp(ctx);
   return {

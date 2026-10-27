@@ -5,7 +5,8 @@
  * How it works
  *   - useQuery ['review-queue'] loads the list from GET /reviews/queue (the server sorts it, soonest due first).
  *   - Each row shows the document title, version number, project, who sent it, the note and the due date.
- *   - A review whose due date is before today is marked "Overdue" in a warning colour.
+ *   - A review whose due date has passed is marked "Overdue by n days" in a warning colour; a nudge from the
+ *     submitter is shown as a small reminder pill.
  *   - Clicking a row opens the document page (/d/:documentId), where the Review tab lets the user approve or request changes.
  *
  * Where it fits
@@ -14,18 +15,16 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { ReviewDto } from '@docstruct/shared';
-import { AnimateIcon, ArrowRightIcon, ClipboardCheckIcon, ClockIcon } from '../components/icons';
+import { AnimateIcon, ArrowRightIcon, BellIcon, ClipboardCheckIcon, ClockIcon } from '../components/icons';
 import { BlurFade } from '../components/magicui/blur-fade';
 import { Avatar, EmptyState, ErrorNote, GlowCard, PageHeader, Skeleton, cx } from '../components/ui';
 import { errorMessage, get } from '../lib/api';
-import { formatDate, timeAgo } from '../lib/format';
+import { dueLabel, timeAgo } from '../lib/format';
 
 /** Review.Queue.View: versions waiting for your decision, across all your projects. */
 export function ReviewQueuePage() {
   // Pending reviews assigned to me (GET /reviews/queue). Same key as the counter on ProjectsPage, so they share the cache.
   const queue = useQuery({ queryKey: ['review-queue'], queryFn: () => get<ReviewDto[]>('/reviews/queue') });
-  // Today's date as "YYYY-MM-DD", so it can be compared as text with each dueDate.
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-8">
@@ -40,8 +39,8 @@ export function ReviewQueuePage() {
       {!!queue.data?.length && (
         <ul className="space-y-3">
           {queue.data.map((r, i) => {
-            // Overdue means it has a due date and that date is already past.
-            const overdue = !!r.dueDate && r.dueDate < today;
+            // The server works out overdue and the days left, so the label matches the Reminders page exactly.
+            const overdue = r.overdue;
             return (
               <BlurFade key={r.reviewId} delay={0.05 + i * 0.05}>
                 <li>
@@ -62,6 +61,11 @@ export function ReviewQueuePage() {
                               {r.projectName}, sent by {r.submittedBy.displayName} {timeAgo(r.createdAt)}
                             </p>
                             {r.submissionNote && <p className="mt-1.5 line-clamp-1 font-serif text-sm text-ink-soft">“{r.submissionNote}”</p>}
+                            {r.nudgedAt && (
+                              <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-st-review-wash px-2 py-0.5 text-[12.5px] font-medium text-st-review">
+                                <BellIcon size={12} /> {r.submittedBy.displayName} reminded you {timeAgo(r.nudgedAt)}
+                              </p>
+                            )}
                           </div>
                           <span
                             className={cx(
@@ -70,7 +74,7 @@ export function ReviewQueuePage() {
                             )}
                           >
                             <ClockIcon size={13} />
-                            {r.dueDate ? `${overdue ? 'Overdue since' : 'Due'} ${formatDate(r.dueDate)}` : 'No due date'}
+                            {dueLabel(r.dueDate, r.daysUntilDue)}
                           </span>
                           <span className="text-primary transition-transform duration-200 group-hover:translate-x-1">
                             <ArrowRightIcon size={16} />

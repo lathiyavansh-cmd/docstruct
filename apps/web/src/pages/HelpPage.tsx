@@ -21,9 +21,11 @@ const STEPS = [
   ['Organise folders', 'In the project, create folders and subfolders. A folder cannot be moved inside one of its own subfolders.'],
   ['Upload a document', `Choose "Upload" in a folder. Accepted: ${FILE_FORMATS.map((f) => f.label).join(', ')}, up to ${formatBytes(MAX_UPLOAD_BYTES)}. The document starts as a Draft at version 1.`],
   ['Upload new versions', 'On the document page choose "Upload new version". Earlier versions are never overwritten; you can download or restore any of them.'],
+  ['Check it against a template', 'If the project has templates (Templates tab), pick one under "Template check" on the document page. DocStruct lists which required sections the current version has and which are missing, and re-checks every new version.'],
   ['Send for review', 'Choose "Send for review" and pick one reviewer. DocStruct compares the version with the previous one and prepares a summary and findings for the reviewer.'],
   ['Review', 'Reviewers open the Review queue, read the change summary, add comments on the document, then approve or request changes.'],
   ['Revise and resubmit', 'If changes were requested, upload a revised version and send it for review again. The earlier review stays in the history.'],
+  ['Keep reviews on time', 'Reminders (in the sidebar) lists reviews that are overdue or due within two days, reminders you received, and decisions on your documents. If a review you sent is overdue, press "Remind reviewer"; it can be sent once a day per review.'],
 ] as const;
 
 /** UD-1: online help for the main tasks. */
@@ -118,11 +120,51 @@ export function HelpPage() {
         </p>
       </section>
 
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Password-protected documents</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Editors and owners can lock a document from its More menu with Protect with password. Everyone then needs the password to open
+          it, project owners included; the title stays visible, but the preview, summary, comments, comparison and downloads stay hidden.
+          After the right password the document stays open for that person for 12 hours on that login. Changing the password locks everyone
+          out until they get the new one. If the password is forgotten, a project owner can set a new one, and this is recorded in the
+          activity log. Share links to a protected document ask for the password too.
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Sending a document to all members</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          A project owner can choose Send to all members from a document's More menu, with an optional note. The document then appears in
+          every member's Shared with me list, marked as new until they open it, however many members the project has.
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Document templates</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          A template is a checklist of the section headings a document must contain, for example Introduction, Functional Requirements and
+          Acceptance Criteria. Project owners create them on the project's Templates tab, one heading per line. When a document is checked
+          against a template, DocStruct reads the headings of its current version and ignores numbering, capitals, punctuation and plurals,
+          so "4. Non-Functional Requirements" satisfies "Non-functional requirement". The Templates tab also lists every document using a
+          template, incomplete ones first, and the Send for review dialog warns when sections are still missing.
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Reminders and overdue reviews</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Every review can carry a due date. Once it passes, the review is marked overdue everywhere it appears, and the Reminders page
+          collects what needs attention: reviews assigned to you that are overdue or due within two days, reminders you received, reviews
+          you sent that are overdue, and decisions made on your documents in the last week. The person who sent a review, or a project
+          owner, can remind the reviewer once a day; the reminder appears in the reviewer's queue and is recorded in the activity log.
+        </p>
+      </section>
+
       <section className="mt-10 rounded-2xl border border-rule bg-paper/60 p-5">
         <h2 className="mb-2 text-lg font-semibold">Interface credits</h2>
         <p className="text-sm leading-relaxed text-ink-soft">
           Some interface pieces (animated icons, the sidebar, card glow, counters, highlights and entrance effects) are open-source components
-          published on 21st.dev by their authors: animate-ui, unlumen, Magic UI and motion-primitives, all under the MIT licence. They only
+          published on 21st.dev by their authors: animate-ui, unlumen, Magic UI, motion-primitives, iconiq ui and Aceternity UI. They only
           change how the screens look and move. Every DocStruct feature, including sign-in, storage, text extraction, comparison and the
           change summary, is written by the team.
         </p>

@@ -20,6 +20,7 @@ import type { AppContext } from '../../context.js';
 import { recordActivity } from '../../lib/activity.js';
 import { HttpError, badRequest, conflict, notFound } from '../../lib/errors.js';
 import { DocumentService } from '../documents/service.js';
+import { ProtectionService } from '../protection/service.js';
 
 interface ShareRow {
   share_id: string;
@@ -69,9 +70,11 @@ export function hashShareToken(token: string): string {
 /** M07 - controlled share links (SRS 3.7). */
 export class ShareService {
   private readonly documents: DocumentService;
+  private readonly protection: ProtectionService;
 
   constructor(private readonly ctx: AppContext) {
     this.documents = new DocumentService(ctx);
+    this.protection = new ProtectionService(ctx);
   }
 
   async list(documentId: string): Promise<ShareLinkDto[]> {
@@ -139,7 +142,7 @@ export class ShareService {
    * and deleted documents grant nothing (Share.Revoke, Share.Create.Expiry). The link opens exactly one
    * document, read-only, at its current version (Share.Scope, Share.Create.ViewOnly).
    */
-  async open(token: string): Promise<SharedDocumentDto> {
+  async open(token: string, password?: string): Promise<SharedDocumentDto> {
     // Quick shape check: anything that cannot be a real token gets 404 without touching the database.
     if (!/^[\w-]{20,100}$/.test(token)) throw notFound('Shared document');
     const { rows } = await this.ctx.db.query<{
@@ -153,9 +156,10 @@ export class ShareService {
       current_version_id: string;
       version_no: number;
       updated_at: Date;
+      password_hash: string | null;
     }>(
       `SELECT s.share_id, s.expires_at, s.revoked_at, d.document_id, d.title, d.description, d.deleted_at,
-              d.current_version_id, v.version_no, d.updated_at
+              d.current_version_id, v.version_no, d.updated_at, d.password_hash
          FROM share_links s
          JOIN documents d ON d.document_id = s.document_id
          JOIN document_versions v ON v.version_id = d.current_version_id
@@ -168,15 +172,26 @@ export class ShareService {
     if (share.revoked_at) throw new HttpError(410, 'LINK_REVOKED', 'This link has been revoked by the document owner');
     if (share.expires_at && share.expires_at.getTime() <= Date.now()) throw new HttpError(410, 'LINK_EXPIRED', 'This link has expired');
 
-    await this.ctx.db.query('UPDATE share_links SET last_accessed_at = now(), access_count = access_count + 1 WHERE share_id = $1', [share.share_id]);
-    return {
+    const summary = {
       title: share.title,
       description: share.description,
       versionNo: share.version_no,
       updatedAt: share.updated_at.toISOString(),
+      isProtected: share.password_hash !== null,
+      expiresAt: share.expires_at?.toISOString() ?? null,
+    };
+    // A password-protected document: the link shows only the title until the right password is sent.
+    // Wrong guesses are limited per link, so the password cannot be guessed by trying many times.
+    if (share.password_hash) {
+      if (!password) return { ...summary, file: null, download: null };
+      await this.protection.checkPassword(`share:${share.share_id}`, share.document_id, share.password_hash, password);
+    }
+
+    await this.ctx.db.query('UPDATE share_links SET last_accessed_at = now(), access_count = access_count + 1 WHERE share_id = $1', [share.share_id]);
+    return {
+      ...summary,
       file: await this.documents.fileLink(share.current_version_id, 'inline'),
       download: await this.documents.fileLink(share.current_version_id, 'attachment'),
-      expiresAt: share.expires_at?.toISOString() ?? null,
     };
   }
 }

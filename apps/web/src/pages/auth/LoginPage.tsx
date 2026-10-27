@@ -7,6 +7,7 @@
  *   - signIn() from useAuth saves the token, so every later API call is sent with it.
  *   - After login it goes back to the page the user first asked for (location.state.from), or to "/".
  *   - Shows a notice when the old session expired, and shows the server's error message if login fails.
+ *   - In demo mode, DemoAccounts sits under the login card (folded shut); clicking a person fills in the form.
  *
  * Where it fits
  *   Route /login in App.tsx, wrapped in GuestOnly and drawn inside AuthLayout. Module: M01 Authentication (owner: Vansh).
@@ -19,6 +20,7 @@ import { Button, ErrorNote, Field, Input, Notice } from '../../components/ui';
 import { errorMessage, post } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { AuthLayout } from './AuthLayout';
+import { DemoAccounts } from './DemoAccounts';
 
 export function LoginPage() {
   const { signIn, expired } = useAuth();
@@ -52,8 +54,17 @@ export function LoginPage() {
       title="Log in"
       footer={
         <>
-          New to DocStruct? <Link to="/signup" className="font-medium text-primary hover:underline">Create an account</Link>
+          New to DocStruct? <Link to="/signup" className="font-medium text-primary transition-colors hover:text-primary-hover">Create an account</Link>
         </>
+      }
+      below={
+        <DemoAccounts
+          onPick={(pickedEmail, pickedPassword) => {
+            setEmail(pickedEmail);
+            setPassword(pickedPassword);
+            setError(null);
+          }}
+        />
       }
     >
       <form onSubmit={submit} className="space-y-4">
@@ -68,7 +79,7 @@ export function LoginPage() {
           Log in
         </Button>
         <p className="text-center text-sm">
-          <Link to="/forgot-password" className="text-ink-soft hover:text-ink hover:underline">Forgot your password?</Link>
+          <Link to="/forgot-password" className="text-ink-soft transition-colors hover:text-ink">Forgot your password?</Link>
         </p>
       </form>
     </AuthLayout>

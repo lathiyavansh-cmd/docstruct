@@ -14,6 +14,8 @@ DocStruct colours, a light theme only, and type-only imports.
 | [unlumen UI](https://ui.unlumen.com) (Animated Sidebar) | unlumen | `src/components/unlumen-ui/sidebar-001.tsx` | MIT |
 | [Magic UI](https://magicui.design) | dillionverma | `src/components/magicui/**` | MIT |
 | [motion-primitives](https://motion-primitives.com) | ibelick | `src/components/motion-primitives/**` | MIT |
+| [iconiq ui](https://iconiqui.com) (Rolling Digits) | edwinvakayil | `src/components/iconiq-ui/rolling-digits.tsx` | Free component, published on 21st.dev |
+| [Aceternity UI](https://ui.aceternity.com) (Timeline) | manuarora700 | `src/components/aceternity/timeline.tsx` | Free component, published on 21st.dev |
 
 ## MIT License
 

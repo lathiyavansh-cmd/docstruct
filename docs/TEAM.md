@@ -26,4 +26,6 @@
 | M09 | Activity & Audit Logs, Dashboard (§3.9) | `activity/`, `dashboard/` | `pages/project/DashboardPage.tsx`, `pages/project/ActivityPage.tsx` | Vivan |
 | F3.6 | Version Comparison & AI Pre-Review (§3.6) | `diff/` | `pages/ComparePage.tsx` | Vansh |
 | F3.6+ | Document summarisation (extends §3.6) | `summary/` | `components/SummaryCard.tsx` | Vansh |
+| M06+ | Password-protected documents | `protection/` | `components/DocumentProtection.tsx` | Vansh |
+| M07+ | Send a document to all members, Shared with me | `recipients/` | `pages/SharedWithMePage.tsx`, `components/ShareWithMembersDialog.tsx` | Shrut |
 | — | Text extraction utility (SI-5) | `services/extractor/` (Python) + `apps/api/src/extraction/` | — | Shrut |

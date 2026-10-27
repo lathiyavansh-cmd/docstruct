@@ -1,6 +1,6 @@
 /**
  * What this file does
- *   This is the frame around every page inside one project. It shows the project name, the user's role in it, and the tabs Overview, Documents, Members and Activity.
+ *   This is the frame around every page inside one project. It shows the project name, the user's role in it, and the tabs Overview, Documents, Members, Activity and Templates.
  *
  * How it works
  *   - Reads projectId from the URL and loads the project with useProject (query key ['project', id], GET /projects/:id).
@@ -14,7 +14,7 @@
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ROLE_LABEL } from '@docstruct/shared';
-import { ActivityIcon, AnimateIcon, LayersIcon, LayoutDashboardIcon, UsersIcon } from '../../components/icons';
+import { ActivityIcon, AnimateIcon, ClipboardListIcon, LayersIcon, LayoutDashboardIcon, UsersIcon } from '../../components/icons';
 import { ErrorNote, Notice, Spinner, cx, type AnimatedIcon } from '../../components/ui';
 import { errorMessage } from '../../lib/api';
 import { useProject } from '../../lib/hooks';
@@ -25,6 +25,7 @@ const TABS: ReadonlyArray<readonly [string, string, AnimatedIcon]> = [
   ['documents', 'Documents', LayersIcon],
   ['members', 'Members', UsersIcon],
   ['activity', 'Activity', ActivityIcon],
+  ['templates', 'Templates', ClipboardListIcon],
 ];
 
 /** Project workspace frame: name, the caller's role (UI-11) and the project's sections. */

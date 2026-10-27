@@ -4,7 +4,8 @@
  *
  * How it works
  *   - Calls bootstrap() to get the context, then createApp() to get the Express app.
- *   - Starts listening and logs the URL and which database is in use.
+ *   - With SEED_DEMO=true it first loads the demo data into an empty database (used on the first deployment).
+ *   - Starts listening and logs the URL, which database and which file store are in use.
  *   - On Ctrl+C or a stop signal, shutdown() finishes background jobs and closes the database.
  *
  * Where it fits
@@ -12,11 +13,21 @@
  */
 import { createApp } from './app.js';
 import { bootstrap } from './bootstrap.js';
+import { seedDemoData } from './db/demo-data.js';
 
 const ctx = await bootstrap();
+// A fresh deployment has an empty database; SEED_DEMO=true fills it with the demo accounts once.
+// A failure here is logged but never stops the server from starting.
+if (process.env.SEED_DEMO === 'true') {
+  try {
+    if (await seedDemoData(ctx)) ctx.log('demo data loaded');
+  } catch (err) {
+    ctx.log('could not load the demo data', err);
+  }
+}
 const app = createApp(ctx);
 const server = app.listen(ctx.config.port, () => {
-  ctx.log(`API listening on http://localhost:${ctx.config.port}/api (database: ${ctx.db.kind})`);
+  ctx.log(`API listening on http://localhost:${ctx.config.port}/api (database: ${ctx.db.kind}, files: ${ctx.storage.driver})`);
 });
 
 // Graceful shutdown: stop new requests, let running jobs finish, then close the database

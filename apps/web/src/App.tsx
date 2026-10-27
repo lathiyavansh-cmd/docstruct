@@ -3,7 +3,8 @@
  *   This is the route table of the app. It decides which page to show for each URL, and blocks pages that need a login.
  *
  * How it works
- *   - RequireAuth checks useAuth(). If nobody is logged in, it sends the user to /login and remembers where they wanted to go.
+ *   - RequireAuth checks useAuth(). If nobody is logged in, "/" shows the overview page (LandingPage); any other
+ *     page sends the user to /login and remembers where they wanted to go.
  *   - GuestOnly does the opposite: a logged-in user who opens /login or /signup is sent to the home page.
  *   - Logged-in pages sit inside AppLayout (the sidebar and top bar). Project pages also sit inside ProjectLayout (the project tabs).
  *   - The share link page (/s/:token) and the password pages are public, so they are outside RequireAuth.
@@ -19,6 +20,7 @@ import { useAuth } from './lib/auth';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage, ResetPasswordPage } from './pages/auth/PasswordPages';
 import { SignUpPage } from './pages/auth/SignUpPage';
+import { LandingPage } from './pages/landing/LandingPage';
 import { ComparePage } from './pages/ComparePage';
 import { DocumentPage } from './pages/DocumentPage';
 import { HelpPage } from './pages/HelpPage';
@@ -28,8 +30,11 @@ import { ActivityPage } from './pages/project/ActivityPage';
 import { DashboardPage } from './pages/project/DashboardPage';
 import { MembersPage } from './pages/project/MembersPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
+import { TemplatesPage } from './pages/project/TemplatesPage';
 import { WorkspacePage } from './pages/project/WorkspacePage';
+import { RemindersPage } from './pages/RemindersPage';
 import { ReviewQueuePage } from './pages/ReviewQueuePage';
+import { SharedWithMePage } from './pages/SharedWithMePage';
 import { SearchPage } from './pages/SearchPage';
 import { SharedDocumentPage } from './pages/SharedDocumentPage';
 
@@ -39,7 +44,9 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
   // While the saved session is still being checked, show a spinner instead of a page.
   if (loading) return <Spinner label="Opening DocStruct" />;
-  // Not logged in: go to /login, and pass the current URL so login can bring the user back here.
+  // Not logged in: the home address shows the overview page with its log-in and sign-up buttons.
+  if (!user && location.pathname === '/') return <LandingPage />;
+  // Any other page goes to /login, passing the current URL so login can bring the user back here.
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   return <>{children}</>;
 }
@@ -65,11 +72,14 @@ export function App() {
         <Route index element={<ProjectsPage />} />
         {/* Project pages share ProjectLayout, which loads the project and shows its tabs. */}
         <Route path="reviews" element={<ReviewQueuePage />} />
+        <Route path="reminders" element={<RemindersPage />} />
+        <Route path="shared" element={<SharedWithMePage />} />
         <Route path="p/:projectId" element={<ProjectLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="documents" element={<WorkspacePage />} />
           <Route path="members" element={<MembersPage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
         </Route>
         <Route path="d/:documentId" element={<DocumentPage />} />
         <Route path="d/:documentId/compare" element={<ComparePage />} />

@@ -49,7 +49,7 @@ export function SignUpPage() {
       title="Create your account"
       footer={
         <>
-          Already have an account? <Link to="/login" className="font-medium text-primary hover:underline">Log in</Link>
+          Already have an account? <Link to="/login" className="font-medium text-primary transition-colors hover:text-primary-hover">Log in</Link>
         </>
       }
     >

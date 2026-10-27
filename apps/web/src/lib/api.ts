@@ -9,7 +9,7 @@
  *   - api() builds the URL as /api + path, adds query parameters, sends JSON and an
  *     "Authorization: Bearer <token>" header.
  *   - A 401 reply on a logged-in request tells every onSessionExpired listener, so the app can go back to login.
- *   - get, post, patch and del are short helpers on top of api(); errorMessage() gives text for toasts.
+ *   - get, post, put, patch and del are short helpers on top of api(); errorMessage() gives text for toasts.
  *
  * Where it fits
  *   Used by almost every page and component (and by lib/auth.tsx, lib/hooks.ts, lib/upload.ts).
@@ -106,6 +106,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 export const get = <T>(path: string, query?: Query) => api<T>(path, { query });
 export const post = <T>(path: string, body: unknown = {}) => api<T>(path, { method: 'POST', body });
 export const patch = <T>(path: string, body: unknown) => api<T>(path, { method: 'PATCH', body });
+export const put = <T>(path: string, body: unknown) => api<T>(path, { method: 'PUT', body });
 export const del = <T>(path: string, query?: Query) => api<T>(path, { method: 'DELETE', query });
 
 export function errorMessage(error: unknown): string {

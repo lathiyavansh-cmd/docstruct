@@ -138,12 +138,39 @@ export interface DocumentDto {
   currentVersion: VersionDto;
   /** Reviewer and due date of the open review, if one is pending. */
   openReview: { reviewId: string; reviewer: UserRefDto; dueDate: string | null } | null;
+  /** True when the document is locked with a password. Its title and details stay visible; its contents do not. */
+  isProtected: boolean;
+  /** The template this document is checked against, if one was chosen. */
+  templateId: string | null;
 }
 
 export interface DocumentDetailDto extends DocumentDto {
   /** Folders from the project root down to the document's folder. */
   folderPath: Array<{ folderId: string; name: string }>;
   versionCount: number;
+  /** Whether the caller may see the contents now: true when not protected, or unlocked with the password. */
+  unlocked: boolean;
+  /** When the caller's unlock ends (protected documents only). */
+  unlockedUntil: string | null;
+}
+
+/** Demo accounts offered on the login page (demo mode only). */
+export interface DemoAccountsDto {
+  password: string;
+  /** Password of the protected document in the demo data. */
+  documentPassword: string;
+  accounts: Array<{ email: string; name: string; role: string; tryThis: string }>;
+}
+
+/** One document another member sent to the caller ("Shared with me"). */
+export interface SharedWithMeDto {
+  document: DocumentDto;
+  projectName: string;
+  sharedBy: UserRefDto;
+  note: string;
+  sharedAt: string;
+  /** Null until the caller opens the document. */
+  readAt: string | null;
 }
 
 /** Step 1 of an upload: the browser PUTs the file to `uploadUrl`, then finalises with `uploadKey`. */
@@ -194,11 +221,82 @@ export interface ReviewDto {
   submittedBy: UserRefDto;
   submissionNote: string;
   dueDate: string | null;
+  /** True while the review is pending and its due date has passed. */
+  overdue: boolean;
+  /** Whole days until the due date (negative when overdue), or null without a due date. */
+  daysUntilDue: number | null;
+  /** When the submitter last reminded the reviewer, and how many times in all. */
+  nudgedAt: string | null;
+  nudgeCount: number;
   status: ReviewStatus;
   decisionNote: string;
   decidedAt: string | null;
   cancelledAt: string | null;
   createdAt: string;
+}
+
+/**
+ * One item on the caller's Reminders page. Each kind says why it is there:
+ *   review_overdue  a review assigned to me is past its due date
+ *   review_due_soon a review assigned to me is due within two days
+ *   nudged          the submitter reminded me about a review
+ *   sent_overdue    a review I sent is past its due date (I can nudge the reviewer)
+ *   decided         a review I sent was decided in the last seven days
+ */
+export type ReminderKind = 'review_overdue' | 'review_due_soon' | 'nudged' | 'sent_overdue' | 'decided';
+
+export interface ReminderDto {
+  kind: ReminderKind;
+  review: ReviewDto;
+}
+
+export interface RemindersDto {
+  /** Items that need the caller's attention (everything except "decided"). */
+  attention: number;
+  items: ReminderDto[];
+}
+
+// ---- Document templates ------------------------------------------------------------------------
+// A template is a checklist of section headings a document must contain. The check reads the extracted
+// text of the current version, so it works on PDF, Word, Markdown and plain text alike.
+
+export interface TemplateDto {
+  templateId: string;
+  projectId: string;
+  name: string;
+  description: string;
+  headings: string[];
+  createdBy: UserRefDto;
+  createdAt: string;
+  updatedAt: string;
+  /** How many documents in the project use this template. */
+  documentCount: number;
+}
+
+export interface TemplateCheckItemDto {
+  /** The required heading, as written in the template. */
+  heading: string;
+  found: boolean;
+  /** The heading in the document that satisfied it, if any (it may be numbered or worded slightly differently). */
+  matchedHeading: string | null;
+}
+
+export interface TemplateCheckDto {
+  template: { templateId: string; name: string };
+  versionNo: number;
+  /** PENDING while the version's text is still being extracted; UNAVAILABLE when it could not be read. */
+  status: 'DONE' | 'PENDING' | 'UNAVAILABLE';
+  items: TemplateCheckItemDto[];
+  missing: number;
+  complete: boolean;
+  /** Headings the document has that the template does not ask for (shown for information only). */
+  extraHeadings: string[];
+}
+
+/** One row of a template's compliance list: a document using the template and how it scores. */
+export interface TemplateComplianceDto {
+  document: DocumentDto;
+  check: TemplateCheckDto;
 }
 
 export interface SubmitReviewRequest {
@@ -374,8 +472,10 @@ export interface SharedDocumentDto {
   description: string;
   versionNo: number;
   updatedAt: string;
-  file: FileLinkDto;
-  download: FileLinkDto;
+  /** Password-protected: the file links are given only after the password is sent with the request. */
+  isProtected: boolean;
+  file: FileLinkDto | null;
+  download: FileLinkDto | null;
   expiresAt: string | null;
 }
 
