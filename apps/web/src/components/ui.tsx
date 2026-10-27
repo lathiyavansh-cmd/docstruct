@@ -61,7 +61,7 @@ export function Button({
       {...rest}
       disabled={rest.disabled || busy}
       className={cx(
-        'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,box-shadow,transform,color] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100',
+        'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-[background-color,border-color,box-shadow,transform,color] duration-300 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100',
         size === 'sm' ? 'h-8 px-2.5 text-[13px]' : 'h-9 px-3.5 text-sm',
         VARIANTS[variant],
         className,
@@ -90,7 +90,7 @@ export function IconButton({ icon: Icon, label, className, ...rest }: ButtonHTML
         title={label}
         {...rest}
         className={cx(
-          'inline-flex size-8 items-center justify-center rounded-lg text-ink-soft transition-[background-color,color,transform] duration-150 hover:bg-primary-wash hover:text-primary active:scale-90 disabled:opacity-40',
+          'inline-flex size-8 items-center justify-center rounded-lg text-ink-soft transition-[background-color,color,transform] duration-300 hover:bg-primary-wash hover:text-primary active:scale-90 disabled:opacity-40',
           className,
         )}
       >
