@@ -10,6 +10,8 @@
  *   - Everything on the page is sample content; it makes no API calls. The buttons link to /login and /signup.
  *   - Animations come from 21st.dev components (Rolling Digits, Aceternity Timeline, Spotlight, BorderBeam,
  *     BlurFade, MagicCard) and motion; people who ask for less motion get still versions.
+ *   - A soft ring trails the cursor and the main buttons lean towards it (SmoothPointer.tsx); the menu has a
+ *     sliding hover pill, and each demo carries a "Try it" hint.
  *
  * Where it fits
  *   Shown by RequireAuth in App.tsx when nobody is logged in and the address is "/". Logged-in users go
@@ -18,6 +20,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useMotionValueEvent, useReducedMotion, useScroll } from 'motion/react';
+import { AnimatedBackground } from '../../components/motion-primitives/animated-background';
 import { ArrowRight, Braces, FileSearch, FileText, GitCompareArrows, KeyRound, Plus, ScanSearch, Sparkles, TextSearch } from 'lucide-react';
 import { BlurFade } from '../../components/magicui/blur-fade';
 import { BorderBeam } from '../../components/magicui/border-beam';
@@ -26,6 +29,7 @@ import { RollingDigits } from '../../components/iconiq-ui/rolling-digits';
 import { Timeline, type TimelineEntry } from '../../components/aceternity/timeline';
 import { GlowCard, StatusBadge, cx } from '../../components/ui';
 import { FeatureTabs } from './FeatureTabs';
+import { CursorRing, Magnetic } from './SmoothPointer';
 import { VersionStack } from './VersionStack';
 
 const NAV = [
@@ -59,32 +63,38 @@ function NavBar() {
           <motion.img src="/favicon.svg" alt="" className="size-8" whileHover={{ rotate: -10, scale: 1.08 }} />
           DocStruct
         </a>
+        {/* A soft pill slides between the links as the pointer moves across them. */}
         <div className="hidden flex-1 items-center justify-center gap-1 md:flex">
-          {NAV.map(([id, label]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              onClick={(e) => (e.preventDefault(), scrollToSection(id))}
-              className={cx('rounded-full px-3 py-1.5 text-sm transition-colors', solid ? 'text-ink-soft hover:bg-paper hover:text-ink' : 'text-white/70 hover:bg-white/10 hover:text-white')}
-            >
-              {label}
-            </a>
-          ))}
+          <AnimatedBackground enableHover className={cx('rounded-full', solid ? 'bg-paper' : 'bg-white/10')} transition={{ type: 'spring', bounce: 0.15, duration: 0.45 }}>
+            {NAV.map(([id, label]) => (
+              <a
+                key={id}
+                data-id={id}
+                href={`#${id}`}
+                onClick={(e) => (e.preventDefault(), scrollToSection(id))}
+                className={cx('rounded-full px-3.5 py-1.5 text-sm transition-colors', solid ? 'text-ink-soft hover:text-ink' : 'text-white/70 hover:text-white')}
+              >
+                {label}
+              </a>
+            ))}
+          </AnimatedBackground>
         </div>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           <Link to="/login" className={cx('rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors', solid ? 'hover:bg-paper' : 'hover:bg-white/10')}>
             Log in
           </Link>
-          <Link
-            to="/signup"
-            className={cx(
-              'group flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
-              solid ? 'bg-ink text-white hover:bg-primary' : 'bg-white text-ink hover:bg-primary-wash',
-            )}
-          >
-            Sign up
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
-          </Link>
+          <Magnetic strength={0.2}>
+            <Link
+              to="/signup"
+              className={cx(
+                'group flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-[background-color,color,box-shadow]',
+                solid ? 'bg-ink text-white hover:bg-primary hover:shadow-lift' : 'bg-white text-ink hover:bg-primary-wash hover:shadow-[0_6px_24px_-6px_rgb(169_180_255/0.7)]',
+              )}
+            >
+              Sign up
+              <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden />
+            </Link>
+          </Magnetic>
         </div>
       </nav>
     </header>
@@ -105,20 +115,29 @@ function RotatingWord() {
     return () => clearInterval(t);
   }, [reduceMotion]);
   return (
-    // One word at a time: the old word lifts away, then the new one rises in its place.
-    <span className="inline-block">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={WORDS[i]}
-          initial={{ opacity: 0, y: '0.3em', filter: 'blur(6px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: '-0.3em', filter: 'blur(6px)' }}
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-          className="inline-block whitespace-nowrap"
-        >
-          {WORDS[i]},
-        </motion.span>
-      </AnimatePresence>
+    // All words share one grid cell; the current one sits in place while the previous one lifts away and the
+    // next waits below, so the change is a single continuous slide with no empty moment.
+    <span className="relative inline-grid overflow-hidden pb-[0.12em] align-bottom" aria-live="off">
+      {WORDS.map((word, n) => {
+        const offset = (n - i + WORDS.length) % WORDS.length;
+        const state = offset === 0 ? 'current' : offset === WORDS.length - 1 ? 'previous' : 'next';
+        return (
+          <motion.span
+            key={word}
+            aria-hidden={state !== 'current'}
+            initial={false}
+            animate={{
+              y: state === 'current' ? '0%' : state === 'previous' ? '-70%' : '70%',
+              opacity: state === 'current' ? 1 : 0,
+              filter: state === 'current' ? 'blur(0px)' : 'blur(6px)',
+            }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="col-start-1 row-start-1 whitespace-nowrap"
+          >
+            {word},
+          </motion.span>
+        );
+      })}
     </span>
   );
 }
@@ -166,17 +185,21 @@ function Hero() {
           </BlurFade>
           <BlurFade delay={0.28}>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                to="/signup"
-                className="group relative flex h-12 items-center gap-2 overflow-hidden rounded-full bg-white px-6 font-medium text-ink shadow-[0_8px_30px_-6px_rgb(169_180_255/0.6)] transition-transform active:scale-[0.97]"
-              >
-                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary-wash to-transparent transition-transform duration-700 group-hover:translate-x-full" aria-hidden />
-                <span className="relative">Create an account</span>
-                <ArrowRight className="relative size-4 transition-transform group-hover:translate-x-1" aria-hidden />
-              </Link>
-              <Link to="/login" className="flex h-12 items-center rounded-full px-6 font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/10">
-                Log in
-              </Link>
+              <Magnetic>
+                <Link
+                  to="/signup"
+                  className="group relative flex h-12 items-center gap-2 overflow-hidden rounded-full bg-white px-6 font-medium text-ink shadow-[0_8px_30px_-6px_rgb(169_180_255/0.55)] transition-[box-shadow,scale] duration-500 hover:shadow-[0_14px_44px_-8px_rgb(169_180_255/0.85)] active:scale-[0.97]"
+                >
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-primary-wash to-transparent transition-transform duration-1000 group-hover:translate-x-full" aria-hidden />
+                  <span className="relative">Create an account</span>
+                  <ArrowRight className="relative size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+                </Link>
+              </Magnetic>
+              <Magnetic>
+                <Link to="/login" className="flex h-12 items-center rounded-full px-6 font-medium text-white ring-1 ring-white/25 transition-[background-color,box-shadow] duration-500 hover:bg-white/10 hover:ring-white/40">
+                  Log in
+                </Link>
+              </Magnetic>
             </div>
             <p className="mt-5 text-sm text-white/50">
               Ten demo accounts are ready on the login page · password <span className="font-mono text-white/75">demo1234</span>
@@ -186,6 +209,10 @@ function Hero() {
 
         <BlurFade delay={0.3} className="lg:pl-4">
           <VersionStack />
+          <p className="mt-8 text-center text-xs text-white/45">
+            <span className="mr-1.5 inline-block size-1.5 animate-pulse rounded-full bg-[#a9b4ff] align-middle" aria-hidden />
+            Click v1 to v4 to step through the history yourself
+          </p>
         </BlurFade>
       </div>
 
@@ -384,13 +411,16 @@ function Faq() {
                 onClick={() => setOpen(isOpen ? null : i)}
                 aria-expanded={isOpen}
                 aria-controls={`faq-${i}`}
-                className="flex w-full items-center gap-4 px-3 py-5 text-left font-medium text-ink"
+                className="group flex w-full items-center gap-4 px-3 py-5 text-left font-medium text-ink"
               >
-                <span className="flex-1">{q}</span>
+                <span className="flex-1 transition-[translate,color] duration-300 group-hover:translate-x-1 group-hover:text-primary">{q}</span>
                 <motion.span
                   animate={{ rotate: isOpen ? 45 : 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  className={cx('flex size-7 shrink-0 items-center justify-center rounded-full transition-colors', isOpen ? 'bg-ink text-white' : 'bg-paper text-ink-soft')}
+                  transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                  className={cx(
+                    'flex size-7 shrink-0 items-center justify-center rounded-full transition-colors duration-300',
+                    isOpen ? 'bg-ink text-white' : 'bg-paper text-ink-soft group-hover:bg-primary-wash group-hover:text-primary',
+                  )}
                 >
                   <Plus className="size-4" aria-hidden />
                 </motion.span>
@@ -403,7 +433,7 @@ function Faq() {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
                   <p className="px-3 pb-5 pr-14 leading-relaxed text-ink-soft">{a}</p>
@@ -429,6 +459,7 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-paper text-ink">
+      <CursorRing />
       <NavBar />
       <main>
         <Hero />
@@ -472,7 +503,7 @@ export function LandingPage() {
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {BUILT.map((b, i) => (
                 <BlurFade key={b.title} inView delay={0.05 * i}>
-                  <GlowCard className="h-full">
+                  <GlowCard className="h-full transition-[translate,box-shadow] duration-500 hover:-translate-y-1">
                     <div className="flex h-full flex-col p-6">
                       <span className="flex size-10 items-center justify-center rounded-xl bg-primary-wash text-primary">
                         <b.icon className="size-5" aria-hidden />
@@ -495,7 +526,7 @@ export function LandingPage() {
               <BlurFade inView delay={0.1}>
                 <p className="mt-4 text-ink-soft">
                   Anything else is quickest to answer by trying it:{' '}
-                  <Link to="/login" className="font-medium text-primary hover:underline">
+                  <Link to="/login" className="font-medium text-primary underline decoration-primary/30 underline-offset-4 transition-colors hover:decoration-primary">
                     open a demo account
                   </Link>
                   .
@@ -523,13 +554,20 @@ export function LandingPage() {
                 Ten demo accounts are ready: an owner, editors, reviewers, a viewer and a brand-new user, across two projects with documents under review.
               </p>
               <div className="relative mt-8 flex flex-wrap justify-center gap-3">
-                <Link to="/login" className="group flex h-12 items-center gap-2 rounded-full bg-white px-6 font-medium text-ink transition-transform active:scale-[0.97]">
-                  Try a demo account
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
-                </Link>
-                <Link to="/signup" className="flex h-12 items-center rounded-full px-6 font-medium ring-1 ring-white/25 transition-colors hover:bg-white/10">
-                  Create an account
-                </Link>
+                <Magnetic>
+                  <Link
+                    to="/login"
+                    className="group flex h-12 items-center gap-2 rounded-full bg-white px-6 font-medium text-ink shadow-[0_8px_30px_-6px_rgb(169_180_255/0.45)] transition-[box-shadow,scale] duration-500 hover:shadow-[0_14px_44px_-8px_rgb(169_180_255/0.8)] active:scale-[0.97]"
+                  >
+                    Try a demo account
+                    <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden />
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <Link to="/signup" className="flex h-12 items-center rounded-full px-6 font-medium ring-1 ring-white/25 transition-[background-color,box-shadow] duration-500 hover:bg-white/10 hover:ring-white/40">
+                    Create an account
+                  </Link>
+                </Magnetic>
               </div>
             </div>
           </BlurFade>
@@ -547,10 +585,10 @@ export function LandingPage() {
             Vansh Lathiya · Vivan Dhoka · Shrut Diwakar · guided by Dr. Sudhir Dhage
           </p>
           <div className="flex gap-4">
-            <Link to="/login" className="hover:text-ink">
+            <Link to="/login" className="transition-colors hover:text-ink">
               Log in
             </Link>
-            <Link to="/signup" className="hover:text-ink">
+            <Link to="/signup" className="transition-colors hover:text-ink">
               Sign up
             </Link>
           </div>

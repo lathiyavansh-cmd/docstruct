@@ -139,8 +139,8 @@ export function VersionStack() {
 
   // A gentle 3D tilt towards the pointer.
   const card = useRef<HTMLDivElement>(null);
-  const rotateX = useSpring(0, { stiffness: 150, damping: 18 });
-  const rotateY = useSpring(0, { stiffness: 150, damping: 18 });
+  const rotateX = useSpring(0, { stiffness: 90, damping: 20, mass: 0.6 });
+  const rotateY = useSpring(0, { stiffness: 90, damping: 20, mass: 0.6 });
   function tilt(e: PointerEvent) {
     if (reduceMotion || !card.current) return;
     const r = card.current.getBoundingClientRect();

@@ -15,7 +15,7 @@
  */
 import { useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BookOpenText, Check, Columns2, GitBranch, History, KeyRound, ListChecks, Lock, Rows3, ScanSearch, Send, Unlock } from 'lucide-react';
+import { BookOpenText, Check, Columns2, GitBranch, History, KeyRound, ListChecks, Lock, MousePointerClick, Rows3, ScanSearch, Send, Unlock } from 'lucide-react';
 import type { DocumentStatus } from '@docstruct/shared';
 import { AnimatedBackground } from '../../components/motion-primitives/animated-background';
 import { Avatar, StatusBadge, cx } from '../../components/ui';
@@ -357,7 +357,7 @@ function ProtectDemo() {
 
 /* ── Tabs ──────────────────────────────────────────────────────────────────────── */
 
-const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: string; body: string; points: string[]; demo: () => ReactNode }> = [
+const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: string; body: string; points: string[]; hint: string; demo: () => ReactNode }> = [
   {
     id: 'versions',
     tab: 'Versions',
@@ -365,6 +365,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'Every upload is a new version. Nothing is overwritten.',
     body: 'A document keeps its whole history. Everyone sees the current version, and any earlier one is a click away.',
     points: ['Numbered v1, v2, v3 with who uploaded it and why', 'Old versions are read-only and kept forever'],
+    hint: 'Click any version',
     demo: VersionsDemo,
   },
   {
@@ -374,6 +375,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'See exactly what changed, word by word.',
     body: 'Pick any two versions. DocStruct lines up the paragraphs and marks every insertion and deletion.',
     points: ['Side-by-side or inline view', 'Works on PDF, Word, Markdown and plain text'],
+    hint: 'Switch between the two views',
     demo: CompareDemo,
   },
   {
@@ -383,6 +385,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'A checklist for the reviewer before they start reading.',
     body: 'Thirteen explainable rules flag the changes that matter: a "should" that became "shall", a changed number, a TBD left behind.',
     points: ['Every finding says which rule raised it', 'Advisory only: it never changes a status'],
+    hint: 'Tick the findings off',
     demo: PreReviewDemo,
   },
   {
@@ -392,6 +395,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'A clear path from draft to approved.',
     body: 'Send a version to a reviewer with a due date. They approve it or ask for changes, with comments pinned to the text.',
     points: ['Review queue for every reviewer', 'Each decision lands in the activity log'],
+    hint: 'Approve it or ask for changes',
     demo: ReviewDemo,
   },
   {
@@ -401,6 +405,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'The gist of a long document in three lengths.',
     body: 'DocStruct picks the most central sentences from the document itself, so a summary never says anything the document does not.',
     points: ['Short, medium and detailed', 'Key terms and a section outline'],
+    hint: 'Pick a length',
     demo: SummaryDemo,
   },
   {
@@ -410,6 +415,7 @@ const FEATURES: Array<{ id: string; tab: string; icon: typeof History; title: st
     title: 'Lock sensitive documents and send them to everyone.',
     body: 'Put a password on a document; even project members need it. Then send it to all members in one step.',
     points: ['An unlock lasts 12 hours on that device', 'Share links can expire or be revoked'],
+    hint: 'Type canteen123, then send it',
     demo: ProtectDemo,
   },
 ];
@@ -464,7 +470,7 @@ export function FeatureTabs() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12 lg:p-10"
           >
             <div className="flex flex-col justify-center">
@@ -483,6 +489,11 @@ export function FeatureTabs() {
               </ul>
             </div>
             <div className="rounded-2xl bg-surface p-1 sm:p-2">
+              {/* A small nudge so visitors know the panel is live. */}
+              <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-primary-wash px-2.5 py-1 text-xs font-medium text-primary">
+                <MousePointerClick className="size-3.5" aria-hidden />
+                Try it: {feature.hint}
+              </p>
               <Demo />
             </div>
           </motion.div>
