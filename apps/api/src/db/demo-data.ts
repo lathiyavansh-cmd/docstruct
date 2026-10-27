@@ -32,6 +32,7 @@ import type { FolderNodeDto } from '@docstruct/shared';
 import { recordActivity } from '../lib/activity.js';
 import { hashPassword } from '../modules/auth/password.js';
 import { RecipientService } from '../modules/recipients/service.js';
+import { TemplateService } from '../modules/templates/service.js';
 import { CANTEEN_CHANGE_NOTES, CANTEEN_SRS, VENDOR_CONTRACT, WATER_REPORT } from './demo-content.js';
 
 /** One simple password for every demo account. */
@@ -351,6 +352,50 @@ async function seedExtras(ctx: AppContext): Promise<boolean> {
 }
 
 /**
+ * Part 3: two document templates in Campus Canteen App (one document complete, one missing a section) and
+ * an overdue, nudged review in the team's project, so the Reminders page has something to show.
+ * Skipped when the project already has a template, so it also tops up older demo databases.
+ */
+async function seedTemplatesAndReminders(ctx: AppContext): Promise<boolean> {
+  const canteen = await ctx.db.query<{ project_id: string; owner: string }>(
+    `SELECT p.project_id, m.user_id AS owner FROM projects p
+       JOIN project_members m ON m.project_id = p.project_id AND m.role = 'OWNER'
+      WHERE p.name = 'Campus Canteen App' LIMIT 1`,
+  );
+  const project = canteen.rows[0];
+  if (!project) return false;
+  const existing = await ctx.db.query('SELECT 1 FROM project_templates WHERE project_id = $1', [project.project_id]);
+  if (existing.rows.length) return false;
+
+  const templates = new TemplateService(ctx);
+  const docId = async (title: string) => (await ctx.db.query<{ document_id: string }>('SELECT document_id FROM documents WHERE project_id = $1 AND title = $2', [project.project_id, title])).rows[0]?.document_id;
+
+  // The SRS checklist asks for a References section the canteen SRS does not have yet, so its check shows one gap.
+  const srsTemplate = await templates.create(project.project_id, project.owner, {
+    name: 'SRS checklist',
+    description: 'What every requirements document in this project must contain before review.',
+    headings: ['Introduction', 'Users', 'Functional Requirements', 'Non-functional Requirements', 'Acceptance Criteria', 'References'],
+  });
+  const reportTemplate = await templates.create(project.project_id, project.owner, {
+    name: 'Project report',
+    description: 'Structure for reports submitted to the faculty.',
+    headings: ['Background', 'Objectives', 'Method', 'Findings', 'Results', 'Recommendations'],
+  });
+  const srs = await docId('Canteen Pre-Order SRS');
+  const report = await docId('Campus Water Report');
+  if (srs) await templates.setDocumentTemplate(srs, project.owner, srsTemplate.templateId);
+  if (report) await templates.setDocumentTemplate(report, project.owner, reportTemplate.templateId);
+
+  // The team project's SRS review was due two days ago and Vansh has already reminded the reviewer once.
+  await ctx.db.query(
+    `UPDATE reviews r SET due_date = current_date - 2, nudged_at = now() - interval '3 hours', nudged_by = r.submitted_by, nudge_count = 1
+      FROM documents d WHERE d.document_id = r.document_id AND d.title = 'SRS Sections 3 and 5' AND r.status = 'PENDING'`,
+  );
+  console.log('Seeded two document templates and an overdue review.');
+  return true;
+}
+
+/**
  * Sets every demo account's password back to DEMO_PASSWORD, so the demo always works even after a visitor
  * changed one. Only the listed demo emails are touched.
  */
@@ -370,8 +415,9 @@ async function resetDemoPasswords(ctx: AppContext): Promise<void> {
 export async function seedDemoData(ctx: AppContext): Promise<boolean> {
   const core = await seedCore(ctx);
   const extras = await seedExtras(ctx);
+  const more = await seedTemplatesAndReminders(ctx);
   await resetDemoPasswords(ctx);
   console.log(`Demo accounts (password ${PASSWORD}):`);
   for (const a of DEMO_ACCOUNTS) console.log(`  ${a.email.padEnd(26)} ${a.name}, ${a.role}`);
-  return core || extras;
+  return core || extras || more;
 }
