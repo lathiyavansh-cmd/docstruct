@@ -138,12 +138,29 @@ export interface DocumentDto {
   currentVersion: VersionDto;
   /** Reviewer and due date of the open review, if one is pending. */
   openReview: { reviewId: string; reviewer: UserRefDto; dueDate: string | null } | null;
+  /** True when the document is locked with a password. Its title and details stay visible; its contents do not. */
+  isProtected: boolean;
 }
 
 export interface DocumentDetailDto extends DocumentDto {
   /** Folders from the project root down to the document's folder. */
   folderPath: Array<{ folderId: string; name: string }>;
   versionCount: number;
+  /** Whether the caller may see the contents now: true when not protected, or unlocked with the password. */
+  unlocked: boolean;
+  /** When the caller's unlock ends (protected documents only). */
+  unlockedUntil: string | null;
+}
+
+/** One document another member sent to the caller ("Shared with me"). */
+export interface SharedWithMeDto {
+  document: DocumentDto;
+  projectName: string;
+  sharedBy: UserRefDto;
+  note: string;
+  sharedAt: string;
+  /** Null until the caller opens the document. */
+  readAt: string | null;
 }
 
 /** Step 1 of an upload: the browser PUTs the file to `uploadUrl`, then finalises with `uploadKey`. */
@@ -374,8 +391,10 @@ export interface SharedDocumentDto {
   description: string;
   versionNo: number;
   updatedAt: string;
-  file: FileLinkDto;
-  download: FileLinkDto;
+  /** Password-protected: the file links are given only after the password is sent with the request. */
+  isProtected: boolean;
+  file: FileLinkDto | null;
+  download: FileLinkDto | null;
   expiresAt: string | null;
 }
 

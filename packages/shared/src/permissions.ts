@@ -57,6 +57,9 @@ export const PERMISSIONS = [
   'folder.delete',
   'document.delete',
   'document.archive',
+  'document.protect',
+  'document.protect.reset',
+  'document.share.members',
   'share.create',
   'share.revoke',
   'share.list',
@@ -92,6 +95,8 @@ const OWN: Record<ProjectRole, Permission[]> = {
     'annotation.create',
     'annotation.reply',
     'annotation.resolve',
+    // Lock a document with a password, or change or remove it (the current password is always required).
+    'document.protect',
   ],
   OWNER: [
     'project.update',
@@ -102,6 +107,10 @@ const OWN: Record<ProjectRole, Permission[]> = {
     'folder.delete',
     'document.delete',
     'document.archive',
+    // Set a new password when the old one is forgotten (recorded in the activity log).
+    'document.protect.reset',
+    // Send a document to every member of the project at once.
+    'document.share.members',
     'share.create',
     'share.revoke',
     'share.list',
