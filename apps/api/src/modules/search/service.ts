@@ -96,19 +96,21 @@ export class SearchService {
       const title = `GREATEST(CASE WHEN lower(d.title) LIKE '%' || lower(${p}) || '%' THEN 1.0 ELSE 0 END, word_similarity(lower(${p}), lower(d.title)))`;
       const tsv = `to_tsvector('english', COALESCE(v.extracted_text, ''))`;
       const tsq = `websearch_to_tsquery('english', ${p})`;
-      const content = `CASE WHEN ${tsv} @@ ${tsq} THEN ts_rank_cd(${tsv}, ${tsq}, 1) * 10 ELSE 0 END`;
+      // A password-protected document can be found by its title only: its text never matches and is never quoted.
+      const hit = `(d.protected_at IS NULL AND ${tsv} @@ ${tsq})`;
+      const content = `CASE WHEN ${hit} THEN ts_rank_cd(${tsv}, ${tsq}, 1) * 10 ELSE 0 END`;
       scoreColumns = `
         (SELECT name FROM projects WHERE project_id = d.project_id) AS project_name,
         (${TITLE_WEIGHT} * (CASE WHEN ${title} >= ${TITLE_SIMILARITY} THEN ${title} ELSE 0 END)
           + ${CONTENT_WEIGHT} * LEAST(${content}, 3)
           + ${RECENCY_WEIGHT} * power(0.5, EXTRACT(EPOCH FROM (now() - d.updated_at)) / 86400.0 / ${HALF_LIFE_DAYS}))::float8 AS score,
         (${title} >= ${TITLE_SIMILARITY}) AS title_hit,
-        (${tsv} @@ ${tsq}) AS content_hit,
-        CASE WHEN ${tsv} @@ ${tsq}
+        ${hit} AS content_hit,
+        CASE WHEN ${hit}
              THEN ts_headline('english', v.extracted_text, ${tsq}, 'StartSel=[[, StopSel=]], MaxWords=30, MinWords=12, MaxFragments=1')
         END AS snippet`;
       // A document is only returned if the title is similar enough or the text matches.
-      where.push(`(${title} >= ${TITLE_SIMILARITY} OR ${tsv} @@ ${tsq})`);
+      where.push(`(${title} >= ${TITLE_SIMILARITY} OR ${hit})`);
       order = 'score DESC, d.updated_at DESC';
     }
 

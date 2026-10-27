@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { SearchResultDto } from '@docstruct/shared';
-import { AnimateIcon, ArrowRightIcon, SearchIcon } from '../components/icons';
+import { AnimateIcon, ArrowRightIcon, SearchIcon, LockIcon } from '../components/icons';
 import { BlurFade } from '../components/magicui/blur-fade';
 import { AnimatedBackground } from '../components/motion-primitives/animated-background';
 import { EmptyState, ErrorNote, Input, PageHeader, Skeleton, StatusBadge } from '../components/ui';
@@ -70,6 +70,7 @@ export function SearchPage() {
                     <span className="block w-full">
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-ink transition-colors group-hover:text-primary">{r.document.title}</span>
+                        {r.document.isProtected && <LockIcon size={13} className="text-primary" aria-label="Password protected" />}
                         <StatusBadge status={r.document.status} />
                         <span className="ml-auto text-primary opacity-0 transition-opacity group-hover:opacity-100">
                           <ArrowRightIcon size={15} />
