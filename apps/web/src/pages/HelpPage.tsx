@@ -118,6 +118,25 @@ export function HelpPage() {
         </p>
       </section>
 
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Password-protected documents</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Editors and owners can lock a document from its More menu with Protect with password. Everyone then needs the password to open
+          it, project owners included; the title stays visible, but the preview, summary, comments, comparison and downloads stay hidden.
+          After the right password the document stays open for that person for 12 hours on that login. Changing the password locks everyone
+          out until they get the new one. If the password is forgotten, a project owner can set a new one, and this is recorded in the
+          activity log. Share links to a protected document ask for the password too.
+        </p>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-2 text-lg font-semibold">Sending a document to all members</h2>
+        <p className="text-sm leading-relaxed text-ink-soft">
+          A project owner can choose Send to all members from a document's More menu, with an optional note. The document then appears in
+          every member's Shared with me list, marked as new until they open it, however many members the project has.
+        </p>
+      </section>
+
       <section className="mt-10 rounded-2xl border border-rule bg-paper/60 p-5">
         <h2 className="mb-2 text-lg font-semibold">Interface credits</h2>
         <p className="text-sm leading-relaxed text-ink-soft">
