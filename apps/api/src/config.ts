@@ -35,6 +35,8 @@ export interface AppConfig {
   webDist: string | null;
   /** Maximum connections in the PostgreSQL pool (Supabase's free pooler allows only a few). */
   dbPoolMax: number;
+  /** Demo mode: the login page lists the demo accounts (SEED_DEMO=true, or local development). */
+  demoMode: boolean;
   /** HMAC secret for signed storage URLs. */
   signingSecret: string;
   /** Appendix C TBD resolved: session and signed-URL validity periods. */
@@ -97,6 +99,7 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     // In production the API also serves the built website (apps/web/dist), so one service hosts everything.
     webDist: process.env.WEB_DIST ? path.resolve(process.env.WEB_DIST) : env === 'production' ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist') : null,
     dbPoolMax: intEnv('DB_POOL_MAX', 10),
+    demoMode: process.env.SEED_DEMO === 'true' || env === 'development',
     signingSecret,
     sessionIdleMinutes: intEnv('SESSION_IDLE_MINUTES', 30),
     sessionMaxHours: intEnv('SESSION_MAX_HOURS', 12),

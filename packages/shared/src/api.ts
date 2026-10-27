@@ -152,6 +152,14 @@ export interface DocumentDetailDto extends DocumentDto {
   unlockedUntil: string | null;
 }
 
+/** Demo accounts offered on the login page (demo mode only). */
+export interface DemoAccountsDto {
+  password: string;
+  /** Password of the protected document in the demo data. */
+  documentPassword: string;
+  accounts: Array<{ email: string; name: string; role: string; tryThis: string }>;
+}
+
 /** One document another member sent to the caller ("Shared with me"). */
 export interface SharedWithMeDto {
   document: DocumentDto;
