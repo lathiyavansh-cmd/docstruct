@@ -23,6 +23,9 @@ its predecessor and prepares a change summary and pre-review findings.
 | 3.7 Sharing and annotation | Comments on a version, pinned to a PDF region, replies, resolve; view-only expiring and revocable share links |
 | 3.8 Search and filtering | Typo-tolerant title search, full-text content search, ranking, filters by status, folder, reviewer and date |
 | 3.9 Dashboard and activity | Status counts, pending actions, review progress, immutable activity log |
+| Password protection and send to all | Password-protected documents (12-hour unlocks, owner reset), send a document to every member at once, Shared with me |
+| Review reminders | Overdue and due-soon tracking, a Reminders page, remind the reviewer once a day |
+| Document templates | Checklists of required section headings per project, a check on every version, compliance list per template |
 
 Everything is written by the team: authentication, file storage, text extraction (a PDF parser and DOCX
 reader in pure Python) and the comparison and summary engine. No external service API is used.
@@ -105,3 +108,4 @@ scripts/            setup, dev runner, commit-message checker
 - [REST API reference](docs/API.md)
 - [Git workflow: branching strategy and commit conventions](docs/GIT_WORKFLOW.md)
 - [Team and module ownership](docs/TEAM.md)
+- [Showcase script and demo files](docs/showcase/DEMO_SCRIPT.md): a 15-minute walkthrough of every feature with the demo accounts
