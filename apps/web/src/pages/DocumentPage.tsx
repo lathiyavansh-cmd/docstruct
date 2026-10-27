@@ -39,6 +39,7 @@ import { ReviewPanel } from '../components/ReviewPanel';
 import { SharePanel } from '../components/SharePanel';
 import { ShareWithMembersDialog } from '../components/ShareWithMembersDialog';
 import { SummaryCard } from '../components/SummaryCard';
+import { TemplateCheckCard } from '../components/TemplateCheckCard';
 import { useToast } from '../components/toast';
 import { UploadDialog } from '../components/UploadDialog';
 import { VersionHistory } from '../components/VersionHistory';
@@ -229,6 +230,8 @@ export function DocumentPage() {
             </Notice>
           )}
           {shownVersion && <SummaryCard versionId={shownVersion.versionId} versionNo={shownVersion.versionNo} />}
+          {/* Which required sections the current version has (only shown once a template exists or can be chosen). */}
+          <TemplateCheckCard documentId={d.documentId} projectId={p.projectId} canEdit={allowed('document.update')} />
           {shownVersion && (
             <DocumentPreview
               versionId={shownVersion.versionId}

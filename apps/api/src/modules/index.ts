@@ -26,6 +26,7 @@ import { reviewRoutes } from './reviews/routes.js';
 import { searchRoutes } from './search/routes.js';
 import { shareRoutes } from './shares/routes.js';
 import { summaryRoutes } from './summary/routes.js';
+import { templateRoutes } from './templates/routes.js';
 import { versionRoutes } from './versions/routes.js';
 
 /**
@@ -46,6 +47,7 @@ export const modules: Array<(ctx: AppContext) => Router> = [
   reviewRoutes, // M05
   diffRoutes, // F3.6
   summaryRoutes, // document summarisation (extends F3.6)
+  templateRoutes, // document templates: checklists of required headings
   annotationRoutes, // M07
   shareRoutes, // M07
   searchRoutes, // M08

@@ -30,7 +30,9 @@ import { ActivityPage } from './pages/project/ActivityPage';
 import { DashboardPage } from './pages/project/DashboardPage';
 import { MembersPage } from './pages/project/MembersPage';
 import { ProjectLayout } from './pages/project/ProjectLayout';
+import { TemplatesPage } from './pages/project/TemplatesPage';
 import { WorkspacePage } from './pages/project/WorkspacePage';
+import { RemindersPage } from './pages/RemindersPage';
 import { ReviewQueuePage } from './pages/ReviewQueuePage';
 import { SharedWithMePage } from './pages/SharedWithMePage';
 import { SearchPage } from './pages/SearchPage';
@@ -70,12 +72,14 @@ export function App() {
         <Route index element={<ProjectsPage />} />
         {/* Project pages share ProjectLayout, which loads the project and shows its tabs. */}
         <Route path="reviews" element={<ReviewQueuePage />} />
+        <Route path="reminders" element={<RemindersPage />} />
         <Route path="shared" element={<SharedWithMePage />} />
         <Route path="p/:projectId" element={<ProjectLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="documents" element={<WorkspacePage />} />
           <Route path="members" element={<MembersPage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="templates" element={<TemplatesPage />} />
         </Route>
         <Route path="d/:documentId" element={<DocumentPage />} />
         <Route path="d/:documentId/compare" element={<ComparePage />} />

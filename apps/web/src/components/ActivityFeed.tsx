@@ -53,6 +53,11 @@ export function describe(entry: ActivityEntryDto): string {
     case 'review.approved': return 'approved';
     case 'review.changes_requested': return 'requested changes to';
     case 'review.cancelled': return 'cancelled the review of';
+    case 'review.nudged': return 'reminded the reviewer of';
+    case 'template.created': return `created the template ${entry.entityLabel}`;
+    case 'template.updated': return `edited the template ${entry.entityLabel}`;
+    case 'template.deleted': return `deleted the template ${entry.entityLabel}`;
+    case 'document.template_set': return d.templateName ? `set the template ${d.templateName} on` : 'removed the template from';
     case 'annotation.created': return 'commented on';
     case 'annotation.resolved': return 'resolved a comment on';
     case 'share.created': return 'created a share link for';
