@@ -51,7 +51,8 @@ export function createApp(ctx: AppContext) {
     app.use('/assets', express.static(path.join(dist, 'assets'), { immutable: true, maxAge: '365d' }));
     app.use(express.static(dist, { index: false }));
     // Any other page address (such as /p/123 or /d/456) is a route inside the React app: send index.html.
-    app.use((req, res, next) => (req.method === 'GET' ? res.sendFile(path.join(dist, 'index.html')) : next()));
+    // HEAD is answered too, so uptime checkers that send HEAD requests see the site as up.
+    app.use((req, res, next) => (req.method === 'GET' || req.method === 'HEAD' ? res.sendFile(path.join(dist, 'index.html')) : next()));
   }
 
   app.use(errorHandler(ctx));
