@@ -50,6 +50,11 @@
   --shadow-card: 0 1px 2px rgb(21 23 43 / 0.04), 0 4px 16px -6px rgb(21 23 43 / 0.08);
   --shadow-lift: 0 2px 4px rgb(21 23 43 / 0.05), 0 12px 32px -10px rgb(48 64 196 / 0.25);
 
+  /* Motion: every transition eases out softly (fast start, gentle stop) unless a class says otherwise. */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-duration: 280ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+
   --color-st-draft: #5b6478;
   --color-st-draft-wash: #edeff3;
   --color-st-review: #9a5b00;
@@ -86,6 +91,13 @@
   }
   ::selection {
     background: var(--color-primary-wash);
+  }
+}
+
+/* In-page links (for example the overview page's menu) glide to their section instead of jumping. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
   }
 }
 

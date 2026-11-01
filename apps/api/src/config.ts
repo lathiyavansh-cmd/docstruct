@@ -15,6 +15,7 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export interface AppConfig {
   env: 'development' | 'test' | 'production';
@@ -28,6 +29,14 @@ export interface AppConfig {
   databaseUrl: string;
   /** Directory of the object store (uploaded files). */
   storageDir: string;
+  /** Where uploaded file bytes are kept: on disk in storageDir, or in the database (for hosts without a lasting disk). */
+  storageDriver: 'filesystem' | 'database';
+  /** Built web client to serve from the API (production), or null when Vite serves it. */
+  webDist: string | null;
+  /** Maximum connections in the PostgreSQL pool (Supabase's free pooler allows only a few). */
+  dbPoolMax: number;
+  /** Demo mode: the login page lists the demo accounts (SEED_DEMO=true, or local development). */
+  demoMode: boolean;
   /** HMAC secret for signed storage URLs. */
   signingSecret: string;
   /** Appendix C TBD resolved: session and signed-URL validity periods. */
@@ -60,6 +69,12 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   const env = (process.env.NODE_ENV as AppConfig['env']) ?? 'development';
   const dataDir = path.resolve(overrides.dataDir ?? process.env.DATA_DIR ?? '.data');
 
+  // The embedded database is for development and tests only: it needs far more memory than a small
+  // production server has, so production must point DATABASE_URL at a real PostgreSQL server.
+  if (env === 'production' && !(overrides.databaseUrl ?? process.env.DATABASE_URL)) {
+    throw new Error('DATABASE_URL is required in production (for example a Supabase session pooler connection string)');
+  }
+
   let signingSecret = overrides.signingSecret ?? process.env.SIGNING_SECRET ?? '';
   if (!signingSecret) {
     // Production must set a real secret; otherwise anyone could forge signed download links.
@@ -74,11 +89,17 @@ export function loadConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
     env,
     port: intEnv('PORT', 4000),
-    appUrl: process.env.APP_URL ?? 'http://localhost:5173',
+    // On Render, RENDER_EXTERNAL_URL is the site's public address (used for CORS and password-reset links).
+    appUrl: process.env.APP_URL ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173',
     publicApiBase: process.env.PUBLIC_API_BASE ?? '/api',
     dataDir,
     databaseUrl: process.env.DATABASE_URL ?? '',
     storageDir: path.resolve(process.env.STORAGE_DIR ?? path.join(dataDir, 'objects')),
+    storageDriver: process.env.STORAGE_DRIVER === 'database' ? 'database' : 'filesystem',
+    // In production the API also serves the built website (apps/web/dist), so one service hosts everything.
+    webDist: process.env.WEB_DIST ? path.resolve(process.env.WEB_DIST) : env === 'production' ? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../web/dist') : null,
+    dbPoolMax: intEnv('DB_POOL_MAX', 10),
+    demoMode: process.env.SEED_DEMO === 'true' || env === 'development',
     signingSecret,
     sessionIdleMinutes: intEnv('SESSION_IDLE_MINUTES', 30),
     sessionMaxHours: intEnv('SESSION_MAX_HOURS', 12),

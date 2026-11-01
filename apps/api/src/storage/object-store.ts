@@ -8,6 +8,8 @@
  *   - createUploadUrl() / createDownloadUrl() build signed links; verify() checks them.
  *   - write() streams a file to a temp file with a size limit, then renames it into place.
  *   - read(), stream(), checksum() and removeOrphan() are used by services and the extractor.
+ *   - With a database handle (STORAGE_DRIVER=database) the bytes live in the stored_objects table
+ *     instead of on disk, so files survive on hosts whose disk is wiped on restart (such as Render).
  *
  * Where it fits
  *   Created in bootstrap.ts. Used by storage/routes.ts, the document and version services,
@@ -15,10 +17,12 @@
  */
 import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { Readable } from 'node:stream';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import type { Queryable } from '../db/database.js';
 
 /**
  * DocStruct's object store (SI-3). Files live on disk under `root`, addressed by an opaque key, and are
@@ -50,12 +54,23 @@ export class ObjectStore {
     private readonly secret: string,
     private readonly ttlSeconds: number,
     private readonly urlBase: string,
+    /** When given, file bytes are kept in the stored_objects table of this database instead of on disk. */
+    private readonly db: Queryable | null = null,
   ) {}
 
-  private pathFor(key: string): string {
+  /** Where file bytes are kept: on disk under root, or in the database. */
+  get driver(): 'filesystem' | 'database' {
+    return this.db ? 'database' : 'filesystem';
+  }
+
+  private checkKey(key: string): void {
     // Security check: only safe characters and no '..', so a key can never point outside root
     // (this blocks path traversal attacks like "../../etc/passwd").
     if (!/^[a-zA-Z0-9/_.-]+$/.test(key) || key.includes('..')) throw new Error(`invalid object key: ${key}`);
+  }
+
+  private pathFor(key: string): string {
+    this.checkKey(key);
     return path.join(this.root, ...key.split('/'));
   }
 
@@ -97,9 +112,21 @@ export class ObjectStore {
     return 'ok';
   }
 
-  /** Filesystem path of an object, for server-side tools such as the text extractor. */
-  localPath(key: string): string {
-    return this.pathFor(key);
+  /**
+   * Runs `fn` with a filesystem path to the object, for server-side tools such as the Python text
+   * extractor. On disk that is the file itself; from the database the bytes are copied to a temporary
+   * file that is deleted afterwards.
+   */
+  async withLocalFile<T>(key: string, fn: (filePath: string) => Promise<T>): Promise<T> {
+    if (!this.db) return fn(this.pathFor(key));
+    const dir = await mkdtemp(path.join(tmpdir(), 'docstruct-'));
+    const file = path.join(dir, 'object');
+    try {
+      await writeFile(file, await this.read(key));
+      return await fn(file);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   }
 
   async exists(key: string): Promise<boolean> {
@@ -107,6 +134,11 @@ export class ObjectStore {
   }
 
   async size(key: string): Promise<number | null> {
+    if (this.db) {
+      this.checkKey(key);
+      const { rows } = await this.db.query<{ size: number }>('SELECT octet_length(data)::int AS size FROM stored_objects WHERE key = $1', [key]);
+      return rows[0]?.size ?? null;
+    }
     try {
       return (await stat(this.pathFor(key))).size;
     } catch {
@@ -116,6 +148,7 @@ export class ObjectStore {
 
   /** Streams `body` into a new object. Fails if the key exists or more than `maxBytes` arrive. */
   async write(key: string, body: Readable, maxBytes: number): Promise<number> {
+    if (this.db) return this.writeToDatabase(key, body, maxBytes);
     const target = this.pathFor(key);
     if (await this.exists(key)) throw new ObjectExistsError(key);
     await mkdir(path.dirname(target), { recursive: true });
@@ -146,17 +179,44 @@ export class ObjectStore {
     }
   }
 
+  /** Database storage: collects the upload in memory (within the size limit), then inserts it once. */
+  private async writeToDatabase(key: string, body: Readable, maxBytes: number): Promise<number> {
+    this.checkKey(key);
+    if (await this.exists(key)) throw new ObjectExistsError(key);
+    const chunks: Buffer[] = [];
+    let received = 0;
+    for await (const chunk of body as AsyncIterable<Buffer>) {
+      received += chunk.length;
+      if (received > maxBytes) throw new ObjectTooLargeError(maxBytes);
+      chunks.push(chunk);
+    }
+    // ON CONFLICT DO NOTHING keeps objects write-once even if two uploads race for the same key.
+    const { rows } = await this.db!.query<{ key: string }>(
+      'INSERT INTO stored_objects (key, data) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING RETURNING key',
+      [key, Buffer.concat(chunks)],
+    );
+    if (!rows[0]) throw new ObjectExistsError(key);
+    return received;
+  }
+
   async writeBuffer(key: string, data: Buffer): Promise<void> {
-    const { Readable } = await import('node:stream');
     await this.write(key, Readable.from([data]), data.length);
   }
 
-  read(key: string): Promise<Buffer> {
-    return readFile(this.pathFor(key));
+  async read(key: string): Promise<Buffer> {
+    if (!this.db) return readFile(this.pathFor(key));
+    this.checkKey(key);
+    const { rows } = await this.db.query<{ data: Uint8Array }>('SELECT data FROM stored_objects WHERE key = $1', [key]);
+    if (!rows[0]) throw new Error(`object not found: ${key}`);
+    return Buffer.from(rows[0].data);
   }
 
   stream(key: string): Readable {
-    return createReadStream(this.pathFor(key));
+    if (!this.db) return createReadStream(this.pathFor(key));
+    const read = () => this.read(key);
+    return Readable.from((async function* () {
+      yield await read();
+    })());
   }
 
   async checksum(key: string): Promise<string> {
@@ -170,6 +230,11 @@ export class ObjectStore {
    * (Doc.Upload.Failure, Reliability-2) - never for a file a version refers to.
    */
   async removeOrphan(key: string): Promise<void> {
+    if (this.db) {
+      this.checkKey(key);
+      await this.db.query('DELETE FROM stored_objects WHERE key = $1', [key]);
+      return;
+    }
     await rm(this.pathFor(key), { force: true });
   }
 }

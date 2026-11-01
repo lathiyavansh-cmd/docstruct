@@ -20,6 +20,10 @@ export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 x 1024 x 1024 = 52,428,8
 /** Appendix C TBD resolved: maximum folder nesting depth. */
 export const MAX_FOLDER_DEPTH = 32;
 
+/** Document passwords: minimum length, and how long a correct password keeps a document open for one login. */
+export const DOCUMENT_PASSWORD_MIN_LENGTH = 6;
+export const DOCUMENT_UNLOCK_HOURS = 12;
+
 export interface FileFormat {
   label: string;
   mime: string;

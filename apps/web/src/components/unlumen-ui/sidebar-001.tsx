@@ -403,7 +403,7 @@ export function Sidebar001Group({
             <span className="shrink-0 text-foreground/35 [&_svg]:size-3.5">
               {icon}
             </span>
-            <span className="text-sm text-foreground/45 group-hover:text-foreground/70 transition-colors duration-150 flex-1">
+            <span className="text-sm text-foreground/45 group-hover:text-foreground/70 transition-colors duration-300 flex-1">
               {label}
             </span>
             <MotionChevron
@@ -423,7 +423,7 @@ export function Sidebar001Group({
               animate={{ rotate: isOpen ? 90 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
-            <span className="text-sm text-foreground/45 group-hover:text-foreground/70 transition-colors duration-150">
+            <span className="text-sm text-foreground/45 group-hover:text-foreground/70 transition-colors duration-300">
               {label}
             </span>
           </>
@@ -564,7 +564,7 @@ export function Sidebar001({
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
           >
-            <div className="absolute right-0 top-0 h-full w-px bg-border/50 group-hover/handle:bg-border transition-colors duration-150" />
+            <div className="absolute right-0 top-0 h-full w-px bg-border/50 group-hover/handle:bg-border transition-colors duration-300" />
           </div>
         </aside>
       </HoverProvider>

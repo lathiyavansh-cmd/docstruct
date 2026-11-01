@@ -68,6 +68,24 @@ Upload is two steps: `POST /projects/:id/uploads {fileName, byteSize}` → `PUT`
 | POST | /reviews/:reviewId/request-changes | review.decide + designated reviewer (note required) |
 | POST | /reviews/:reviewId/cancel | submitter or review.cancel.any |
 | POST | /documents/:documentId/archive | document.archive |
+| GET | /me/reminders | session: overdue and soon-due reviews, nudges received, overdue reviews sent, decisions this week |
+| POST | /reviews/:reviewId/nudge | review.submit, and submitter or review.cancel.any; once per review per 24 hours |
+
+Every review carries `overdue` and `daysUntilDue`, worked out by the database from `dueDate`.
+
+## Document templates
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | /projects/:projectId/templates | project.read |
+| POST | /projects/:projectId/templates | template.manage (owner): `{ name, description?, headings: string[] }` |
+| PATCH / DELETE | /projects/:projectId/templates/:templateId | template.manage |
+| GET | /projects/:projectId/templates/:templateId/compliance | project.read: every document using it, incomplete first |
+| PUT | /documents/:documentId/template | document.update: `{ templateId }` or `{ templateId: null }`; returns the check |
+| GET | /documents/:documentId/template-check | document.read: the current version's check, or `null` |
+
+The check compares the headings of the current version's extracted text with the template's list, ignoring
+numbering, case, punctuation and plurals; each document heading satisfies at most one required heading.
 
 ## F3.6 Comparison and pre-review
 

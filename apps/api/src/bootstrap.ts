@@ -26,10 +26,11 @@ export async function bootstrap(overrides: Partial<AppConfig> = {}): Promise<App
     if (err) console.error(`[docstruct] ${msg}`, err);
     else console.log(`[docstruct] ${msg}`);
   };
-  const db = await openDatabase(config.databaseUrl, config.dataDir);
+  const db = await openDatabase(config.databaseUrl, config.dataDir, config.dbPoolMax);
   // Every start brings the schema up to date, so a fresh database works without a manual step.
   await migrate(db, log);
   mkdirSync(config.storageDir, { recursive: true });
-  const storage = new ObjectStore(config.storageDir, config.signingSecret, config.signedUrlTtlSeconds, config.publicApiBase);
+  // STORAGE_DRIVER=database keeps file bytes in the database (see 010_stored_objects.sql).
+  const storage = new ObjectStore(config.storageDir, config.signingSecret, config.signedUrlTtlSeconds, config.publicApiBase, config.storageDriver === 'database' ? db : null);
   return { config, db, storage, jobs: new JobQueue(log), log };
 }

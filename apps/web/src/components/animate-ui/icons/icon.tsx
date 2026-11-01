@@ -384,7 +384,7 @@ function AnimateIcon({
   const handleMouseEnter = composeEventHandlers<React.MouseEvent<HTMLElement>>(
     childProps.onMouseEnter,
     () => {
-      if (animateOnHover) startAnimation(animateOnHover);
+      // DocStruct: icons stay still on hover; only colours respond to the pointer.
     },
   );
 

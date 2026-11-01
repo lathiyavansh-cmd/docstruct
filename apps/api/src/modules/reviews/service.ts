@@ -9,6 +9,9 @@
  *   - decide() locks the review and document, checks that the caller is the named reviewer, then sets
  *     APPROVED or CHANGES_REQUESTED.
  *   - cancel() puts the document back to the status it had before the review.
+ *   - nudge() lets the submitter (or an owner) remind the reviewer, at most once a day per review.
+ *   - reminders() builds one person's Reminders list: overdue and soon-due reviews, nudges received,
+ *     reviews they sent that are overdue, and recent decisions on their documents.
  *   - canTransition() from the shared package is the state machine that says which status changes are legal.
  *   - assertNoOpenReview() and assertNotPendingReviewer() are guards used by other modules.
  *
@@ -26,6 +29,7 @@ import {
   type ReviewDto,
   type ReviewStatus,
 } from '@docstruct/shared';
+import type { ReminderDto, RemindersDto } from '@docstruct/shared';
 import type { AppContext } from '../../context.js';
 import type { Queryable } from '../../db/database.js';
 import { recordActivity } from '../../lib/activity.js';
@@ -39,7 +43,9 @@ const REVIEW_SELECT = `
   SELECT r.review_id, d.project_id, p.name AS project_name, r.document_id, d.title AS document_title,
          r.version_id, v.version_no, (d.current_version_id <> r.version_id) AS superseded,
          r.reviewer_id, rv.display_name AS reviewer_name, r.submitted_by, sb.display_name AS submitted_by_name,
-         r.submission_note, r.due_date::text AS due_date, r.status, r.decision_note, r.decided_at, r.cancelled_at, r.created_at
+         r.submission_note, r.due_date::text AS due_date, r.status, r.decision_note, r.decided_at, r.cancelled_at, r.created_at,
+         (r.status = 'PENDING' AND r.due_date < current_date) AS overdue,
+         (r.due_date - current_date)::int AS days_until_due, r.nudged_at, r.nudge_count
     FROM reviews r
     JOIN documents d ON d.document_id = r.document_id
     JOIN projects p ON p.project_id = d.project_id
@@ -62,6 +68,10 @@ interface ReviewRow {
   submitted_by_name: string;
   submission_note: string;
   due_date: string | null;
+  overdue: boolean;
+  days_until_due: number | null;
+  nudged_at: Date | null;
+  nudge_count: number;
   status: ReviewStatus;
   decision_note: string;
   decided_at: Date | null;
@@ -83,6 +93,10 @@ function toReviewDto(r: ReviewRow): ReviewDto {
     submittedBy: { userId: r.submitted_by, displayName: r.submitted_by_name },
     submissionNote: r.submission_note,
     dueDate: r.due_date,
+    overdue: r.overdue,
+    daysUntilDue: r.days_until_due,
+    nudgedAt: r.nudged_at?.toISOString() ?? null,
+    nudgeCount: r.nudge_count,
     status: r.status,
     decisionNote: r.decision_note,
     decidedAt: r.decided_at?.toISOString() ?? null,
@@ -122,6 +136,9 @@ export async function assertNotPendingReviewer(q: Queryable, projectId: string, 
 }
 
 /** M05 - Structured Review Workflow (SRS 3.5). */
+/** A reviewer can be reminded about the same review at most once in this period. */
+const NUDGE_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 export class ReviewService {
   constructor(private readonly ctx: AppContext) {}
 
@@ -261,6 +278,73 @@ export class ReviewService {
       });
     });
     return this.get(reviewId);
+  }
+
+  /**
+   * Review.Nudge: the submitter or an owner reminds the reviewer. The reviewer sees it on their Reminders
+   * page and in the queue. One nudge per review per 24 hours, so nobody can be spammed.
+   */
+  async nudge(reviewId: string, userId: string, role: ProjectRole): Promise<ReviewDto> {
+    await this.ctx.db.tx(async (q) => {
+      const { rows } = await q.query<{ document_id: string; submitted_by: string; reviewer_id: string; status: ReviewStatus; nudged_at: Date | null; project_id: string; title: string }>(
+        `SELECT r.document_id, r.submitted_by, r.reviewer_id, r.status, r.nudged_at, d.project_id, d.title
+           FROM reviews r JOIN documents d ON d.document_id = r.document_id
+          WHERE r.review_id = $1 FOR UPDATE OF r`,
+        [reviewId],
+      );
+      const review = rows[0];
+      if (!review) throw notFound('Review');
+      if (review.submitted_by !== userId && !can(role, 'review.cancel.any')) {
+        throw forbidden('Only the person who submitted the review or a project owner can send a reminder');
+      }
+      if (review.status !== 'PENDING') throw conflict('This review has already been decided or cancelled', 'REVIEW_CLOSED');
+      if (review.reviewer_id === userId) throw badRequest('You are the reviewer of this document');
+      if (review.nudged_at && Date.now() - review.nudged_at.getTime() < NUDGE_INTERVAL_MS) {
+        throw conflict('The reviewer was already reminded today. Try again tomorrow.', 'NUDGED_RECENTLY');
+      }
+      await q.query('UPDATE reviews SET nudged_at = now(), nudged_by = $2, nudge_count = nudge_count + 1 WHERE review_id = $1', [reviewId, userId]);
+      await recordActivity(q, {
+        projectId: review.project_id,
+        actorId: userId,
+        action: 'review.nudged',
+        entityType: 'review',
+        entityId: review.document_id,
+        entityLabel: review.title,
+        detail: { reviewId, reviewerId: review.reviewer_id },
+      });
+    });
+    return this.get(reviewId);
+  }
+
+  /**
+   * Review.Reminders: everything one person should look at, most urgent first. Only reviews in projects
+   * the person still belongs to, on documents that still exist. Computed on request, so it is always current.
+   */
+  async reminders(userId: string): Promise<RemindersDto> {
+    const { rows } = await this.ctx.db.query<ReviewRow & { mine: boolean }>(
+      `${REVIEW_SELECT}
+        JOIN project_members m ON m.project_id = d.project_id AND m.user_id = $1
+       WHERE d.deleted_at IS NULL
+         AND ((r.reviewer_id = $1 AND r.status = 'PENDING' AND (r.due_date <= current_date + 2 OR r.nudged_at > now() - interval '7 days'))
+           OR (r.submitted_by = $1 AND r.reviewer_id <> $1 AND
+               ((r.status = 'PENDING' AND r.due_date < current_date) OR (r.decided_at > now() - interval '7 days'))))
+       ORDER BY r.due_date NULLS LAST, r.decided_at DESC NULLS LAST, r.created_at`,
+      [userId],
+    );
+    const items: ReminderDto[] = [];
+    for (const row of rows) {
+      const review = toReviewDto(row);
+      const forMe = row.reviewer_id === userId;
+      // One review can be on the list for two reasons (for example overdue and nudged); the most urgent wins.
+      if (forMe && review.overdue) items.push({ kind: 'review_overdue', review });
+      else if (forMe && review.status === 'PENDING' && review.nudgedAt) items.push({ kind: 'nudged', review });
+      else if (forMe && review.status === 'PENDING') items.push({ kind: 'review_due_soon', review });
+      else if (review.status === 'PENDING') items.push({ kind: 'sent_overdue', review });
+      else items.push({ kind: 'decided', review });
+    }
+    const order: Record<ReminderDto['kind'], number> = { review_overdue: 0, nudged: 1, review_due_soon: 2, sent_overdue: 3, decided: 4 };
+    items.sort((a, b) => order[a.kind] - order[b.kind]);
+    return { attention: items.filter((i) => i.kind !== 'decided').length, items };
   }
 
   /** Review.Cancel: by the submitter or a project owner; the document returns to its previous status. */

@@ -16,15 +16,15 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { REVIEWER_ROLES, ROLE_LABEL, canTransition, type DocumentDetailDto, type ProjectDto, type ReviewDto } from '@docstruct/shared';
+import { REVIEWER_ROLES, ROLE_LABEL, canTransition, type DocumentDetailDto, type ProjectDto, type ReviewDto, type TemplateCheckDto } from '@docstruct/shared';
 import { errorMessage, get, post } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { formatDate, formatDateTime } from '../lib/format';
+import { dueLabel, formatDateTime, timeAgo } from '../lib/format';
 import { useCan, useMembers } from '../lib/hooks';
 import { PreReviewPanel } from './PreReview';
 import { useToast } from './toast';
-import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Select, StatusBadge, TextArea } from './ui';
-import { BadgeCheckIcon, RotateCcwIcon, SendIcon, XIcon } from './icons';
+import { Button, ConfirmDialog, ErrorNote, Field, Input, Modal, Notice, Select, StatusBadge, TextArea } from './ui';
+import { BadgeCheckIcon, BellIcon, RotateCcwIcon, SendIcon, XIcon } from './icons';
 
 /** M05 on the document page: the open review, the reviewer's decision, submission and the review history. */
 export function ReviewPanel({ document: doc, project }: { document: DocumentDetailDto; project: ProjectDto }) {
@@ -67,6 +67,18 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
     onError: () => setConfirm(null),
   });
 
+  // Review.Nudge: the submitter or an owner reminds the reviewer (once a day; the server enforces the gap).
+  const nudge = useMutation({
+    mutationFn: () => post<ReviewDto>(`/reviews/${open!.reviewId}/nudge`),
+    onSuccess: (r) => {
+      toast(`Reminded ${r.reviewer.displayName}`);
+      queryClient.invalidateQueries({ queryKey: ['reviews', doc.documentId] });
+      queryClient.invalidateQueries({ queryKey: ['reminders'] });
+    },
+    onError: (e) => toast(errorMessage(e), 'error'),
+  });
+  const nudgedToday = !!open?.nudgedAt && Date.now() - new Date(open.nudgedAt).getTime() < 24 * 60 * 60 * 1000;
+
   // Can send for review if the role allows it, nothing is open, and the status rules allow moving to UNDER_REVIEW.
   const canSubmit = allowed('review.submit') && !open && canTransition(doc.status, 'UNDER_REVIEW');
 
@@ -86,9 +98,18 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
         <div className="space-y-4 rounded-xl border border-st-review/30 bg-st-review-wash/40 p-4">
           <div className="text-sm">
             <p>
-              <strong className="font-medium">{open.reviewer.displayName}</strong> is reviewing version {open.versionNo}
-              {open.dueDate && <>, due {formatDate(open.dueDate)}</>}.
+              <strong className="font-medium">{open.reviewer.displayName}</strong> is reviewing version {open.versionNo}.
+              {open.dueDate && (
+                <span className={open.overdue ? 'ml-1.5 rounded-full bg-st-changes-wash px-2 py-0.5 text-[12.5px] font-medium text-st-changes' : 'ml-1.5 rounded-full bg-paper px-2 py-0.5 text-[12.5px] text-ink-soft ring-1 ring-rule'}>
+                  {dueLabel(open.dueDate, open.daysUntilDue)}
+                </span>
+              )}
             </p>
+            {open.nudgedAt && (
+              <p className="text-ink-soft">
+                Reminded {timeAgo(open.nudgedAt)}{open.nudgeCount > 1 && ` (${open.nudgeCount} times)`}.
+              </p>
+            )}
             <p className="text-ink-soft">Sent by {open.submittedBy.displayName} on {formatDateTime(open.createdAt)}</p>
             {open.submissionNote && <p className="mt-2 font-serif text-ink-soft">“{open.submissionNote}”</p>}
           </div>
@@ -116,9 +137,14 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
             </div>
           )}
           {canCancel && !isReviewer && (
-            <Button variant="quiet" size="sm" icon={XIcon} onClick={() => setConfirm('cancel')}>
-              Cancel review
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" icon={BellIcon} busy={nudge.isPending} disabled={nudgedToday} title={nudgedToday ? 'Reminded in the last 24 hours' : undefined} onClick={() => nudge.mutate()}>
+                {nudgedToday ? 'Reminded today' : 'Remind reviewer'}
+              </Button>
+              <Button variant="quiet" size="sm" icon={XIcon} onClick={() => setConfirm('cancel')}>
+                Cancel review
+              </Button>
+            </div>
           )}
         </div>
       ) : (
@@ -177,6 +203,9 @@ export function ReviewPanel({ document: doc, project }: { document: DocumentDeta
 function SubmitDialog({ document: doc, project, onClose, onDone }: { document: DocumentDetailDto; project: ProjectDto; onClose: () => void; onDone: () => void }) {
   const members = useMembers(project.projectId);
   const toast = useToast();
+  // If the document has a template, warn when sections are still missing (the submitter may still send it).
+  const check = useQuery({ queryKey: ['template-check', doc.documentId], queryFn: () => get<TemplateCheckDto | null>(`/documents/${doc.documentId}/template-check`) });
+  const missing = check.data?.status === 'DONE' ? check.data.items.filter((i) => !i.found).map((i) => i.heading) : [];
   // Only members whose role can review appear in the reviewer drop-down.
   const eligible = members.data?.filter((m) => REVIEWER_ROLES.includes(m.role)) ?? [];
   const [reviewerId, setReviewerId] = useState('');
@@ -204,6 +233,11 @@ function SubmitDialog({ document: doc, project, onClose, onDone }: { document: D
       }
     >
       {submit.error && <ErrorNote>{errorMessage(submit.error)}</ErrorNote>}
+      {missing.length > 0 && (
+        <Notice className="mb-4">
+          Against the {check.data!.template.name} template this version is missing {missing.length === 1 ? 'a section' : `${missing.length} sections`}: {missing.join(', ')}. You can still send it, but the reviewer will see the gap.
+        </Notice>
+      )}
       <Field label="Reviewer" hint="Members with the Reviewer or Owner role can review.">
         {(id) => (
           <Select id={id} value={reviewerId} onChange={(e) => setReviewerId(e.target.value)}>

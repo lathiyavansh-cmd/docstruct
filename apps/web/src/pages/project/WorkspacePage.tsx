@@ -20,7 +20,7 @@ import { DOCUMENT_STATUSES, REVIEWER_ROLES, STATUS_LABEL, type DocumentDto, type
 import { FolderTree } from '../../components/FolderTree';
 import { useToast } from '../../components/toast';
 import { UploadDialog } from '../../components/UploadDialog';
-import { AnimateIcon, ArrowRightIcon, CloudUploadIcon, SearchIcon, UploadIcon, XIcon } from '../../components/icons';
+import { AnimateIcon, ArrowRightIcon, CloudUploadIcon, SearchIcon, UploadIcon, XIcon, LockIcon } from '../../components/icons';
 import { AnimatedBackground } from '../../components/motion-primitives/animated-background';
 import { Button, EmptyState, ErrorNote, Input, Select, Skeleton, StatusBadge } from '../../components/ui';
 import { errorMessage, get } from '../../lib/api';
@@ -214,11 +214,15 @@ export function WorkspacePage() {
                     <AnimateIcon animateOnHover asChild>
                       <span className="grid w-full grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_9.5rem_4rem_6.5rem_1rem]">
                         <span className="flex min-w-0 items-start gap-3">
-                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-faint ring-1 ring-rule transition-[color,transform] duration-200 group-hover:-rotate-6 group-hover:text-primary">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-faint ring-1 ring-rule transition-[color,transform] duration-200 group-hover:text-primary">
                             {d.currentVersion.mimeType.startsWith('image/') ? <ImageIcon className="size-4" aria-hidden /> : <FileText className="size-4" aria-hidden />}
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate font-medium transition-colors group-hover:text-primary">{d.title}</span>
+                            <span className="flex items-center gap-1.5 truncate font-medium transition-colors group-hover:text-primary">
+                              {d.title}
+                              {/* Password-protected documents show a lock; opening them asks for the password. */}
+                              {d.isProtected && <LockIcon size={13} className="shrink-0 text-primary" aria-label="Password protected" />}
+                            </span>
                             {d.openReview && (
                               <span className="block text-[13px] text-ink-soft">
                                 With {d.openReview.reviewer.displayName}

@@ -23,6 +23,8 @@ import { parse, uuid } from '../../lib/validate.js';
 import { currentUser, requireAuth } from '../auth/middleware.js';
 import { authorize, byDocument, byProject, membershipOf } from '../rbac/middleware.js';
 import { DocumentService } from './service.js';
+import { requireUnlocked } from '../protection/guard.js';
+import { ProtectionService } from '../protection/service.js';
 
 const title = z.string().trim().min(1, 'Title is required').max(200);
 const description = z.string().trim().max(2000);
@@ -31,6 +33,7 @@ const description = z.string().trim().max(2000);
 export function documentRoutes(ctx: AppContext): Router {
   const router = Router();
   const service = new DocumentService(ctx);
+  const protection = new ProtectionService(ctx);
   const auth = requireAuth(ctx);
 
   router.get('/projects/:projectId/documents', auth, authorize(ctx, 'document.read', byProject()), async (req, res) => {
@@ -75,7 +78,11 @@ export function documentRoutes(ctx: AppContext): Router {
   });
 
   router.get('/documents/:documentId', auth, authorize(ctx, 'document.read', byDocument()), async (req, res) => {
-    res.json(await service.get(req.params.documentId as string));
+    const documentId = req.params.documentId as string;
+    const doc = await service.get(documentId);
+    // For a protected document, say whether this login has unlocked it (and until when).
+    const until = await protection.unlockedUntil(documentId, currentUser(req));
+    res.json({ ...doc, unlocked: until !== null, unlockedUntil: until instanceof Date ? until.toISOString() : null });
   });
 
   router.patch('/documents/:documentId', auth, authorize(ctx, 'document.update', byDocument()), async (req, res) => {
@@ -95,13 +102,13 @@ export function documentRoutes(ctx: AppContext): Router {
   });
 
   /** Doc.Preview / Doc.Preview.Unavailable: `previewable` tells the client whether to render or offer download. */
-  router.get('/documents/:documentId/preview', auth, authorize(ctx, 'document.read', byDocument()), async (req, res) => {
+  router.get('/documents/:documentId/preview', auth, authorize(ctx, 'document.read', byDocument()), requireUnlocked(ctx, 'document'), async (req, res) => {
     const versionId = await service.currentVersionId(req.params.documentId as string);
     res.json(await service.fileLink(versionId, 'inline'));
   });
 
   /** Doc.Download: the current version. */
-  router.get('/documents/:documentId/download', auth, authorize(ctx, 'document.download', byDocument()), async (req, res) => {
+  router.get('/documents/:documentId/download', auth, authorize(ctx, 'document.download', byDocument()), requireUnlocked(ctx, 'document'), async (req, res) => {
     const versionId = await service.currentVersionId(req.params.documentId as string);
     res.json(await service.fileLink(versionId, 'attachment'));
   });

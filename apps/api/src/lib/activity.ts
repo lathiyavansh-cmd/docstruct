@@ -30,6 +30,11 @@ export type ActivityAction =
   | 'document.moved'
   | 'document.deleted'
   | 'document.archived'
+  | 'document.protected'
+  | 'document.password_changed'
+  | 'document.password_reset'
+  | 'document.unprotected'
+  | 'document.shared_members'
   | 'version.uploaded'
   | 'version.restored'
   | 'review.submitted'
@@ -39,13 +44,18 @@ export type ActivityAction =
   | 'annotation.created'
   | 'annotation.resolved'
   | 'share.created'
-  | 'share.revoked';
+  | 'share.revoked'
+  | 'review.nudged'
+  | 'template.created'
+  | 'template.updated'
+  | 'template.deleted'
+  | 'document.template_set';
 
 export interface ActivityInput {
   projectId: string;
   actorId: string | null;
   action: ActivityAction;
-  entityType: 'project' | 'member' | 'folder' | 'document' | 'version' | 'review' | 'annotation' | 'share';
+  entityType: 'project' | 'member' | 'folder' | 'document' | 'version' | 'review' | 'annotation' | 'share' | 'template';
   entityId?: string | null;
   entityLabel?: string | null;
   detail?: Record<string, unknown>;

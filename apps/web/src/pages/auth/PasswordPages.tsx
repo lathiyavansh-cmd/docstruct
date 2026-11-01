@@ -43,7 +43,7 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout title="Reset your password" footer={<Link to="/login" className="text-primary hover:underline">Back to log in</Link>}>
+    <AuthLayout title="Reset your password" footer={<Link to="/login" className="font-medium text-primary transition-colors hover:text-primary-hover">Back to log in</Link>}>
       {sent ? (
         <Notice>
           If an account exists for {email}, we have sent a link to reset the password. The link works once and expires after 30 minutes.

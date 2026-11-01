@@ -46,7 +46,7 @@ export class DocumentService {
     this.folders = new FolderService(ctx);
   }
 
-  async get(documentId: string): Promise<DocumentDetailDto> {
+  async get(documentId: string): Promise<Omit<DocumentDetailDto, 'unlocked' | 'unlockedUntil'>> {
     const doc = await findDocument(this.ctx.db, documentId);
     if (!doc) throw notFound('Document');
     // Walks up from the document's folder to the top using parent_id (the breadcrumb path).

@@ -14,6 +14,7 @@ import type { AppContext } from '../../context.js';
 import { requireAuth } from '../auth/middleware.js';
 import { authorize, byVersion } from '../rbac/middleware.js';
 import { SummaryService } from './service.js';
+import { requireUnlocked } from '../protection/guard.js';
 
 /** Document summarisation: every project member who can read a document can read its summary. */
 export function summaryRoutes(ctx: AppContext): Router {
@@ -21,7 +22,7 @@ export function summaryRoutes(ctx: AppContext): Router {
   const service = new SummaryService(ctx);
 
   // byVersion() finds the project through the version's document, so only members of that project get through.
-  router.get('/versions/:versionId/summary', requireAuth(ctx), authorize(ctx, 'document.read', byVersion()), async (req, res) => {
+  router.get('/versions/:versionId/summary', requireAuth(ctx), authorize(ctx, 'document.read', byVersion()), requireUnlocked(ctx, 'version'), async (req, res) => {
     res.json(await service.forVersion(req.params.versionId as string));
   });
 

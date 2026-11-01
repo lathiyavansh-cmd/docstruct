@@ -73,7 +73,7 @@ export async function extractVersion(ctx: AppContext, versionId: string): Promis
 
   let result: ExtractionResult;
   if (ctx.config.extractor.driver === 'python') {
-    result = await runPython(ctx, ctx.storage.localPath(version.storage_key), version.mime_type);
+    result = await ctx.storage.withLocalFile(version.storage_key, (file) => runPython(ctx, file, version.mime_type));
     if (!result.ok && result.error.startsWith('python not available')) {
       result = builtin(await ctx.storage.read(version.storage_key), version.mime_type);
     }

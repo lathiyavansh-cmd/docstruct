@@ -20,6 +20,7 @@ import { currentUser, requireAuth } from '../auth/middleware.js';
 import { DocumentService } from '../documents/service.js';
 import { authorize, byDocument, byVersion } from '../rbac/middleware.js';
 import { VersionService } from './service.js';
+import { requireUnlocked } from '../protection/guard.js';
 
 /** M04 - Version Management (SRS 3.4). */
 export function versionRoutes(ctx: AppContext): Router {
@@ -33,7 +34,8 @@ export function versionRoutes(ctx: AppContext): Router {
   });
 
   /** Upload step 2 for a new version (step 1 is POST /projects/:projectId/uploads). */
-  router.post('/documents/:documentId/versions', auth, authorize(ctx, 'version.create', byDocument()), async (req, res) => {
+  // A protected document's contents can only be replaced by someone who has unlocked it with the password.
+  router.post('/documents/:documentId/versions', auth, authorize(ctx, 'version.create', byDocument()), requireUnlocked(ctx, 'document'), async (req, res) => {
     // uploadKey points to the file already sent to storage in step 1; the version number is never taken from the client.
     const body = parse(z.object({ uploadKey: z.string().min(1).max(400), changeNote: z.string().trim().max(500).optional() }), req.body);
     res.status(201).json(await service.upload(req.params.documentId as string, currentUser(req).userId, body.uploadKey, body.changeNote ?? ''));
@@ -43,6 +45,7 @@ export function versionRoutes(ctx: AppContext): Router {
     '/documents/:documentId/versions/:versionId/restore',
     auth,
     authorize(ctx, 'version.restore', byDocument()),
+    requireUnlocked(ctx, 'document'),
     async (req, res) => {
       // The version id is checked to be a UUID here; the service also checks it belongs to this document.
       const { versionId } = parse(z.object({ versionId: uuid }), req.params);
@@ -51,11 +54,11 @@ export function versionRoutes(ctx: AppContext): Router {
   );
 
   /** Version.Download.Previous */
-  router.get('/versions/:versionId/download', auth, authorize(ctx, 'document.download', byVersion()), async (req, res) => {
+  router.get('/versions/:versionId/download', auth, authorize(ctx, 'document.download', byVersion()), requireUnlocked(ctx, 'version'), async (req, res) => {
     res.json(await documents.fileLink(req.params.versionId as string, 'attachment'));
   });
 
-  router.get('/versions/:versionId/preview', auth, authorize(ctx, 'document.read', byVersion()), async (req, res) => {
+  router.get('/versions/:versionId/preview', auth, authorize(ctx, 'document.read', byVersion()), requireUnlocked(ctx, 'version'), async (req, res) => {
     res.json(await documents.fileLink(req.params.versionId as string, 'inline'));
   });
 
