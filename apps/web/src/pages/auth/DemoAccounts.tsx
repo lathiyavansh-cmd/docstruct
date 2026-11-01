@@ -80,7 +80,7 @@ export function DemoAccounts({ onPick }: { onPick: (email: string, password: str
                     className="group flex w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-primary-wash/60"
                   >
                     <Avatar name={a.name} size="sm" />
-                    <span className="min-w-0 flex-1 transition-transform duration-300 group-hover:translate-x-0.5">
+                    <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{a.name}</span>
                       <span className="block truncate text-xs text-ink-faint">{a.role}</span>
                     </span>

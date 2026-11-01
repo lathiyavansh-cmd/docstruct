@@ -91,7 +91,7 @@ function ReminderList({ items, onNudge, nudging }: { items: ReminderDto[]; onNud
                     <AnimateIcon animateOnHover asChild>
                       <Link to={`/d/${r.documentId}?review=${r.reviewId}`} className="group inline-flex items-center gap-1.5 font-medium transition-colors hover:text-primary">
                         {r.documentTitle} <span className="text-[13px] font-normal text-ink-faint tabular">version {r.versionNo}</span>
-                        <span className="text-primary transition-transform duration-300 group-hover:translate-x-1">
+                        <span className="text-primary transition-transform duration-300">
                           <ArrowRightIcon size={14} />
                         </span>
                       </Link>

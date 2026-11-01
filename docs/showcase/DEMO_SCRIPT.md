@@ -31,8 +31,8 @@ Open the site logged out. Scroll once through the page.
 - **Say:** "DocStruct keeps every version of a project's documents, shows reviewers exactly what changed, and
   checks each revision before anyone reads it. Everything here is our own code: sign-in, storage, text
   extraction, the comparison engine, the summariser and search. Supabase only stores the data."
-- Click **v1 to v4** on the hero card: each version highlights its changes and the finding the pre-review
-  engine raised. Point at the "Try it" demos if there is time (the password demo opens with `canteen123`).
+- In **What it does**, click through the six tabs: each one is a small working demo. The Protect & share
+  demo opens with `canteen123`.
 
 ## 2. Log in and the workspace (1 min)
 

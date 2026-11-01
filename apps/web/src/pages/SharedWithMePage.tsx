@@ -61,7 +61,7 @@ export function SharedWithMePage() {
                           {s.note && <p className="mt-1 line-clamp-2 font-serif text-sm text-ink-soft">“{s.note}”</p>}
                         </div>
                         <StatusBadge status={s.document.status} />
-                        <span className="text-primary transition-transform duration-200 group-hover:translate-x-1">
+                        <span className="text-primary transition-transform duration-200">
                           <ArrowRightIcon size={16} />
                         </span>
                       </div>

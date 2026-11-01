@@ -15,7 +15,6 @@
  */
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import { BlurFade } from '../../components/magicui/blur-fade';
 import { Spotlight } from '../../components/motion-primitives/spotlight';
 
@@ -30,7 +29,7 @@ export function AuthLayout({ title, children, footer, below }: { title: string; 
 
       <header className="relative px-5 py-5 sm:px-8">
         <Link to="/" className="group flex w-fit items-center gap-2 font-semibold text-ink" aria-label="DocStruct overview">
-          <motion.img src="/favicon.svg" alt="" className="size-8" whileHover={{ rotate: -10, scale: 1.08 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }} />
+          <img src="/favicon.svg" alt="" className="size-8" />
           DocStruct
         </Link>
       </header>

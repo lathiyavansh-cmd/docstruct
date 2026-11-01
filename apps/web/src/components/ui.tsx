@@ -217,7 +217,7 @@ export function EmptyState({ title, children, action, icon: Icon }: { title: str
         className="group rounded-xl border border-dashed border-rule-strong bg-[radial-gradient(ellipse_at_top,var(--color-primary-wash),transparent_70%)] px-6 py-10 text-center transition-colors hover:border-primary/40"
       >
         {Icon && (
-          <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-surface text-primary shadow-card ring-1 ring-rule transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-105">
+          <span className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-surface text-primary shadow-card ring-1 ring-rule transition-transform duration-300">
             <Icon size={22} />
           </span>
         )}
@@ -352,7 +352,7 @@ export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md'
     <span
       aria-hidden
       className={cx(
-        'inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white ring-2 ring-surface transition-transform duration-200 hover:scale-110',
+        'inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white ring-2 ring-surface transition-transform duration-200',
         size === 'sm' ? 'size-6 text-[10px]' : 'size-8 text-xs',
       )}
       style={{ background: `linear-gradient(135deg, hsl(${hash} 45% 50%), hsl(${(hash + 40) % 360} 42% 38%))` }}

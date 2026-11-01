@@ -52,7 +52,7 @@ export function HelpPage() {
               transition={{ delay: 0.05 + i * 0.06 }}
               className="group grid grid-cols-[2.25rem_1fr] gap-3 rounded-xl py-2 pr-3 transition-colors hover:bg-paper"
             >
-              <span className="relative flex size-9 items-center justify-center rounded-full bg-surface font-serif text-base text-primary ring-1 ring-rule transition-[background-color,color,transform] duration-200 tabular group-hover:scale-110 group-hover:bg-primary group-hover:text-white">
+              <span className="relative flex size-9 items-center justify-center rounded-full bg-surface font-serif text-base text-primary ring-1 ring-rule transition-[background-color,color,transform] duration-200 tabular group-hover:bg-primary group-hover:text-white">
                 {i + 1}
               </span>
               <div>

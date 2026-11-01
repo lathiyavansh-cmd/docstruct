@@ -214,7 +214,7 @@ export function WorkspacePage() {
                     <AnimateIcon animateOnHover asChild>
                       <span className="grid w-full grid-cols-[1fr_auto] items-center gap-4 sm:grid-cols-[1fr_9.5rem_4rem_6.5rem_1rem]">
                         <span className="flex min-w-0 items-start gap-3">
-                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-faint ring-1 ring-rule transition-[color,transform] duration-200 group-hover:-rotate-6 group-hover:text-primary">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-ink-faint ring-1 ring-rule transition-[color,transform] duration-200 group-hover:text-primary">
                             {d.currentVersion.mimeType.startsWith('image/') ? <ImageIcon className="size-4" aria-hidden /> : <FileText className="size-4" aria-hidden />}
                           </span>
                           <span className="min-w-0">

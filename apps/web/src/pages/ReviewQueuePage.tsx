@@ -49,7 +49,7 @@ export function ReviewQueuePage() {
                     <Link to={`/d/${r.documentId}?review=${r.reviewId}`} className="group block rounded-xl">
                       <GlowCard>
                         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 p-4">
-                          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-st-review-wash text-st-review transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105">
+                          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-st-review-wash text-st-review transition-transform duration-300">
                             <ClipboardCheckIcon size={19} />
                           </span>
                           <div className="min-w-0 flex-1">
@@ -76,7 +76,7 @@ export function ReviewQueuePage() {
                             <ClockIcon size={13} />
                             {dueLabel(r.dueDate, r.daysUntilDue)}
                           </span>
-                          <span className="text-primary transition-transform duration-200 group-hover:translate-x-1">
+                          <span className="text-primary transition-transform duration-200">
                             <ArrowRightIcon size={16} />
                           </span>
                         </div>

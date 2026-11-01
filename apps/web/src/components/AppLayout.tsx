@@ -32,7 +32,7 @@ import { Sidebar001, Sidebar001Content, Sidebar001Footer, Sidebar001Header, Side
 function Logo() {
   return (
     <Link to="/" className="group flex items-center gap-2 font-semibold tracking-tight text-ink">
-      <motion.img src="/favicon.svg" alt="" className="size-7" whileHover={{ rotate: -8, scale: 1.08 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }} />
+      <img src="/favicon.svg" alt="" className="size-7" />
       <span>
         Doc<span className="text-primary">Struct</span>
       </span>

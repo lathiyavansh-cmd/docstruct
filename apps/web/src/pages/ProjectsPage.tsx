@@ -107,7 +107,7 @@ export function ProjectsPage() {
                   onClick={() => setCreating(true)}
                   className="group flex h-full min-h-44 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-rule-strong text-sm text-ink-soft transition-colors hover:border-primary/50 hover:bg-primary-wash/40 hover:text-primary"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-surface shadow-card ring-1 ring-rule transition-transform group-hover:scale-110">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-surface shadow-card ring-1 ring-rule transition-transform">
                     <SquarePlusIcon size={20} />
                   </span>
                   New project
@@ -145,7 +145,7 @@ function ProjectCard({ project: p }: { project: ProjectDto }) {
                 <UsersIcon size={14} /> {plural(p.memberCount, 'member')}
               </span>
               <span>Updated {timeAgo(p.updatedAt)}</span>
-              <span className="ml-auto -translate-x-1 text-primary opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-x-0 group-hover:opacity-100">
+              <span className="ml-auto text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 <ArrowRightIcon size={16} />
               </span>
             </div>

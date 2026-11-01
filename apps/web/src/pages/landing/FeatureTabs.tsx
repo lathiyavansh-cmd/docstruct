@@ -10,7 +10,7 @@
  *   - The panel cross-fades between tabs; arrow keys move between tabs as well.
  *
  * Where it fits
- *   Rendered by pages/landing/LandingPage.tsx. Reuses DiffLine and SEVERITY from VersionStack.tsx and the
+ *   Rendered by pages/landing/LandingPage.tsx. Reuses DiffLine and SEVERITY from sampleDocument.tsx and the
  *   shared UI pieces from components/ui.tsx. Module: app shell / landing page (owner: Vansh).
  */
 import { useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
@@ -19,7 +19,7 @@ import { BookOpenText, Check, Columns2, GitBranch, History, KeyRound, ListChecks
 import type { DocumentStatus } from '@docstruct/shared';
 import { AnimatedBackground } from '../../components/motion-primitives/animated-background';
 import { Avatar, StatusBadge, cx } from '../../components/ui';
-import { DiffLine, SEVERITY, VERSIONS } from './VersionStack';
+import { DiffLine, SEVERITY, VERSIONS } from './sampleDocument';
 
 /* ── Demos ─────────────────────────────────────────────────────────────────────── */
 

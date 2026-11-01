@@ -72,7 +72,7 @@ export function FolderTree({
             {selected === f.folderId ? (
               <FolderOpen className="size-4 shrink-0" />
             ) : (
-              <Folder className="size-4 shrink-0 text-ink-faint transition-transform duration-200 group-hover:-rotate-8 group-hover:text-primary" />
+              <Folder className="size-4 shrink-0 text-ink-faint transition-transform duration-200 group-hover:text-primary" />
             )}
             <span className="truncate">{f.name}</span>
             {f.documentCount > 0 && <span className="ml-auto pl-2 text-xs text-ink-faint tabular">{f.documentCount}</span>}

@@ -93,7 +93,7 @@ export function ActivityItem({ entry, as: Tag = 'li', className, showKind }: { e
     <AnimateIcon animateOnHover asChild>
       <Tag className={cx('group flex gap-3 py-2.5', className)}>
         {showKind ? (
-          <span className={cx('relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full ring-4 ring-surface transition-transform group-hover:scale-110', kind.tone)}>
+          <span className={cx('relative z-10 flex size-7 shrink-0 items-center justify-center rounded-full ring-4 ring-surface transition-transform', kind.tone)}>
             <KindIcon size={14} />
           </span>
         ) : (

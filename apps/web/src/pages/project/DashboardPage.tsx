@@ -58,7 +58,7 @@ function StatCard({ icon: Icon, label, value, note, tone, to, delay, beam }: {
             <div className="flex h-full flex-col p-4">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-medium text-ink-soft">{label}</span>
-                <span className={cx('flex size-8 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6', tone)}>
+                <span className={cx('flex size-8 items-center justify-center rounded-lg transition-transform duration-300', tone)}>
                   <Icon size={16} />
                 </span>
               </div>
@@ -190,13 +190,13 @@ export function DashboardPage() {
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
                     {DOCUMENT_STATUSES.map((s, i) => (
-                      <motion.div key={s} whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 400, damping: 22 }}>
+                      <motion.div key={s}>
                         <Link
                           to={docsLink(s)}
                           className="group block rounded-xl border border-rule px-3 py-2.5 transition-[border-color,box-shadow] hover:border-primary/30 hover:shadow-card"
                         >
                           <dt className="flex items-center gap-1.5 text-[12.5px] text-ink-soft">
-                            <span className={cx('size-2 rounded-full transition-transform group-hover:scale-125', STATUS_DOT[s])} aria-hidden />
+                            <span className={cx('size-2 rounded-full transition-transform', STATUS_DOT[s])} aria-hidden />
                             {STATUS_LABEL[s]}
                           </dt>
                           <dd className="mt-1 font-serif text-2xl">
@@ -335,7 +335,7 @@ function PendingCard({ to, icon: Icon, tone, title, detail, status }: {
       <AnimateIcon animateOnHover asChild>
         <Link
           to={to}
-          className="group flex flex-wrap items-center gap-3 rounded-xl border border-rule bg-surface px-4 py-3 shadow-card transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lift"
+          className="group flex flex-wrap items-center gap-3 rounded-xl border border-rule bg-surface px-4 py-3 shadow-card transition-[border-color,box-shadow,transform] duration-200 hover:border-primary/30 hover:shadow-lift"
         >
           <span className={cx('flex size-9 shrink-0 items-center justify-center rounded-lg', tone)}>
             <Icon size={17} />
@@ -345,7 +345,7 @@ function PendingCard({ to, icon: Icon, tone, title, detail, status }: {
             <p className="text-[13px] text-ink-soft">{detail}</p>
           </div>
           <StatusBadge status={status} />
-          <span className="text-primary transition-transform duration-200 group-hover:translate-x-1">
+          <span className="text-primary transition-transform duration-200">
             <ArrowRightIcon size={16} />
           </span>
         </Link>
