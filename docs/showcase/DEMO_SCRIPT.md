@@ -10,8 +10,7 @@ folder.
   15 idle minutes and the first visit takes about a minute to wake it.
 - Every demo account uses the password `demo1234`. The login page lists them: click a name and press Log in.
 - Keep this folder open; you will upload `Canteen_SRS_v5.md`, `Library_Booking_Proposal_v1.md`,
-  `Library_Booking_Proposal_v2.md`, `Hostel_Leave_SRS_v1.md` and `Hostel_Leave_SRS_v2.md`, and paste the
-  headings from `Template_SRS_Checklist.txt`.
+  `Library_Booking_Proposal_v2.md` and the reports in the `templates/` folder (see step 8b).
 - The password of the protected contract is `canteen123`.
 - Use a private window (or log out) between accounts. Logged-in users skip the overview page.
 
@@ -118,28 +117,21 @@ Log in as **arjun@docstruct.test** (no projects).
 - **Templates tab**: create "Proposal checklist" with Introduction, Objectives, Scope, Functional
   Requirements, Timeline, Risks, References; pick it on the document: "1 missing: References".
 
-## 8b. Document templates, from scratch (3 min)
+## 8b. Document templates: one template, several students (5 min)
 
-A dedicated walkthrough of the template check. Use it instead of the template part of step 8, or on its own.
+The full walkthrough, with the expected result for every file, is in
+[templates/HOW_TO_DEMO.md](templates/HOW_TO_DEMO.md). In short:
 
-1. Log in as **vansh@docstruct.test** and open **DocStruct Mini Project** (he is its owner, so he can manage
-   templates).
-2. **Templates** tab > **New template**. Name: `SRS checklist`. Paste the six headings from
-   `Template_SRS_Checklist.txt` into **Required sections** (Introduction, Users and Roles, Functional
-   Requirements, Non-functional Requirements, Acceptance Criteria, References). **Create**.
-   **Say:** "The faculty guide's required structure becomes a checklist the project owns."
-3. **Documents** tab > **Upload** `Hostel_Leave_SRS_v1.md`, title "Hostel Leave SRS". On its page, under
-   **Template check**, choose **SRS checklist**. It reads **2 missing**:
-   - found although written differently: "Section 2 - User Roles" satisfies *Users and Roles*, and
-     "3 Functional Requirement" (singular) satisfies *Functional Requirements*.
-   - missing: *Non-functional Requirements* and *References*.
-   - "Also in the document: 5 Open Questions" (a section the template did not ask for).
-   **Say:** "Numbering, capitals, punctuation and plurals are ignored, so it does not report false gaps."
-4. Press **Send for review**: the dialog warns that this version is missing two sections. Cancel it.
-5. **Upload new version** > `Hostel_Leave_SRS_v2.md`, note "Added NFRs and references". The check turns
-   green: **All sections present**.
-6. Back on the **Templates** tab, open **SRS checklist**: its compliance list shows Hostel Leave SRS as
-   complete. **Say:** "With many submissions, the owner sees at a glance which ones are still incomplete."
+1. **Vansh** (owner) creates the template "Mini Project Report" on the **Templates** tab, pasting the 9 sections
+   from `templates/Mini_Project_Report_TEMPLATE.txt`.
+2. **Vivan** uploads `Smart_Attendance_Report.md` (complete) and `Canteen_Feedback_Report.md` (1 missing:
+   References); **Shrut** uploads `Lost_and_Found_Report_v1.md` (2 missing: Literature Review, Results).
+   Each chooses the template under **Template check** on the document page.
+3. **Vansh** opens the template on the **Templates** tab: every report, incomplete ones first.
+4. **Shrut** uploads `Lost_and_Found_Report_v2.md` as a new version: the check turns green.
+
+For a quicker, single-document version, use `Template_SRS_Checklist.txt` with `Hostel_Leave_SRS_v1.md`
+(2 missing) and `Hostel_Leave_SRS_v2.md` (complete).
 
 ## 9. Search, roles and the activity log (1 min)
 

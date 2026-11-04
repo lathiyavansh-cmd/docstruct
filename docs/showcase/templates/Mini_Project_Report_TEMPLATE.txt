@@ -1,0 +1,14 @@
+Template name: Mini Project Report
+Description: Structure every mini project report must follow before it is submitted to the guide.
+
+Required sections (paste these lines into "Required sections", one per line):
+
+Abstract
+Introduction
+Problem Statement
+Literature Review
+Proposed System
+Implementation
+Results
+Conclusion
+References
