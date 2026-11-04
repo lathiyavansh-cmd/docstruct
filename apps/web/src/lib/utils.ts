@@ -2,6 +2,10 @@
  * What this file does
  *   Provides cn(), a small helper that builds the CSS class string for an element.
  *
+ * Why it exists
+ *   The copied 21st.dev components import cn() from '@/lib/utils' (the shadcn convention), so this file must
+ *   exist at this path; it also lets callers override a component's default Tailwind classes without clashes.
+ *
  * How it works
  *   - clsx() joins its inputs into one string and drops false, null or undefined values,
  *     so `cn('btn', isActive && 'btn-active')` works.

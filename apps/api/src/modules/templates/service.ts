@@ -3,6 +3,11 @@
  *   Manages a project's document templates (checklists of required headings), attaches a template to a
  *   document and checks the document against it.
  *
+ * Why it exists
+ *   Owners need to see which submissions are missing required sections without opening each one. This
+ *   service ties templates to documents and reports PENDING or UNAVAILABLE while text is missing, so a check
+ *   that could not run is never shown as a failed one.
+ *
  * How it works
  *   - list(), create(), update() and remove() keep the project_templates rows; each change is logged.
  *   - setDocumentTemplate() stores the choice on the document (or clears it) and returns a fresh check.

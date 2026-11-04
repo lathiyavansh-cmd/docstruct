@@ -2,6 +2,10 @@
  * What this file does
  *   This is the search screen. The user types a word or phrase and sees matching documents from every project they belong to.
  *
+ * Why it exists
+ *   Users often remember a phrase but not which project or folder holds the document. The Documents tab searches
+ *   only one project; this screen searches all of the user's projects, including the document text.
+ *
  * How it works
  *   - The search term lives in the URL as ?q=..., so a search can be bookmarked or shared, and the back button works.
  *   - useQuery ['search', q] calls GET /search?q=... only when q is not empty. The server checks titles and document text and returns best matches first.

@@ -3,6 +3,11 @@
  *   Tests the basic platform pieces: the health endpoint, the 404 for unknown routes, database safety rules
  *   (row-level security on, activity log cannot be changed) and the signed upload and download links.
  *
+ * Why it exists
+ *   Every module relies on these rules but no module test checks them: row-level security on every table (CO-6),
+ *   an activity log nobody can rewrite (Log.Immutable), and file links that cannot be forged, used to overwrite
+ *   a stored file or used after they expire (CI-4, SE-13, CO-7).
+ *
  * How it works
  *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
  *   - Tests send real HTTP requests with supertest, or run SQL directly through env.ctx.db.

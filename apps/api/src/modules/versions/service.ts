@@ -3,6 +3,11 @@
  *   Holds the version control logic: listing a document's versions, adding a new uploaded version, and
  *   restoring an older version as a new one.
  *
+ * Why it exists
+ *   History must only grow: an upload or a restore adds a version and never overwrites one, and the current
+ *   version must not change under an open review (SA-6). One locked transaction stops two uploads, or an
+ *   upload and a review, from interleaving.
+ *
  * How it works
  *   - history() returns all versions of a document, newest first.
  *   - upload() locks the document, consumes the upload ticket, gets the next number from allocate.ts,

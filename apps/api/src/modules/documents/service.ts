@@ -3,6 +3,11 @@
  *   Holds the business logic for documents: view with folder path, list with folder filters, create
  *   from an upload, rename, move, soft delete, and build signed links for preview and download.
  *
+ * Why it exists
+ *   Creating a document touches storage, three tables and the activity log, so it must be one transaction that
+ *   also removes the stored file on failure, or a document could point at a missing file. Delete only hides a
+ *   document so its versions and history survive (SA-2), and other modules reuse fileLink() for file URLs.
+ *
  * How it works
  *   - create() runs one transaction: use up the upload ticket, insert the document and version 1,
  *     point the document at that version and log it. On failure the stored file is removed.

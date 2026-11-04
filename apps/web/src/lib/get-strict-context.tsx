@@ -1,9 +1,18 @@
 // Source: animate-ui (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   A helper that creates a React context plus a hook to read it; the hook throws a clear error if a
  *   component is used outside its provider. It draws nothing on screen itself.
- *   Used by: components/animate-ui/primitives/animate/tooltip.tsx. It only supports the tooltip's appearance; no feature logic.
+ *
+ * Why it exists
+ *   The tooltip uses four separate contexts; this turns a silent "undefined" bug (a tooltip part placed
+ *   outside its provider) into an error that names the missing provider. The team writes every feature itself
+ *   (the professor's no-external-API rule); this open-source piece only affects looks, so it was copied in
+ *   rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: components/animate-ui/primitives/animate/tooltip.tsx. It only supports the tooltip's appearance;
+ *   no feature logic.
  */
 import * as React from 'react';
 

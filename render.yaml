@@ -1,6 +1,10 @@
 # What this file does
 #   Render "Blueprint": describes the DocStruct web service so Render can create and deploy it in one step.
 #
+# Why it exists
+#   Without it every Render setting (Docker runtime, health check, environment variables) would have to be
+#   typed by hand in the dashboard; keeping them in the repository lets the deployment be recreated exactly.
+#
 # How it works
 #   - One free Docker web service in Singapore, built from the Dockerfile, health-checked at /api/health.
 #   - The database is a Supabase PostgreSQL project: paste its connection string into DATABASE_URL when Render asks.

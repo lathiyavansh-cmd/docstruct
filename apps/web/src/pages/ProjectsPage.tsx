@@ -2,6 +2,10 @@
  * What this file does
  *   This is the home page after login. It lists every project the user belongs to and lets them create a new project.
  *
+ * Why it exists
+ *   Projects are DocStruct's unit of access: every document and role lives inside one. After login a user needs
+ *   to see which projects they can open and start a new one; the waiting-review count points them at work.
+ *
  * How it works
  *   - useQuery ['projects'] loads the user's projects from GET /projects.
  *   - useQuery ['review-queue'] loads GET /reviews/queue only to show how many reviews are waiting.

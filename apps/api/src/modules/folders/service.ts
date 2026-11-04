@@ -3,6 +3,11 @@
  *   Holds the business logic for folders: show the tree, create, rename, move and delete, with checks
  *   for depth, loops and duplicate names.
  *
+ * Why it exists
+ *   Two moves made at the same moment could each pass the cycle check and together create a loop; locking the
+ *   project row first prevents that. Depth limits, unique names and keeping the documents of a deleted folder
+ *   (soft delete) must hold whatever the client sends, so they are enforced here.
+ *
  * How it works
  *   - Each change runs in a transaction and first locks the project row (FOR UPDATE) so changes
  *     happen one at a time per project.

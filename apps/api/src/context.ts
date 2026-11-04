@@ -3,6 +3,10 @@
  *   Defines the AppContext object that is passed to every module, and a tiny JobQueue
  *   for background work.
  *
+ * Why it exists
+ *   Modules get the database, storage and settings from this object instead of global imports, so each test
+ *   file can build its own. The JobQueue lets an upload reply before slow text extraction has finished.
+ *
  * How it works
  *   - JobQueue.run() starts a task without waiting for it and logs it if it fails.
  *   - JobQueue.idle() waits until all running tasks are finished.

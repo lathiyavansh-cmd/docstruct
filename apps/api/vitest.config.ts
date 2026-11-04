@@ -2,6 +2,10 @@
  * What this file does
  *   Configures Vitest, the test runner for the API.
  *
+ * Why it exists
+ *   Without the development condition the tests would use the shared package's built output, which must be
+ *   rebuilt after every change; the longer timeouts cover starting a database and running migrations.
+ *
  * How it works
  *   - Uses the 'development' condition so @docstruct/shared loads from TypeScript source.
  *   - Picks up test files in test/ and src/ ending in .test.ts.

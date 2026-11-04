@@ -2,6 +2,10 @@
 # What this file does
 #   Git hook that checks every new commit message before the commit is saved.
 #
+# Why it exists
+#   CI only catches a badly formatted message after it is pushed, when fixing it means rewriting history.
+#   Checking at commit time stops the message before it is saved.
+#
 # How it works
 #   - Git runs this file and passes the path of the message file as $1.
 #   - It runs scripts/verify-commit-msg.mjs on that file.

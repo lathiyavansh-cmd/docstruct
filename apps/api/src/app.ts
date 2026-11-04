@@ -3,6 +3,10 @@
  *   Builds the Express web application: security middleware, the /api router with every
  *   feature module, and one central error handler that turns errors into JSON replies.
  *
+ * Why it exists
+ *   Building the app in a function, apart from listening on a port, lets tests create a full app on a
+ *   throwaway database. One error handler means every module returns errors in the same JSON shape.
+ *
  * How it works
  *   - createApp() adds helmet (security headers) and CORS for the web client's origin.
  *   - It mounts the storage routes first, then the JSON body parser, then every module router.

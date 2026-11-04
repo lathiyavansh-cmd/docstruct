@@ -3,6 +3,10 @@
  *   Small helpers that turn raw values into text people can read: dates, "3 min ago" times,
  *   file sizes and plural words.
  *
+ * Why it exists
+ *   Dates, times and sizes appear on nearly every page; one set of helpers words them the same everywhere,
+ *   and sharing formatBytes with the server means a size reads the same in a server error and in the browser.
+ *
  * How it works
  *   - formatBytes is re-exported from the shared package so server and web show sizes the same way.
  *   - Two Intl.DateTimeFormat objects are made once and reused; they follow the browser's locale.

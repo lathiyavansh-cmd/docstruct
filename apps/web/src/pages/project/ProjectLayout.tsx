@@ -2,6 +2,10 @@
  * What this file does
  *   This is the frame around every page inside one project. It shows the project name, the user's role in it, and the tabs Overview, Documents, Members, Activity and Templates.
  *
+ * Why it exists
+ *   All the project tabs need the same project, header and archived notice. Loading the project once here and
+ *   passing it down stops each tab fetching it again and keeps the tab bar in one place.
+ *
  * How it works
  *   - Reads projectId from the URL and loads the project with useProject (query key ['project', id], GET /projects/:id).
  *   - Works out which tab is active from the current URL, and slides a small underline to it.
@@ -9,7 +13,7 @@
  *   - Renders the chosen tab page through <Outlet context={p} />, so child pages get the project with useCurrentProject() without loading it again.
  *
  * Where it fits
- *   Route /p/:projectId in App.tsx. Its child routes are DashboardPage (index), WorkspacePage (documents), MembersPage (members) and ActivityPage (activity). Module: M02 Project Management (owner: Vivan).
+ *   Route /p/:projectId in App.tsx. Its child routes are DashboardPage (index), WorkspacePage (documents), MembersPage (members), ActivityPage (activity) and TemplatesPage (templates). Module: M02 Project Management (owner: Vivan).
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';

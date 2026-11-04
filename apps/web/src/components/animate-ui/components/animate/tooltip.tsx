@@ -1,8 +1,16 @@
 // Source: animate-ui (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
- *   The styled tooltip: a small dark label with an arrow that pops up next to a button on hover.
- *   It wraps the unstyled tooltip in primitives/animate/tooltip.tsx and adds DocStruct colours.
+ * What this file does
+ *   The styled tooltip: a small dark label with an arrow that pops up next to a button on hover. It wraps the
+ *   unstyled tooltip in primitives/animate/tooltip.tsx and adds DocStruct colours.
+ *
+ * Why it exists
+ *   The sidebar footer buttons (Help, Profile, Log out) show only an icon, so the tooltip names them. Keeping
+ *   the DocStruct styling in this file leaves the copied primitive close to upstream. The team writes every
+ *   feature itself (the professor's no-external-API rule); this open-source piece only affects looks, so it
+ *   was copied in rather than built from scratch.
+ *
+ * Where it fits
  *   Used by: components/AppLayout.tsx (sidebar footer buttons). It only affects appearance; no feature logic.
  */
 import * as React from 'react';

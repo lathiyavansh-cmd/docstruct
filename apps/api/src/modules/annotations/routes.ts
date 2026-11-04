@@ -3,6 +3,11 @@
  *   Defines the HTTP endpoints for annotations (comments on a document): list threads on a version,
  *   create a comment, reply to it and mark it resolved.
  *
+ * Why it exists
+ *   Comments show document content, so every comment endpoint needs sign-in, the role for that action and
+ *   the unlock check for protected documents; declaring them on each route means a new endpoint cannot skip
+ *   one. The region schema also rejects boxes that fall off the page before they are stored.
+ *
  * How it works
  *   - Zod schemas check the comment text and the optional page number and region on the page.
  *   - authorize(...) checks the caller's role. byVersion(), byDocument() or byAnnotation() finds the

@@ -2,6 +2,10 @@
  * What this file does
  *   The dialog a project owner uses to send a document to every member of the project at once.
  *
+ * Why it exists
+ *   Sending a document to members one by one is slow in a large project; one dialog and one request put it
+ *   in everyone's "Shared with me" list. As its own dialog, the More menu on DocumentPage only has to open it.
+ *
  * How it works
  *   - Shows how many members will receive it and an optional note.
  *   - Posts to POST /documents/:id/share-members; the server adds the document to each member's

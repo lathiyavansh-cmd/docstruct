@@ -2,6 +2,10 @@
  * What this file does
  *   Checks incoming request data against a Zod schema and rejects bad input with a 400 error.
  *
+ * Why it exists
+ *   Data from the browser cannot be trusted (SE-14). One helper gives every route the same 400 reply format
+ *   instead of each route writing its own checks.
+ *
  * How it works
  *   - parse() runs the schema; on failure it lists each problem and throws badRequest.
  *   - uuid and idParam() are reusable schemas for id values in URLs.

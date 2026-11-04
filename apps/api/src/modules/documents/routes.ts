@@ -3,6 +3,11 @@
  *   Defines the HTTP endpoints for documents: list, the two upload steps, view, rename, move, delete,
  *   preview and download.
  *
+ * Why it exists
+ *   Each document action needs its own permission (read, create, move, delete, download), and preview and
+ *   download also need the password unlock; listing them per route keeps the access rule of every endpoint in
+ *   one place. The upload step is checked by hand because it serves both new documents and new versions.
+ *
  * How it works
  *   - Uploads happen in two steps: POST /uploads gives a signed upload URL, then POST /documents
  *     turns the uploaded file into a document.

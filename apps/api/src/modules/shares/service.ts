@@ -3,6 +3,11 @@
  *   Holds the logic for share links: secret links that let someone outside the project view one
  *   document read-only. Links can expire and can be revoked.
  *
+ * Why it exists
+ *   People outside a project sometimes need to read one document without becoming members. Storing only the
+ *   token hash means a database leak gives no working links, and checking revocation, expiry, deletion and
+ *   the document password on every open stops a link outliving its purpose.
+ *
  * How it works
  *   - createShareToken() makes a random 32-byte token; only its SHA-256 hash is stored in the database.
  *   - create() saves the link and returns the raw token once, inside the URL.

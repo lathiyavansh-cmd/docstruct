@@ -1,7 +1,14 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   A card that shows a soft coloured glow following the mouse pointer while it is over the card.
+ *
+ * Why it exists
+ *   Clickable cards (such as the project cards) need to look clickable; the glow under the pointer gives that
+ *   feedback. The team writes every feature itself (the professor's no-external-API rule); this open-source
+ *   piece only affects looks, so it was copied in rather than built from scratch.
+ *
+ * Where it fits
  *   Used by: components/ui.tsx (the GlowCard component). It only affects appearance; no feature logic.
  */
 import React, { useCallback, useEffect, useRef } from "react"

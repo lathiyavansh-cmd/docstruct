@@ -1,6 +1,10 @@
 -- What this file does
 --   Creates the version_diffs table, a cache of comparisons between two versions of a document.
 --
+-- Why it exists
+--   Comparing two versions reads and compares their full texts, which is slow, and the answer never changes
+--   because versions are immutable. Storing it once per pair makes every later view instant.
+--
 -- How it works
 --   - Each row stores the change list, stats, summary and pre-review findings as JSON or text.
 --   - status is READY, or UNAVAILABLE with a reason (for example when text could not be extracted).

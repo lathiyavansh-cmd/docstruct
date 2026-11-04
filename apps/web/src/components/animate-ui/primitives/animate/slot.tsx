@@ -1,8 +1,16 @@
 // Source: animate-ui (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
- *   A helper for the "asChild" pattern: instead of adding an extra wrapper element, it passes its
- *   classes, styles, refs and animation props onto its single child element.
+ * What this file does
+ *   A helper for the "asChild" pattern: instead of adding an extra wrapper element, it passes its classes,
+ *   styles, refs and animation props onto its single child element.
+ *
+ * Why it exists
+ *   AnimateIcon and the tooltip trigger wrap real buttons and links; without this, each would add an extra
+ *   element that breaks layout and puts the click handler on the wrong element. The team writes every feature
+ *   itself (the professor's no-external-API rule); this open-source piece only affects looks, so it was
+ *   copied in rather than built from scratch.
+ *
+ * Where it fits
  *   Used by: components/animate-ui/icons/icon.tsx and components/animate-ui/primitives/animate/tooltip.tsx.
  *   It only affects appearance; no feature logic.
  */

@@ -2,6 +2,11 @@
  * What this file does
  *   Shared React hooks for project data and for checking what the current user is allowed to do.
  *
+ * Why it exists
+ *   Several project pages need the same project and member data and the same "may I?" check; shared hooks
+ *   keep the query keys identical so they share one cache entry. Permission checks here only hide buttons
+ *   (UI-11): anything in the browser can be bypassed, so the API enforces every permission itself (SE-10).
+ *
  * How it works
  *   - useProject() loads one project: query key ['project', id], GET /projects/:id.
  *   - useMembers() loads the member list: query key ['members', id], GET /projects/:id/members.

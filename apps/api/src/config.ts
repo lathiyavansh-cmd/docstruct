@@ -3,6 +3,10 @@
  *   Defines every setting the API uses and reads them from environment variables,
  *   with safe defaults for local development.
  *
+ * Why it exists
+ *   Reading process.env in one place means a bad setting fails at start-up instead of halfway through a
+ *   request, and production refuses to start without DATABASE_URL and SIGNING_SECRET.
+ *
  * How it works
  *   - AppConfig lists all settings (port, URLs, database, storage, timeouts, extractor).
  *   - intEnv() reads a number from the environment and rejects bad values.

@@ -2,6 +2,10 @@
  * What this file does
  *   Applies the SQL migration files in apps/api/migrations to the database, each one only once.
  *
+ * Why it exists
+ *   The schema must be the same on every laptop, in tests and on Supabase. Applying versioned SQL files exactly
+ *   once (Maintainability-5) means nobody changes tables by hand, and an older database is upgraded on start.
+ *
  * How it works
  *   - Creates a schema_migrations table that records which files have already run.
  *   - Reads all .sql files, sorted by name (001, 002, ...), and skips those already applied.

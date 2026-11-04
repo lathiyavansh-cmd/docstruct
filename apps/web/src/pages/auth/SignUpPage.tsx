@@ -2,6 +2,10 @@
  * What this file does
  *   This is the sign-up screen. A new user enters a name, email and password to create an account.
  *
+ * Why it exists
+ *   Anyone who wants to use DocStruct, or be added to a project by email, first needs an account. Logging them
+ *   in straight after sign-up saves filling in the login form again.
+ *
  * How it works
  *   - Keeps the three fields in one form state object.
  *   - On submit it calls post('/auth/signup') with the form and gets back a session (token and user).

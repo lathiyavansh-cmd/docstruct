@@ -3,6 +3,11 @@
  *   Tests review reminders (overdue tracking and nudging the reviewer) and document templates (checking a
  *   document's headings against a checklist).
  *
+ * Why it exists
+ *   Overdue tracking depends on dates, so without these tests a mistake would only show once a review was really
+ *   late. They also pin the once-a-day nudge limit and the heading match, which must accept a reworded heading
+ *   without counting one document heading twice.
+ *
  * How it works
  *   - Boots the API on an in-memory database with createTestEnv() and creates an owner, editor and reviewer.
  *   - Reviews cannot be submitted with a past due date, so the test moves the due date back with SQL to

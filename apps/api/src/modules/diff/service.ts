@@ -2,6 +2,11 @@
  * What this file does
  *   Runs a comparison between two versions of a document, stores the result, and serves the pre-review for a review.
  *
+ * Why it exists
+ *   Re-running the diff on every page view would repeat the same work on large texts, so each pair is stored
+ *   once in version_diffs, and text that is not ready (PENDING) or cannot exist (UNAVAILABLE) is handled here.
+ *   Running the pre-review as a background job means a slow or failed comparison never blocks a review.
+ *
  * How it works
  *   - compare() loads both versions' extracted text and returns a saved result from version_diffs if one exists.
  *   - Otherwise it runs compare.ts and prereview.ts, then saves the result so it is computed only once.

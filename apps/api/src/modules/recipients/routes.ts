@@ -2,6 +2,10 @@
  * What this file does
  *   The HTTP endpoints for sending a document to all project members and for the "Shared with me" list.
  *
+ * Why it exists
+ *   Sending to every member is an owner-only action, while the "Shared with me" list spans all of a user's
+ *   projects and has no single project to check; separate routes let each use the right check.
+ *
  * How it works
  *   - POST /documents/:id/share-members  project owners: send to every member, with an optional note.
  *   - GET  /me/shared                     any logged-in user: documents sent to them, newest first.

@@ -1,5 +1,22 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
-// In DocStruct: the animated "lock" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
+/**
+ * What this file does
+ *   The animated "lock" icon, exported as LockIcon through components/icons.ts. Like every icon here it stays
+ *   still on hover (hover motion is switched off in icon.tsx, see "DocStruct: icons stay still on hover") and
+ *   plays its motion only when a component passes `animate`. DocumentProtection.tsx passes `animate` on the
+ *   unlock screen, so it plays once there. It only affects appearance.
+ *
+ * Why it exists
+ *   It marks password protection: protected documents, the unlock screen, and password actions. Copied from
+ *   animate-ui rather than drawn from scratch: it only changes how the screen looks, and every DocStruct
+ *   feature is still written by the team.
+ *
+ * Where it fits
+ *   Used by: components/DocumentProtection.tsx (unlock screen and dialogs), pages/DocumentPage.tsx (badge and
+ *   password menu items), pages/project/WorkspacePage.tsx and pages/SearchPage.tsx (protected markers),
+ *   pages/SharedDocumentPage.tsx, pages/SharedWithMePage.tsx, pages/ProfilePage.tsx and
+ *   pages/auth/PasswordPages.tsx.
+ */
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

@@ -3,6 +3,11 @@
  *   Lists the fixed sets of values the app uses: project roles, document statuses, review statuses,
  *   change kinds and text-extraction statuses, plus the human-readable labels shown on screen.
  *
+ * Why it exists
+ *   These values are stored as-is in the database and compared in both apps, so a typo such as 'APPROVE' on one
+ *   side would silently match nothing. Defining them once turns that mistake into a compile error and keeps the
+ *   on-screen labels the same on every page.
+ *
  * How it works
  *   - Each set is a plain object marked `as const`, so it works both as a value and as a TypeScript type.
  *   - The type line under each object turns its values into a union, e.g. 'OWNER' | 'EDITOR' | ...

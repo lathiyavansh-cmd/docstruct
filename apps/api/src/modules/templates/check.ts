@@ -2,6 +2,11 @@
  * What this file does
  *   Checks a document's text against a template: a list of section headings the document must contain.
  *
+ * Why it exists
+ *   Documents number and word headings differently from the template, so an exact match would report false
+ *   gaps. This tolerant, in-order matching is kept separate and free of the database so it can be tested on
+ *   its own.
+ *
  * How it works
  *   - documentHeadings() cuts the extracted text into paragraphs and keeps the ones that look like headings
  *     (the same heuristic the comparison engine and the summariser use).

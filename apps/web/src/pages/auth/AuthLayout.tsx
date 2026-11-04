@@ -3,6 +3,10 @@
  *   This is the shared frame around the login, sign-up and password pages: one centred card with the form,
  *   on a quiet background. Everything else about DocStruct lives on the overview page at "/".
  *
+ * Why it exists
+ *   Login, sign-up and the two password pages need the same frame. One component keeps those four screens
+ *   consistent and lets the login page add the demo accounts without a layout of its own.
+ *
  * How it works
  *   - Takes four props: title (the heading), children (the form), footer (links under the form) and
  *     below (an optional extra under the card, used by the login page for the demo accounts).

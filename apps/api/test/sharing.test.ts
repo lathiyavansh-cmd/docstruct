@@ -3,6 +3,11 @@
  *   Tests annotations (PDF page and region anchors, permissions, replies, resolving, version scope)
  *   and share links (create, open without login, token hashing, revoke, expiry, logging).
  *
+ * Why it exists
+ *   Share links open a document without logging in, so a mistake here exposes files to anyone. These tests prove
+ *   a link opens only its one document, stops at revocation or expiry, and is stored only as a hash (SE-15), and
+ *   that annotations stay tied to the version and roles they belong to.
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database, and creates a project with an owner, editor, reviewer and viewer.

@@ -1,2 +1,6 @@
-# Canonical author identities for `git shortlog` / `git log --use-mailmap`.
+# What this file does
+#   Canonical author identities for `git shortlog` / `git log --use-mailmap`.
+# Why it exists
+#   Commits made with different names or e-mail settings would otherwise show up as separate authors, so a
+#   member's work would be split across several entries.
 Vansh Lathiya <lathiyavansh@gmail.com>

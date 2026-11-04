@@ -2,6 +2,11 @@
  * What this file does
  *   Defines the HTTP endpoints for folders: get the folder tree, create, rename, move and delete.
  *
+ * Why it exists
+ *   Folder changes decide where every document in a project appears, so each endpoint checks the caller's
+ *   project role first and the name rule (no / or \) is applied before the service runs. Deleting a
+ *   non-empty folder needs ?confirm=true, so one stray click cannot hide a folder of documents.
+ *
  * How it works
  *   - A Zod schema checks folder names (1 to 120 characters, no / or \).
  *   - authorize(...) checks the caller's project role. byFolder() finds the project from the folder id.

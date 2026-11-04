@@ -1,0 +1,11 @@
+Template name: SRS checklist
+Description: Sections every requirements document must have before it is sent for review.
+
+Required sections (paste these lines into "Required sections", one per line):
+
+Introduction
+Users and Roles
+Functional Requirements
+Non-functional Requirements
+Acceptance Criteria
+References

@@ -2,6 +2,11 @@
  * What this file does
  *   Tests document summarisation: the summarising algorithm itself and the summary API endpoint.
  *
+ * Why it exists
+ *   Summaries are built in-house with no external NLP or AI service, so these tests are what shows they are any
+ *   good: central sentences kept, near-duplicates dropped, longer summaries containing shorter ones, and the
+ *   endpoint closed to people outside the project.
+ *
  * How it works
  *   - The first block calls summarise.ts functions directly on a sample report (REPORT) and small inputs.
  *   - The "summary API" block uses createTestEnv() from helpers.ts, which boots the whole API on an

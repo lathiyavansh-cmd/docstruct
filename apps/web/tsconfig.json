@@ -1,3 +1,8 @@
+// What this file does
+//   TypeScript settings for the web client: strict checks, React JSX, Vite types and the '@/...' path alias.
+// Why it exists
+//   `npm run typecheck` and `npm run build` run tsc with this file, so type errors stop a release; the
+//   "development" condition makes tsc read @docstruct/shared from source, the same way Vite does.
 {
   "compilerOptions": {
     "target": "ES2022",

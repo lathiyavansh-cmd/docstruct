@@ -3,6 +3,11 @@
  *   Tests account features: password hashing, sign-up, duplicate e-mails, login, throttling, logout, idle
  *   session expiry, profile edit, password reset and password change.
  *
+ * Why it exists
+ *   Login, sessions and password storage guard every other module (SE-2, SE-4). These tests prove the database
+ *   never holds a plain password, that login errors do not reveal which e-mails exist, and that a logged-out or
+ *   idle session really stops working.
+ *
  * How it works
  *   - The first block calls hashPassword() and verifyPassword() directly.
  *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite

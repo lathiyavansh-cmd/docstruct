@@ -2,6 +2,10 @@
  * What this file does
  *   Unit tests for the Markdown renderer in markdown.ts, run with Vitest.
  *
+ * Why it exists
+ *   Markdown previews are inserted as raw HTML, so a mistake in the renderer could let an uploaded file run
+ *   script in another user's browser; these tests catch that before release.
+ *
  * How it works
  *   - Feeds small Markdown strings to renderMarkdown() and checks the HTML string that comes back.
  *   - Covers normal formatting, HTML escaping (no <script> or <img> gets through), link rules

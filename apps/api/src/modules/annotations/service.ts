@@ -3,6 +3,11 @@
  *   Holds the logic for annotations: comment threads attached to one document version, with
  *   optional page and region anchors on PDFs, one level of replies, and resolving.
  *
+ * Why it exists
+ *   Feedback must stay tied to the exact version it was written on, so the server, not the client, decides
+ *   which version a comment or reply lands on, limits threads to one level and links comments to the open
+ *   review. Without this a client could pin feedback to content nobody is reviewing.
+ *
  * How it works
  *   - list() loads all rows for a version, builds the top-level threads, then puts replies under them.
  *   - create() always uses the document's current version and links the comment to the open review

@@ -1,7 +1,12 @@
 /**
  * What this file does
- *   Stores uploaded files on disk and creates signed, short-lived links to upload or download them.
+ *   Stores uploaded files (on disk, or in the database when STORAGE_DRIVER=database) and creates signed,
+ *   short-lived links to upload or download them.
  *   The design rules are in the block comment below.
+ *
+ * Why it exists
+ *   Files must never be reachable without a permission check (SE-13): the API checks access, then hands out a
+ *   link that works for one file for a few minutes. Write-once keys keep stored versions unchangeable (CO-7).
  *
  * How it works
  *   - pathFor() turns a key into a safe file path; signature() makes an HMAC over the link fields.
@@ -25,7 +30,8 @@ import { pipeline } from 'node:stream/promises';
 import type { Queryable } from '../db/database.js';
 
 /**
- * DocStruct's object store (SI-3). Files live on disk under `root`, addressed by an opaque key, and are
+ * DocStruct's object store (SI-3). Files live on disk under `root` or, with STORAGE_DRIVER=database, in the
+ * stored_objects table (Render's free disk is wiped on restart). Either way they are addressed by an opaque key and are
  * reachable from the browser only through short-lived URLs signed with an HMAC (SE-13, CI-4): the API
  * issues the URL after its permission checks, and the browser then transfers the bytes directly.
  *

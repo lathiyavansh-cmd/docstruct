@@ -3,6 +3,10 @@
  *   The folder sidebar of a project's Documents page. It shows folders as a tree you can expand, and lets
  *   allowed users create, rename, move and delete folders.
  *
+ * Why it exists
+ *   A project can hold many documents, so they need a folder hierarchy to stay findable (UI-4). The chosen
+ *   folder lives in the URL, so a folder view survives a refresh and can be shared as a link.
+ *
  * How it works
  *   - The tree comes in as a prop; WorkspacePage loads it (query key ['folders', projectId], GET /projects/:id/folders).
  *     canEdit and canDelete come from the user's role and hide the menu items.

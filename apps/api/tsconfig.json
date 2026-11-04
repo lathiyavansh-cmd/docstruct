@@ -1,3 +1,8 @@
+// What this file does
+//   TypeScript settings for the API: strict checks and Node's ES module resolution.
+// Why it exists
+//   `npm run typecheck` (and CI) checks src, test and vitest.config.ts with it, so type errors in tests are
+//   caught too, not only in the code that ships.
 {
   "compilerOptions": {
     "target": "ES2022",

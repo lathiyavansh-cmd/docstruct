@@ -4,6 +4,11 @@
  *   for review, viewing review history, approving, requesting changes, cancelling, and archiving a document.
  *   Also the caller's reminders list and the nudge (remind the reviewer) action.
  *
+ * Why it exists
+ *   Who may submit, decide, nudge or cancel differs by action, and the queue and reminders span all projects
+ *   so they cannot use a project check; each route states its own rule. Request-changes also requires a note
+ *   here, so a reviewer cannot send a document back without saying why.
+ *
  * How it works
  *   - Zod schemas check the body (reviewer id, due date as YYYY-MM-DD, optional notes).
  *   - authorize(...) checks the caller's project role. byDocument() or byReview() finds the project

@@ -2,6 +2,10 @@
  * What this file does
  *   This is the login screen. The user types an email and password to start a session.
  *
+ * Why it exists
+ *   Projects, documents and reviews are private to their members, so the API returns nothing until the user
+ *   proves who they are. Returning them to the page they first asked for keeps pasted links working.
+ *
  * How it works
  *   - On submit it calls post('/auth/login') with the email and password and gets back a session (token and user).
  *   - signIn() from useAuth saves the token, so every later API call is sent with it.

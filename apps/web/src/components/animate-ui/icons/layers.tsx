@@ -1,5 +1,22 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
-// In DocStruct: the animated "layers" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
+/**
+ * What this file does
+ *   The animated "layers" icon, exported as LayersIcon through components/icons.ts. Like every icon here it
+ *   stays still on hover (hover motion is switched off in icon.tsx, see "DocStruct: icons stay still on
+ *   hover") and plays its motion only when a component passes `animate`. It animates only on the selected
+ *   project row of CommandPalette.tsx. It only affects appearance.
+ *
+ * Why it exists
+ *   A stack of pages: it marks documents, versions and projects. Copied from animate-ui rather than drawn
+ *   from scratch: it only changes how the screen looks, and every DocStruct feature is still written by the
+ *   team.
+ *
+ * Where it fits
+ *   Used by: components/AppLayout.tsx (sidebar project links), components/CommandPalette.tsx,
+ *   components/VersionHistory.tsx (compare action), pages/DocumentPage.tsx ("Versions" tab, "Move to
+ *   folder"), pages/ProjectsPage.tsx (project cards), pages/project/ProjectLayout.tsx ("Documents" tab) and
+ *   pages/project/DashboardPage.tsx.
+ */
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

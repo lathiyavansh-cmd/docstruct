@@ -3,6 +3,11 @@
  *   The quick "jump to" box that opens with Ctrl+K. The user types to filter pages and projects,
  *   or picks "Search documents for ..." to run a full-text search.
  *
+ * Why it exists
+ *   With several projects, clicking through the sidebar is slow; a keyboard-driven box reaches any page,
+ *   project or document search without the mouse. Its filtering and key handling are self-contained, so
+ *   it lives apart from AppLayout, which only opens and closes it.
+ *
  * How it works
  *   - Props: open, onClose and the projects list (AppLayout passes the list it already loaded; nothing is fetched here).
  *   - "commands" is a fixed list of pages plus one entry per project. "items" filters it by the typed text.

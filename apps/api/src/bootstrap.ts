@@ -2,6 +2,10 @@
  * What this file does
  *   Starts up all the shared services the API needs and bundles them into one context object.
  *
+ * Why it exists
+ *   The server, the seed script and the tests all need the same start-up steps in the same order (settings,
+ *   then a migrated database, then storage); one function keeps the three from drifting apart.
+ *
  * How it works
  *   - Loads configuration from environment variables (config.ts).
  *   - Creates a small logger that stays quiet in tests unless there is an error.

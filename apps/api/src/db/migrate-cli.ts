@@ -2,6 +2,10 @@
  * What this file does
  *   A small command-line script that runs database migrations without starting the server.
  *
+ * Why it exists
+ *   Lets setup.mjs or a developer bring a database (for example a new Supabase project) up to date without
+ *   starting the server.
+ *
  * How it works
  *   - Loads config and opens the database.
  *   - Calls migrate() and prints how many migrations were applied.

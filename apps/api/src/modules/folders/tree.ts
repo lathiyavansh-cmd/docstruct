@@ -3,6 +3,11 @@
  *   Pure helper functions for the folder tree. They take a list or map of folders and never touch
  *   the database, which makes them easy to unit test.
  *
+ * Why it exists
+ *   Cycle and depth checks are the risky part of folders; keeping them free of the database lets
+ *   test/folders.test.ts check them with plain maps. Their step limits also stop a damaged tree from making
+ *   the server loop forever.
+ *
  * How it works
  *   - buildFolderTree() turns a flat list into a nested tree using one Map lookup per folder.
  *   - wouldCreateCycle() walks up from the new parent to see if the moved folder is above it.

@@ -3,6 +3,11 @@
  *   Tests the version comparison and pre-review endpoints end to end: comparing two versions, caching the
  *   result, refusing versions of another document, the "unavailable" case, and the automatic pre-review.
  *
+ * Why it exists
+ *   diff-engine.test.ts checks the algorithms alone; this file guards what surrounds them over HTTP: refusing a
+ *   version of another document, storing and reusing results, and running the pre-review on submission as
+ *   advice only, never deciding for the reviewer (Diff.PreReview.Advisory).
+ *
  * How it works
  *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
  *   - twoVersions() uploads a document with two versions (V1 and V2) and waits for text extraction.

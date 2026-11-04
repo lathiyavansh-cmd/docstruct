@@ -4,6 +4,11 @@
  *   checks, rollback on failure, permissions, preview and download, rename, move, folder listing,
  *   soft delete and version immutability.
  *
+ * Why it exists
+ *   Upload takes two steps (signed upload, then finalise), so a failure halfway could leave orphan files or
+ *   half-made documents. These tests prove bad files are refused before storage, failures roll back fully, only
+ *   permitted roles can upload or delete, and stored versions cannot be changed (CO-7).
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database with a temporary file store, and creates a project with four users.

@@ -3,6 +3,11 @@
  *   Helpers for uploading a file: checking it in the browser first, then sending it to storage
  *   while reporting how far the upload has got.
  *
+ * Why it exists
+ *   Files go from the browser to storage through a signed URL rather than inside an API request, and large
+ *   files need a progress bar (UI-13); fetch() cannot report that, so the transfer needs its own code. It is
+ *   kept out of UploadDialog so validateFile() can be unit-tested without the dialog.
+ *
  * How it works
  *   - validateFile() checks the file type from its name, the 50 MB limit and that it is not empty.
  *     It returns an error message, or null when the file is fine.

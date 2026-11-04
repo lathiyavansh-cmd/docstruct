@@ -3,6 +3,11 @@
   What this file does
     The single HTML page of the web client. React draws the whole app inside it.
 
+  Why it exists
+    In production the API server sends this same page for every page URL, so React Router (not the
+    server) picks the screen, including public share links. Vite also needs it as the starting point
+    of the build: the script tag here is what pulls in all the app code.
+
   How it works
     - Sets the character set, mobile viewport, icon and page title.
     - Provides an empty <div id="root"> for React to fill.

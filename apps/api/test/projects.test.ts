@@ -3,6 +3,11 @@
  *   Tests project and membership behaviour: creating, listing, hiding from outsiders, adding,
  *   re-roling and removing members, the last-owner rule, renaming and archiving.
  *
+ * Why it exists
+ *   Membership decides who can see each project. These tests prove outsiders get a 404 rather than a hint the
+ *   project exists (SE-6), only owners manage members (SE-8), and a project can never be left without an owner,
+ *   a rule the database enforces as well as the API (Reliability-5).
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database, and signs up four users (owner, editor, viewer, outsider).

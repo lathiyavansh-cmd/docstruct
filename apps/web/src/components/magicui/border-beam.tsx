@@ -1,8 +1,16 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   Draws a short coloured beam of light that keeps travelling around the border of a card.
- *   Used by: pages/auth/AuthLayout.tsx and pages/project/DashboardPage.tsx. It only affects appearance; no feature logic.
+ *
+ * Why it exists
+ *   It draws attention to one card that matters, such as the dashboard's "Waiting on you" card when there is
+ *   work to do. The team writes every feature itself (the professor's no-external-API rule); this open-source
+ *   piece only affects looks, so it was copied in rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: pages/project/DashboardPage.tsx and pages/landing/LandingPage.tsx. It only affects appearance;
+ *   no feature logic.
  */
 import { motion, type MotionStyle, type Transition } from "motion/react"
 

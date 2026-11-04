@@ -1,3 +1,5 @@
 # What this file does: lists the Python packages the text extractor needs (it needs none).
+# Why it exists: the project allows no external APIs, so the extractor has no third-party parsers; this file
+#   says so where people look for dependencies, and CI's `pip install -r` step still has a file to read.
 # Where it fits: services/extractor, run by apps/api/src/extraction/extractor.ts. Module: text extractor (owner: Shrut).
 # The extractor uses only the Python standard library (Python 3.9+). Nothing to install.

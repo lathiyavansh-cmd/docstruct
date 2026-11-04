@@ -3,6 +3,11 @@
  *   Shows the automatic "pre-review" for a reviewer: a summary of what changed since the previous
  *   version and a list of findings (things worth checking), each marked by severity.
  *
+ * Why it exists
+ *   Reviewers often re-check a document after small edits; seeing what changed and what looks worth checking
+ *   saves rereading the whole version. The advisory label keeps the human reviewer, not the machine,
+ *   responsible for the decision.
+ *
  * How it works
  *   - PreReviewPanel loads the result: query key ['pre-review', reviewId], GET /reviews/:id/pre-review.
  *   - While the server is still comparing (status PENDING) the query re-runs every 1.5 seconds.

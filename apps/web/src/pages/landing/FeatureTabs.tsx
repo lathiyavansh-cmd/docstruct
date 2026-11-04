@@ -3,6 +3,10 @@
  *   The "What DocStruct does" section of the landing page: six tabs, each with a short explanation and a
  *   small working demo of the feature (versions, compare, pre-review, review, summary, protect and share).
  *
+ * Why it exists
+ *   Visitors decide from the overview page whether DocStruct is worth an account, and a working demo shows the
+ *   features better than text. Its own file keeps the six demos and their local state out of LandingPage.tsx.
+ *
  * How it works
  *   - FEATURES lists the tabs; the active one is kept in state and the sliding highlight is AnimatedBackground.
  *   - Each demo is a small component with its own local state (for example the review buttons change the

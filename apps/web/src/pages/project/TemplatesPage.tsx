@@ -3,6 +3,10 @@
  *   The project's "Templates" tab: the checklists of required section headings, and for each one which
  *   documents use it and whether they are complete.
  *
+ * Why it exists
+ *   Teams want every document of a kind to contain the same sections. Templates let an owner define those
+ *   headings once, and the compliance view shows which documents are still incomplete.
+ *
  * How it works
  *   - useQuery ['templates', projectId] loads GET /projects/:id/templates.
  *   - Owners create, edit and delete templates (POST / PATCH / DELETE). Headings are typed one per line.

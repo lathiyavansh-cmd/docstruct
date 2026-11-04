@@ -2,6 +2,11 @@
  * What this file does
  *   Defines the HTTP endpoints for accounts: sign up, log in, log out, view and edit profile, change and reset password.
  *
+ * Why it exists
+ *   Input rules (trimmed, lower-cased e-mails, password length) are applied here so AuthService only gets
+ *   clean values, and the forgot-password reply is the same whether or not the account exists, so nobody can
+ *   use it to find out who has an account.
+ *
  * How it works
  *   - Each request body is checked with a zod schema through parse(); bad input becomes a 400 error.
  *   - The route then calls one AuthService method and sends back its result with the right status code.

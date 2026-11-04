@@ -2,6 +2,10 @@
  * What this file does
  *   This is the Overview tab of a project. It shows counts of documents by status, what is waiting on the logged-in user, documents under review with their due dates, and recent activity.
  *
+ * Why it exists
+ *   On opening a project, a member needs to see at a glance where its documents stand and what is waiting on
+ *   them. One dashboard call gives the counts without loading every document list.
+ *
  * How it works
  *   - Gets the project from ProjectLayout with useCurrentProject().
  *   - useQuery ['dashboard', projectId] loads everything in one call: GET /projects/:projectId/dashboard.

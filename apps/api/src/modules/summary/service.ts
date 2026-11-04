@@ -2,6 +2,11 @@
  * What this file does
  *   Returns the summary of one document version, computing it the first time and reading it from the database after that.
  *
+ * Why it exists
+ *   TextRank compares every pair of sentences, which is too slow to repeat on each visit, so the result is
+ *   stored once per version. Text that is still being extracted is not stored, so a later request retries,
+ *   and summarise.ts stays free of database code.
+ *
  * How it works
  *   - forVersion() loads the version's extracted text from document_versions.
  *   - If version_summaries already has a row, that saved result is returned.

@@ -3,6 +3,11 @@
  *   Defines the HTTP endpoints for projects and project members: list, create, view, rename,
  *   archive, and add, re-role or remove members.
  *
+ * Why it exists
+ *   Listing and creating projects need only sign-in, but every other project action needs a specific role;
+ *   naming the permission on each route keeps that difference explicit, and the role schema stops anything
+ *   other than the four known roles reaching the members table.
+ *
  * How it works
  *   - Zod schemas (name, description, role) check the request body before any work is done.
  *   - Every route runs requireAuth first, so only signed-in users get through.

@@ -1,6 +1,11 @@
 -- What this file does
 --   Creates the reviews table for the submit, approve and request-changes workflow.
 --
+-- Why it exists
+--   The record of a review must keep showing exactly which version was approved or sent back, even after newer
+--   uploads, and a decision must not change afterwards. Putting these rules in the database means no code path
+--   can break them.
+--
 -- How it works
 --   - Each review row points to the exact version that was submitted and to the reviewer.
 --   - CHECK rules keep status and its timestamps consistent.

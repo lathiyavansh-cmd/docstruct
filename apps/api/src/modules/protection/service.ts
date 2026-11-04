@@ -3,6 +3,11 @@
  *   Password protection for single documents: locking, unlocking, changing, removing and resetting the
  *   password, and the check every content route uses to refuse a locked document.
  *
+ * Why it exists
+ *   Some documents must stay closed even to members who can see they exist, which the role table cannot
+ *   express. Hashing, the attempt limit, per-session unlocks and password_version live here so the routes,
+ *   the guard and public share links all apply the same rules.
+ *
  * How it works
  *   - The password is hashed with scrypt (the same code as login passwords) and only the hash is stored.
  *   - unlock() checks the password and records an unlock for this login session that lasts 12 hours.

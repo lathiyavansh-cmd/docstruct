@@ -3,6 +3,11 @@
  *   Describes the exact shape of every JSON body that travels between the website and the server.
  *   A "DTO" (data transfer object) is one such shape; a "Request" is what the website sends.
  *
+ * Why it exists
+ *   The website and the server are separate apps; if each declared its own copy of every request and response
+ *   shape, the copies would drift apart and fail only at runtime. One copy imported by both prevents that
+ *   (Maintainability-2).
+ *
  * How it works
  *   - Each interface lists the fields and their types; there is no runtime code except PASSWORD_MIN_LENGTH.
  *   - The server builds its responses to match these types, and the website reads them using the same types.

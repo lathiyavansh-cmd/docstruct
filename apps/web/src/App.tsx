@@ -2,6 +2,11 @@
  * What this file does
  *   This is the route table of the app. It decides which page to show for each URL, and blocks pages that need a login.
  *
+ * Why it exists
+ *   Keeping every route and its login guard in one table means no page can be added without deciding
+ *   whether it needs a session (Account.Login / SE-2), while share links and password pages stay usable
+ *   without an account. The guards only steer the user; the API still checks the token on every request.
+ *
  * How it works
  *   - RequireAuth checks useAuth(). If nobody is logged in, "/" shows the overview page (LandingPage); any other
  *     page sends the user to /login and remembers where they wanted to go.

@@ -1,4 +1,10 @@
-# Each module's owner must approve pull requests that touch it (see docs/TEAM.md).
+# What this file does
+#   Names the GitHub user who owns each module folder.
+#
+# Why it exists
+#   Each module's owner must approve pull requests that touch it (see docs/TEAM.md), so nobody changes another
+#   member's module without their review.
+#
 # Replace the two placeholder handles with Vivan's and Shrut's GitHub usernames
 # once they accept the repository invitation.
 

@@ -1,14 +1,23 @@
 // Source: Timeline by Aceternity UI (manuarora700), published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   A vertical timeline whose line fills with colour as the page scrolls past it; each step's title sticks
  *   beside its content while you read it.
- *   Used by: pages/landing/LandingPage.tsx ("How a document moves"). It only affects appearance; no feature logic.
+ *
+ * Why it exists
+ *   The landing page explains how a document moves from upload through review to approval as ordered steps,
+ *   and a line that fills as you scroll makes that order easy to follow. The team writes every feature itself
+ *   (the professor's no-external-API rule); this open-source piece only affects looks, so it was copied in
+ *   rather than built from scratch.
  *
  * How it works
  *   - useScroll() tracks how far the list has scrolled through the viewport (0 to 1).
  *   - The coloured bar's height follows that progress; a ResizeObserver keeps the full height current.
  *   - A step's dot lights up once the bar has reached it.
+ *
+ * Where it fits
+ *   Used by: pages/landing/LandingPage.tsx ("How a document moves"). It only affects appearance; no feature
+ *   logic.
  */
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';

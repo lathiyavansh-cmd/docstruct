@@ -2,6 +2,10 @@
  * What this file does
  *   The "Shared with me" page: every document a project owner sent to the logged-in user, newest first.
  *
+ * Why it exists
+ *   Without this list, a document shared with a user could only be found again through the link they were sent.
+ *   Keeping the shares in one place with unread markers shows them what is new.
+ *
  * How it works
  *   - useQuery ['shared-with-me'] loads GET /me/shared (the same key gives the unread count in the sidebar).
  *   - Unread entries are highlighted; opening the document marks it read (DocumentPage posts /shared/read).

@@ -2,6 +2,10 @@
  * What this file does
  *   Defines the one HTTP endpoint that returns the summary of a document version.
  *
+ * Why it exists
+ *   A summary quotes sentences from the document, so it needs the same gates as reading the file (sign-in,
+ *   document.read and the password unlock) in front of SummaryService.
+ *
  * How it works
  *   - GET /versions/:versionId/summary runs requireAuth, then authorize() with the document.read permission.
  *   - It then calls SummaryService.forVersion() and sends the result as JSON.

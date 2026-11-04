@@ -3,6 +3,10 @@
  *   The "Template check" card on the document page: which template the document is checked against and
  *   which required sections its current version has or is missing.
  *
+ * Why it exists
+ *   Projects can require documents to follow a set structure; showing which required sections are missing
+ *   lets authors fix them before review instead of having a reviewer send the document back.
+ *
  * How it works
  *   - useQuery ['template-check', documentId] loads GET /documents/:id/template-check (null = no template).
  *   - useQuery ['templates', projectId] loads the project's templates for the chooser (editors only).

@@ -1,3 +1,8 @@
+# What this file does
+#   Makes git store text files with LF line endings and treat images, PDFs and Word files as binary.
+# Why it exists
+#   Windows checkouts would otherwise turn line endings into CRLF, which breaks the shell git hooks and marks
+#   whole files as changed; binary files must never have their bytes converted.
 * text=auto eol=lf
 *.png binary
 *.jpg binary

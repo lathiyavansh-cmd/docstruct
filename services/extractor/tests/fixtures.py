@@ -1,11 +1,17 @@
-"""Builds small but structurally real PDF and DOCX files for the tests.
+"""
+What this file does
+    Builds small but structurally real PDF and DOCX files for the tests.
+
+Why it exists
+    The extractor tests need PDF and DOCX inputs whose text and layout are known exactly. Building inputs in
+    code means no binary sample files need to be stored in the repository, and each test can build the
+    precise case it checks (compressed streams, replaced fonts, extra objects, tables).
 
 How it works
     - build_pdf() writes the PDF objects by hand (catalogue, page tree, font, pages, content streams),
       then the cross-reference table and trailer, exactly as a real PDF writer would.
     - text_page() writes a content stream that places text lines with known spacing.
     - build_docx() writes a minimal ZIP with word/document.xml holding paragraphs and an optional table.
-    Building inputs in code means no binary sample files need to be stored in the repository.
 
 Where it fits
     Imported by tests/test_extractor.py. Module: text extractor (owner: Shrut).

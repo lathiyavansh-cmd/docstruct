@@ -1,12 +1,19 @@
 /**
  * What this file does
  *   Defines the HTTP endpoints for share links: list a document's links, create one, revoke one, and
- *   the public endpoint that opens a document from a link without signing in.
+ *   the public endpoints that open a document from a link without signing in (with its password if
+ *   the document is protected).
+ *
+ * Why it exists
+ *   Share links are the one way to open a document without an account, so the public routes must sit outside
+ *   requireAuth while the management routes stay behind sign-in and the share permissions; having both here
+ *   makes that boundary easy to see.
  *
  * How it works
  *   - The three management routes need sign-in and a project role allowed to manage shares.
  *   - The create route checks the optional expiry (an ISO date-time) and label with Zod.
- *   - The public route has no auth middleware; ShareService.open() checks the token itself.
+ *   - The two public routes have no auth middleware; ShareService.open() checks the token itself, and
+ *     the password too for a protected document.
  *
  * Where it fits
  *   Registered in modules/index.ts and mounted under /api by app.ts. Uses ShareService (service.ts)

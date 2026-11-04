@@ -2,6 +2,10 @@
  * What this file does
  *   This file holds the two "forgot password" screens. Step 1 asks for an email and sends a reset link. Step 2 is opened from that link and sets a new password.
  *
+ * Why it exists
+ *   Without these screens a user who forgets their password would be locked out of their projects. The emailed
+ *   one-time token proves they own the address before a new password is accepted.
+ *
  * How it works
  *   - ForgotPasswordPage calls post('/auth/password/forgot') with the email, then shows a "check your email" notice.
  *   - ResetPasswordPage reads ?token= from the URL and calls post('/auth/password/reset') with the token and new password.

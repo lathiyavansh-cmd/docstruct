@@ -3,6 +3,11 @@
  *   Holds the review state machine: the list of status changes a document is allowed to make.
  *   For example a Draft can go Under Review, but an Archived document can never change again.
  *
+ * Why it exists
+ *   The server changes status on submit, decide and archive, and the website decides whether to show the submit
+ *   button; one table keeps them all to the analysis model, so for example a document under review cannot be
+ *   archived before it is decided or cancelled.
+ *
  * How it works
  *   - ALLOWED_TRANSITIONS maps each status to the statuses it may move to next.
  *   - canTransition(from, to) looks up that table and returns true or false.

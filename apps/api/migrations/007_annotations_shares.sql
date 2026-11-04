@@ -1,6 +1,11 @@
 -- What this file does
 --   Creates the annotations table (comments on a version) and the share_links table (view-only links).
 --
+-- Why it exists
+--   Comments must stay attached to the version they were written about, and people outside the project need a
+--   way to read a document without an account. Storing only token hashes means a database leak gives no
+--   working links.
+--
 -- How it works
 --   - annotations can be pinned to a page and region, and can have one level of replies.
 --   - guard_annotation_reply() trigger checks that a reply matches its parent's version.

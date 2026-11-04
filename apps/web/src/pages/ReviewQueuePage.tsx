@@ -2,6 +2,10 @@
  * What this file does
  *   This is the "Review queue" screen. It lists every document version that someone sent to the logged-in user for review, from all projects.
  *
+ * Why it exists
+ *   Reviewers are given work in many projects; without one cross-project list they would have to open each
+ *   project to find what is waiting on them. Sorting by due date shows what to do first.
+ *
  * How it works
  *   - useQuery ['review-queue'] loads the list from GET /reviews/queue (the server sorts it, soonest due first).
  *   - Each row shows the document title, version number, project, who sent it, the note and the due date.

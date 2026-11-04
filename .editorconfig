@@ -1,3 +1,9 @@
+# What this file does
+#   Tells editors which character set, line ending and indentation to use for each kind of file.
+# Why it exists
+#   The team edits on different systems and editors; without shared rules, files would mix CRLF and LF, tabs and
+#   spaces, and every save would add noise to the diffs.
+
 root = true
 
 [*]

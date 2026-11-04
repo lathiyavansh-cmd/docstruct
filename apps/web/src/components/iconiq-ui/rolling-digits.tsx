@@ -1,8 +1,12 @@
 // Source: Rolling Digits by edwinvakayil (iconiq ui), published on 21st.dev by its author; trimmed and adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   A number whose digits roll into place like an odometer the first time it scrolls into view.
- *   Used by: pages/landing/LandingPage.tsx (the numbers under the hero). It only affects appearance; no feature logic.
+ *
+ * Why it exists
+ *   The landing page shows a few headline numbers under the hero, and rolling them in when they come into
+ *   view draws the eye to them. The team writes every feature itself (the professor's no-external-API rule);
+ *   this open-source piece only affects looks, so it was copied in rather than built from scratch.
  *
  * How it works
  *   - RollingDigits shows zeros until the number is 60% visible, then switches to the real value once.
@@ -10,6 +14,10 @@
  *     the new digits on the left and each existing cell rolls from its old digit to its new one.
  *   - DigitCell springs the new digit in (y, opacity, scale) and lets the old one fly out the other way.
  *   - Screen readers get the plain number from a visually hidden span.
+ *
+ * Where it fits
+ *   Used by: pages/landing/LandingPage.tsx (the numbers under the hero). It only affects appearance; no
+ *   feature logic.
  */
 import { AnimatePresence, motion, useInView, useSpring } from 'motion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';

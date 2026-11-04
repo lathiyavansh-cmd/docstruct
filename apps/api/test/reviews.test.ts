@@ -4,6 +4,11 @@
  *   rule, who may decide or cancel, the request-changes and resubmit loop, history, locks while a
  *   review is open, archiving and activity logging.
  *
+ * Why it exists
+ *   The review workflow changes statuses, locks and history together. These tests catch what a broken state
+ *   machine or missing check would allow: two open reviews (Review.Submit.Single), a decision by the wrong person
+ *   (SE-9), or a document changed or deleted while under review (SA-6).
+ *
  * How it works
  *   - The first block calls canTransition() directly to check the state machine table.
  *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite

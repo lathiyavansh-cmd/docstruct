@@ -2,6 +2,10 @@
  * What this file does
  *   Command-line entry point for loading the demo data:  npm run db:seed
  *
+ * Why it exists
+ *   demo-data.ts holds the logic; this entry point lets it run from the command line and close the database
+ *   afterwards, without starting the HTTP server.
+ *
  * How it works
  *   - Boots the application context (configuration, migrated database, file store).
  *   - Calls seedDemoData() from demo-data.ts, which does nothing if the demo data already exists.

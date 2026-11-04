@@ -2,6 +2,10 @@
  * What this file does
  *   Writes entries to the project activity log, the history of who did what and when.
  *
+ * Why it exists
+ *   Many services record actions; one insert function keeps every entry in the same shape, so the dashboard and
+ *   project history can read them without special cases.
+ *
  * How it works
  *   - ActivityAction lists every allowed action name, so a typo fails at compile time.
  *   - ActivityInput describes one log entry (project, actor, action, entity, extra detail).

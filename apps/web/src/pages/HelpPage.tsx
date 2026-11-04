@@ -2,6 +2,10 @@
  * What this file does
  *   This is the in-app Help screen. It explains the main tasks step by step, the project roles, the document statuses, and how the automatic summaries work.
  *
+ * Why it exists
+ *   New members and evaluators need to learn the workflow, roles and statuses without asking the team. Taking
+ *   limits and role names from @docstruct/shared stops the guide drifting away from the real rules.
+ *
  * How it works
  *   - It is a static page: no useQuery, no API calls.
  *   - Facts like accepted file formats, the upload size limit and role names come from the shared package (@docstruct/shared), so the help text always matches the real rules.

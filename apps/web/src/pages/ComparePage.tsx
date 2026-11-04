@@ -2,6 +2,10 @@
  * What this file does
  *   This is the "Compare versions" screen. The user picks an earlier and a later version of one document and sees what changed, paragraph by paragraph and word by word, plus an automatic change summary and pre-review findings.
  *
+ * Why it exists
+ *   Reviewers need to see exactly what changed between two uploads before approving, instead of rereading the
+ *   whole document. It is its own route so a comparison (?from= and ?to=) can be linked and reopened.
+ *
  * How it works
  *   - useQuery ['document', id] loads the document (GET /documents/:id) and ['versions', id] loads its versions (GET /documents/:id/versions, newest first).
  *   - The chosen versions live in the URL as ?from=...&to=... . If missing, it compares the second newest with the newest.

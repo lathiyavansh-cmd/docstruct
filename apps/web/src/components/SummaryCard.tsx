@@ -3,6 +3,11 @@
  *   The collapsible Summary card at the top of a document page. It shows a summary of the version
  *   being viewed in three lengths, plus key terms and reading statistics.
  *
+ * Why it exists
+ *   Long documents take time to read before reviewing or deciding whether they are relevant; a short,
+ *   medium or detailed summary gives the gist first. The summary comes from DocStruct's own summariser on
+ *   the server, and the advisory label marks it as machine output to check, not to rely on.
+ *
  * How it works
  *   - Loads the summary: query key ['summary', versionId], GET /versions/:id/summary.
  *   - While status is PENDING (text still being read) the query re-runs every 1.5 seconds.

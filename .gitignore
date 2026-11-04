@@ -1,3 +1,9 @@
+# What this file does
+#   Lists files and folders git must never track.
+# Why it exists
+#   Keeps secrets (.env), the local embedded database and uploaded files (.data) and generated output out of
+#   the repository, so nobody commits a password or their personal test data.
+
 # dependencies
 node_modules/
 .venv/

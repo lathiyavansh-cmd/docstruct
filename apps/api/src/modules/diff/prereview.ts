@@ -3,6 +3,11 @@
  *   Looks at the changes between two versions and produces (1) a list of warnings ("findings") for the
  *   reviewer and (2) a short written summary of what changed.
  *
+ * Why it exists
+ *   SRS SI-4 assumed an external AI summarisation service; under the no-external-APIs rule the team built it
+ *   in-house. Explicit regex rules make every finding explainable (for example "shall" changed to "should"),
+ *   and keeping them apart from compare.ts lets the rules change without touching the diff itself.
+ *
  * How it works
  *   - Regex patterns detect requirement words (shall/should), negations, placeholders, dates, numbers and references.
  *   - rulesFor() applies every rule to one change; findIssues() runs it over all substantive changes and sorts by severity.

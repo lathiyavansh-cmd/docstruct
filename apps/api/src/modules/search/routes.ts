@@ -3,6 +3,11 @@
  *   Defines the two search endpoints: search inside one project, and search across every project
  *   the user is a member of.
  *
+ * Why it exists
+ *   Search must never return documents from projects the caller is not in (Search.Scope). The project route
+ *   checks membership with authorize(); the global route has no single project, so it builds the allowed
+ *   project list itself before calling the service.
+ *
  * How it works
  *   - searchQuery (Zod) checks the optional term and filters: status, folder, reviewer and a date range.
  *   - The project search uses authorize(...) so only members can search that project.

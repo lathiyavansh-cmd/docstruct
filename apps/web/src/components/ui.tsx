@@ -3,6 +3,11 @@
  *   The shared building blocks of the DocStruct interface: buttons, form fields, status badges, loading
  *   and error boxes, cards, pop-up dialogs, page headers, avatars and the machine-output label.
  *
+ * Why it exists
+ *   Buttons, badges and dialogs appear on every page, so one copy keeps them consistent and keeps their rules
+ *   in one place: status in words and colour, never colour alone (Usability-2), a confirmation before every
+ *   irreversible action (UI-12), a label on all machine output, and busy buttons that cannot be sent twice.
+ *
  * How it works
  *   - Each export is a small React component that only takes props; nothing here loads data or calls the API.
  *   - Styling is done with Tailwind classes. cx() joins class names and lets later classes win.
@@ -29,7 +34,7 @@ export function cx(...parts: Array<string | false | null | undefined>) {
   return cn(parts);
 }
 
-/** An animate-ui icon: animates when its AnimateIcon parent is hovered. */
+/** An animate-ui icon component. It stays still on hover; it animates only when given `animate`. */
 export type AnimatedIcon = ComponentType<{ size?: number; className?: string }>;
 
 type Variant = 'primary' | 'secondary' | 'quiet' | 'danger';
@@ -42,8 +47,8 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 /**
- * Buttons press in slightly when clicked; with `icon` (an animated icon) the icon plays when the button is
- * hovered. Passing icons as children still works for plain lucide icons.
+ * Buttons press in slightly when clicked; on hover only the colours and shadow change. `icon` takes an
+ * animated icon, which stays still. Passing icons as children still works for plain lucide icons.
  */
 export function Button({
   variant = 'secondary',

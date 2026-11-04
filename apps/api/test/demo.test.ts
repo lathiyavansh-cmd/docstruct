@@ -2,6 +2,11 @@
  * What this file does
  *   Tests the demo data: all ten demo accounts, the second project and the demo-accounts endpoint.
  *
+ * Why it exists
+ *   The live site's login page promises these accounts, and with SEED_DEMO=true server.ts runs the seed on every
+ *   start. These tests catch a seed that breaks a promised login, duplicates data on a restart, or shows the
+ *   account list outside demo mode.
+ *
  * How it works
  *   - Boots the whole API on an in-memory database with createTestEnv() and runs seedDemoData() on it.
  *   - Logs in as several demo users with the shared demo password and checks what each one sees.

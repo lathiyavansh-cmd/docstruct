@@ -3,6 +3,11 @@
  *   Reads a project's activity log so it can be shown to members. It only reads; entries are
  *   written elsewhere by recordActivity() in lib/activity.ts.
  *
+ * Why it exists
+ *   Many modules write activity entries, but they are read in two places (the activity endpoint and the
+ *   dashboard's recent list); one reader keeps the keyset paging, the 200-row cap and the "Former member"
+ *   fallback the same in both.
+ *
  * How it works
  *   - ActivityService.list() selects log rows for one project, newest first, a page at a time.
  *   - It joins profiles to show who did each action.

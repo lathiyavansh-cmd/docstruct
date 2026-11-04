@@ -3,6 +3,10 @@
  * What this file does
  *   Runs the API server and the web client at the same time with one command (details below).
  *
+ * Why it exists
+ *   The API and the web client are separate workspaces with their own dev servers. Without this script each
+ *   developer would need two terminals and would have to keep the two ports in step by hand.
+ *
  * How it works
  *   - arg() reads optional --api-port and --web-port flags.
  *   - Spawns `npm run dev` for both workspaces and tells each one the other's port.

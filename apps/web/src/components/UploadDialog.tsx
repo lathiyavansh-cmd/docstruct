@@ -3,6 +3,10 @@
  *   The upload pop-up. It is used both to add a new document to a project and to add a new version
  *   to an existing document.
  *
+ * Why it exists
+ *   New documents and new versions use the same two-step upload, so one dialog handles both instead of two
+ *   copies drifting apart. Checking the file first spares users a long upload the server would refuse.
+ *
  * How it works
  *   - "mode" prop: { kind: 'document' } for a new document, { kind: 'version', documentId, title } for a new version.
  *   - The file can be dropped on the box or picked with a hidden <input type="file">. validateFile() from lib/upload.ts

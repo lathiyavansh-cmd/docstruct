@@ -2,6 +2,11 @@
  * What this file does
  *   Holds all account logic: creating users, logging in, checking sessions, logging out, profiles and passwords.
  *
+ * Why it exists
+ *   Sign-in is built in-house (no hosted auth service), so session expiry, idle timeout, the lockout after
+ *   repeated failed logins and revoking sessions after a password change all have to be enforced here. Both
+ *   the routes and the requireAuth middleware use it, so every request is checked by the same rules.
+ *
  * How it works
  *   - signUp() and login() check the input against the database and then call createSession() to issue a token.
  *   - authenticate() turns a bearer token back into a user and enforces session expiry rules.

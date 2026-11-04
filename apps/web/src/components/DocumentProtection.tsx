@@ -3,6 +3,11 @@
  *   The screens for password-protected documents: the password form shown instead of a locked document,
  *   and the dialogs to protect a document, change or remove its password, or reset a forgotten one.
  *
+ * Why it exists
+ *   Some documents need a lock beyond project roles, so that even members must know a password to open
+ *   them. Keeping these screens apart from DocumentPage puts all password handling (never stored, never
+ *   shown again) in one place.
+ *
  * How it works
  *   - UnlockPanel posts the password to POST /documents/:id/unlock; on success the document stays open for
  *     this login for 12 hours, and onUnlocked() reloads the page data.

@@ -3,6 +3,10 @@
  *   Holds the shared SQL pieces and row converters for documents and versions, so every module reads
  *   a document the same way.
  *
+ * Why it exists
+ *   Many modules list documents; without one shared SELECT and converter they would drift apart, and the same
+ *   document could show a different current version or open review on different pages.
+ *
  * How it works
  *   - VERSION_COLUMNS and VERSION_JOINS select one version with its uploader's name.
  *   - documentSelect() / DOCUMENT_SELECT select a document with its current version and any open review.
@@ -10,8 +14,9 @@
  *   - findDocument() loads one non-deleted document by id.
  *
  * Where it fits
- *   Used by documents/service.ts, versions/service.ts, dashboard/service.ts, search/service.ts and
- *   reviews/routes.ts. Module: M03 Document & Folder Management (owner: Shrut).
+ *   Used by documents/service.ts, versions/service.ts, dashboard/service.ts, search/service.ts,
+ *   recipients/service.ts, templates/service.ts and reviews/routes.ts.
+ *   Module: M03 Document & Folder Management (owner: Shrut).
  */
 import type { DocumentDto, DocumentStatus, ExtractionStatus, VersionDto } from '@docstruct/shared';
 import type { Queryable } from '../../db/database.js';

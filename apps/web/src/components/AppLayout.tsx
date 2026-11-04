@@ -3,6 +3,10 @@
  *   The frame around every logged-in page: the left sidebar (logo, search, main links, your projects,
  *   user box) on desktop, a top bar with a slide-in menu on phones, and the Ctrl+K command palette.
  *
+ * Why it exists
+ *   Every logged-in page needs the same navigation, review and reminder counts and log out. Drawing them
+ *   once here means pages only draw their own content, and the badges stay current on every page.
+ *
  * How it works
  *   - Loads the project list (query key ['projects'], GET /projects) for the sidebar and the palette.
  *   - Loads the review queue (query key ['review-queue'], GET /reviews/queue) to show a count badge on "Review queue",

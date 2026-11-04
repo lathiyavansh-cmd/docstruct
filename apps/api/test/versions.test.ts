@@ -3,6 +3,11 @@
  *   Tests version control: adding versions, numbering under concurrent uploads, downloading old versions,
  *   restoring, role checks, status reset after approval, and activity logging.
  *
+ * Why it exists
+ *   Versions are the record of what was reviewed, so none may be lost or rewritten. These tests cover numbering
+ *   under concurrent uploads (PE-8), restoring by adding a new version instead of editing history, and an
+ *   approved document going back to Draft when its content changes.
+ *
  * How it works
  *   - createTestEnv() from helpers.ts boots the whole API on an in-memory PGlite database.
  *   - beforeAll signs up an owner, editor, reviewer and viewer and puts them in one project.

@@ -2,6 +2,11 @@
  * What this file does
  *   Checks the first bytes of an uploaded file to confirm it really is the type its name says.
  *
+ * Why it exists
+ *   The browser uploads straight to storage, so the file name and type it reports cannot be trusted. Checking
+ *   the bytes on the server stops a renamed or corrupted file becoming a version that later fails in preview
+ *   or text extraction (Robustness-4).
+ *
  * How it works
  *   - contentMatchesFormat() looks for each format's "magic bytes" (a fixed signature at the start).
  *   - isText() treats a file as text if it has no zero bytes and decodes as valid UTF-8.
