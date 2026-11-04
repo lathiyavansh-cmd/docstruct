@@ -1,17 +1,24 @@
 """
-Text extraction from PDF files, written against the PDF 1.7 specification (ISO 32000-1) using only the
-Python standard library.
+What this file does
+    Text extraction from PDF files, written against the PDF 1.7 specification (ISO 32000-1) using only the
+    Python standard library.
 
-Pipeline:
-  1. index every indirect object, including objects packed inside compressed object streams (/ObjStm);
-  2. walk the page tree from the document catalogue in reading order;
-  3. decode each page's content streams (FlateDecode, ASCIIHexDecode, ASCII85Decode, LZWDecode);
-  4. interpret the text operators (BT/ET, Tf, Td, TD, Tm, T*, Tj, TJ, ', ") while tracking the text position;
-  5. map character codes to Unicode through the font's /ToUnicode CMap, or its /Encoding and /Differences;
-  6. rebuild lines from baselines and paragraphs from the vertical gaps between lines.
+Why it exists
+    A PDF stores text as positioned glyphs in compressed streams, not as paragraphs, and no third-party parser
+    may be used, so DocStruct needs its own reader to turn uploaded PDFs into text it can search and compare.
 
-Scanned PDFs (images without a text layer) yield no text; the caller reports extraction as failed, which is
-what the SRS requires (Version.Text.Failure).
+How it works
+    Pipeline:
+      1. index every indirect object, including objects packed inside compressed object streams (/ObjStm);
+      2. walk the page tree from the document catalogue in reading order;
+      3. decode each page's content streams (FlateDecode, ASCIIHexDecode, ASCII85Decode, LZWDecode);
+      4. interpret the text operators (BT/ET, Tf, Td, TD, Tm, T*, Tj, TJ, ', ") while tracking the text
+         position;
+      5. map character codes to Unicode through the font's /ToUnicode CMap, or its /Encoding and /Differences;
+      6. rebuild lines from baselines and paragraphs from the vertical gaps between lines.
+
+    Scanned PDFs (images without a text layer) yield no text; the caller reports extraction as failed, which
+    is what the SRS requires (Version.Text.Failure).
 
 Where it fits
     Registered in docstruct_extractor/__init__.py for application/pdf; extract_pdf_text() at the bottom is

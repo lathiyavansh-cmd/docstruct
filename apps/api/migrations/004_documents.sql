@@ -1,6 +1,11 @@
 -- What this file does
 --   Creates the tables for folders, documents, document versions and upload tickets.
 --
+-- Why it exists
+--   A new upload must never overwrite an earlier one, so the document (identity and status) and its versions
+--   (unchangeable content) are separate tables. Upload tickets stop a user from turning a file someone else
+--   uploaded into a version.
+--
 -- How it works
 --   - folders form a tree inside a project through parent_id.
 --   - documents hold title, status and a pointer to the current version; deletes are soft.

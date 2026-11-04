@@ -3,6 +3,11 @@
  *   Tests background text extraction from uploaded files: Markdown text is extracted, images are
  *   marked unsupported, a failed extraction keeps the version, and PDFs work through the Python service.
  *
+ * Why it exists
+ *   Search, comparison and summaries all read extracted_text, and extraction runs in the background where errors
+ *   are easy to miss. These tests prove a failed or unsupported extraction never loses the uploaded version
+ *   (Version.Text.Failure) and that the API really gets PDF text from the Python extractor.
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database, and creates one project.

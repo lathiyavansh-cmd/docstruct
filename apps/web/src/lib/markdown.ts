@@ -2,6 +2,11 @@
  * What this file does
  *   Turns the text of an uploaded .md file into safe HTML so it can be shown as a formatted preview.
  *
+ * Why it exists
+ *   Users upload .md files and expect to read them formatted, but uploaded content is untrusted. A small
+ *   renderer that escapes first and writes only its own tags means a file cannot inject script or
+ *   javascript: links into the page.
+ *
  * How it works
  *   - renderMarkdown() walks the file line by line. Each loop step spots one block (code fence, heading,
  *     rule, quote, list or paragraph), turns it into an HTML string and moves the line index forward.

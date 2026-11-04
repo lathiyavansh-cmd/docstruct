@@ -1,8 +1,13 @@
-"""Unit tests for the DocStruct text extractor.
-
+"""
 What this file does
+    Unit tests for the DocStruct text extractor.
     Checks that plain text, Markdown, DOCX and PDF files come out as the expected paragraphs, that bad
     input is reported as a failure, and that extract.py prints the agreed JSON.
+
+Why it exists
+    The extractor is a hand-written parser for complex formats with no third-party library behind it, so these
+    tests are what shows it reads real file structures correctly. The CLI tests also guard the JSON contract:
+    if it changed, the API could not parse the answer and would record every extraction as failed.
 
 How it works
     - Uses Python's built-in unittest; test inputs are generated in memory by fixtures.py.

@@ -3,6 +3,11 @@
  *   Shows one version of a document inside the page, picking the right viewer for the file type.
  *   It also exports downloadVersion() for the Download buttons.
  *
+ * Why it exists
+ *   Documents can be PDF, images, text, Markdown or DOCX, and each needs a different viewer; choosing here
+ *   keeps that logic out of the pages. Files are only reachable through short-lived signed links (SE-13),
+ *   so this file also owns fetching them, and downloadVersion() gives every Download button the same flow.
+ *
  * How it works
  *   - Loads a short-lived file link: query key ['preview-link', versionId], GET /versions/:id/preview.
  *   - PDF goes to PdfViewer (with comment pins), images go to an <img>, text and Markdown go to TextPreview.
@@ -12,7 +17,7 @@
  *   - downloadVersion() asks GET /versions/:id/download for a link and sends the browser to it.
  *
  * Where it fits
- *   Used by DocumentPage and VersionHistory (which also uses downloadVersion). Module: M03 documents (owner: Shrut).
+ *   Used by DocumentPage; VersionHistory imports only downloadVersion. Module: M03 documents (owner: Shrut).
  */
 import { useQuery } from '@tanstack/react-query';
 import type { AnnotationDto, FileLinkDto, RegionDto } from '@docstruct/shared';

@@ -3,6 +3,11 @@
  *   The comments panel beside a document. It lists comment threads for the version on screen and lets
  *   users add, reply to and resolve comments.
  *
+ * Why it exists
+ *   Reviewers need to point at a specific part of a version and discuss it in threads that can be closed
+ *   once dealt with, instead of describing places in a general review note. The threads shown are those
+ *   of the version on screen, so remarks on old text do not appear against a newer upload.
+ *
  * How it works
  *   - The threads come in as a prop; DocumentPage loads them (query key ['annotations', versionId],
  *     GET /versions/:id/annotations). The can* props come from the user's role and hide buttons.

@@ -1,4 +1,11 @@
-"""Plain text and Markdown: decode, normalise line endings, keep the author's paragraph breaks.
+"""
+What this file does
+    Plain text and Markdown: decode, normalise line endings, keep the author's paragraph breaks.
+
+Why it exists
+    Text uploads arrive in whatever encoding and line endings the author's editor used. Without this, a UTF-16
+    or Windows-1252 file would fail to decode, and Windows line endings would hide the blank lines that mark
+    paragraphs for search and comparison.
 
 How it works
     - Tries UTF-8 first (with or without a byte-order mark), then UTF-16 if the file starts with a UTF-16 mark.

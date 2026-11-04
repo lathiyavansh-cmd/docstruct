@@ -1,6 +1,10 @@
 -- What this file does
 --   Adds database indexes that make document search and status filters fast. No new tables.
 --
+-- Why it exists
+--   Without these indexes every search would scan every title and every extracted text, so search would slow
+--   down as documents are added (Scalability-3).
+--
 -- How it works
 --   - A trigram GIN index on lower(title) for title matching.
 --   - A full-text GIN index on the extracted text of each version.

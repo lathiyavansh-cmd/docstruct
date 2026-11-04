@@ -2,6 +2,10 @@
  * What this file does
  *   This is the page for one document. It shows the file preview and summary on the left, and a side panel with tabs for Review, Comments, Versions and Sharing. From here the user can upload a new version, download, edit details, move, archive or delete the document.
  *
+ * Why it exists
+ *   Every task on one document (review, comments, versions, sharing, file actions) needs a single home. Keeping
+ *   them as tabs on one page, shown by role, means members never hunt across screens for a document's state.
+ *
  * How it works
  *   - useQuery ['document', id] loads GET /documents/:id; useProject loads the project (GET /projects/:projectId) so useCan knows the user's role.
  *   - useQuery ['versions', id] loads GET /documents/:id/versions; useQuery ['annotations', versionId] loads GET /versions/:versionId/annotations (comments for the version on screen).

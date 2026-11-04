@@ -1,13 +1,19 @@
 """
-Command-line entry point used by the DocStruct API after a version is uploaded.
+What this file does
+    Command-line entry point used by the DocStruct API after a version is uploaded.
 
-    python -I extract.py <file-path> <mime-type>
+        python -I extract.py <file-path> <mime-type>
 
-Prints one JSON object to stdout:
-    {"ok": true,  "text": "...", "chars": 1234}
-    {"ok": false, "error": "reason"}
-and always exits with status 0 unless the arguments are wrong, so the API can tell a failed extraction
-(which it records as FAILED) from a broken invocation.
+    Prints one JSON object to stdout:
+        {"ok": true,  "text": "...", "chars": 1234}
+        {"ok": false, "error": "reason"}
+    and always exits with status 0 unless the arguments are wrong, so the API can tell a failed extraction
+    (which it records as FAILED) from a broken invocation.
+
+Why it exists
+    The API runs on Node and the extractor is Python, so they need a small fixed contract: one process per file,
+    one JSON answer. A separate process also means a crash or hang on a malformed file cannot take down the
+    API, which stops the process after a timeout.
 
 How it works
     - Reads the whole file as bytes and passes it, with the MIME type, to docstruct_extractor.extract().

@@ -3,6 +3,11 @@
  *   The Share tab of a document. It lets an owner make public read-only links for people without an
  *   account, see the existing links and revoke them.
  *
+ * Why it exists
+ *   People outside the project sometimes need to read a document without an account; revocable links with an
+ *   optional expiry give that access without making them members. The server returns the full link only
+ *   once, so the panel must show it straight after creation.
+ *
  * How it works
  *   - Loads the links: query key ['shares', documentId], GET /documents/:id/shares.
  *   - Creating a link: useMutation POST /documents/:id/shares with a label and an optional expiry date.

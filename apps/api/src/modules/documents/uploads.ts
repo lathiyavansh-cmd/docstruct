@@ -3,6 +3,11 @@
  *   Runs the two-step file upload. It first hands out a short-lived signed upload URL, then checks the
  *   stored file when the document or version is created.
  *
+ * Why it exists
+ *   Files go straight from the browser to the object store (CI-4), so the API never sees the bytes on the way
+ *   in. The ticket is how it later proves the file was meant for this project and user, is used only once and
+ *   matches its format. New documents and new versions share it, so both follow the same checks.
+ *
  * How it works
  *   - issue() checks the file type and size, saves an upload ticket row and returns a signed PUT URL.
  *   - consume() marks the ticket as used (once only, not expired), checks the file exists, checks its

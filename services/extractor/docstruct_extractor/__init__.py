@@ -1,9 +1,13 @@
 """
-DocStruct text extraction utility (SRS SI-5, Version.Text.Extract).
+What this file does
+    DocStruct text extraction utility (SRS SI-5, Version.Text.Extract).
+    Turns an uploaded PDF, DOCX, TXT or Markdown file into plain text with paragraphs separated by blank lines.
+    The text feeds content search (Search.Content) and paragraph-level version comparison (Diff.Compare).
 
-Turns an uploaded PDF, DOCX, TXT or Markdown file into plain text with paragraphs separated by blank lines.
-The text feeds content search (Search.Content) and paragraph-level version comparison (Diff.Compare).
-Everything here is implemented with the Python standard library only.
+Why it exists
+    PDF and DOCX keep their text inside compressed, structured files, and the project allows no external APIs,
+    so DocStruct reads them itself. Everything here is implemented with the Python standard library only.
+    This file gives extract.py and the tests one function and one error type for every format.
 
 How it works
     - EXTRACTORS maps each MIME type to the function that reads that format (pdf.py, docx.py, text.py).

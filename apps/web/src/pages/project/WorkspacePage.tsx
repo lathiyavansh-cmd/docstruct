@@ -2,6 +2,10 @@
  * What this file does
  *   This is the Documents tab of a project. The left side shows the folder tree; the right side lists the documents in the chosen folder, with a search box, filters and an Upload button.
  *
+ * Why it exists
+ *   A project can hold many documents, so members need folders, search and filters to find one and a place to
+ *   upload new ones. Filters in the URL let the Overview tab link straight to a filtered list.
+ *
  * How it works
  *   - useQuery ['folders', projectId] loads the folder tree from GET /projects/:projectId/folders, shown by FolderTree.
  *   - useQuery ['documents', projectId, folderId, filters] loads the list. With no filters it calls GET /projects/:projectId/documents; with a search term or filter it calls GET /projects/:projectId/search.

@@ -3,6 +3,11 @@
  *   Tests search and filters: fuzzy title matching, full-text content search with snippets, ranking,
  *   project scope, and the status, reviewer, folder and date filters on their own and combined.
  *
+ * Why it exists
+ *   Search returns documents from many projects in one list, so its first duty is never to include one from a
+ *   project the user is not in (Search.Scope). The tests also pin typo-tolerant titles, ranking, and filters that
+ *   must narrow the results together rather than replace each other (Filter.Combine).
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database, then creates folders, documents and one review, plus a second project the editor is not in.

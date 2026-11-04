@@ -2,6 +2,10 @@
  * What this file does
  *   Unit tests for validateFile() in upload.ts, run with Vitest.
  *
+ * Why it exists
+ *   validateFile() decides what users may upload before anything is sent; the tests pin down the allowed
+ *   types, the size limit and the empty-file case so a change cannot quietly loosen or break them.
+ *
  * How it works
  *   - Builds fake File objects that only have a name and a size, which is all validateFile() reads.
  *   - Checks that supported types pass (any letter case), other types are refused, and that too-large

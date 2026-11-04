@@ -2,6 +2,10 @@
  * What this file does
  *   Tests sending a document to all project members and the "Shared with me" list.
  *
+ * Why it exists
+ *   One request writes an entry for every member, so these tests make sure nobody is missed, the sender is left
+ *   out, only owners can send, and sending never gets round deletion or password protection.
+ *
  * How it works
  *   - Boots the whole API on an in-memory database with createTestEnv() and sends real HTTP requests.
  *   - Builds a project with an owner and many members to check that one request reaches all of them.

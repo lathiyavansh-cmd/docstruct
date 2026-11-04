@@ -3,6 +3,11 @@
  *   Pulls the plain text out of an uploaded document version and saves it in the database,
  *   so versions can be compared and searched by content.
  *
+ * Why it exists
+ *   Comparison, summaries and content search all need plain text, and the team may not use an outside
+ *   extraction API, so DocStruct pulls the text out itself, once per version, as a background job that never
+ *   blocks the upload.
+ *
  * How it works
  *   - builtin() decodes TXT and Markdown files directly in Node.
  *   - runPython() runs services/extractor/extract.py for other formats and reads its JSON output.

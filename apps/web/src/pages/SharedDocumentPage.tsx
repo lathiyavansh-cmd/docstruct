@@ -2,6 +2,10 @@
  * What this file does
  *   This is the page a person sees when they open a share link (/s/:token). It shows one document version, read-only, with a Download button. No login is needed.
  *
+ * Why it exists
+ *   A share link lets a member send one document to someone with no DocStruct account. That visitor must see the
+ *   file without logging in and must reach nothing else, so the page sits outside the logged-in app.
+ *
  * How it works
  *   - Reads the token from the URL and loads the shared document with useQuery ['shared', token] from GET /public/shares/:token.
  *   - If the document is password protected, the server sends only its title. The page asks for the password and posts it to

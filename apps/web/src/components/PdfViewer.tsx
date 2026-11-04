@@ -3,6 +3,11 @@
  *   Draws a PDF inside the page, one canvas per page, and shows comment boxes on top of the pages.
  *   It also lets the user drag a box on a page to pin a new comment there.
  *
+ * Why it exists
+ *   The browser's own PDF viewer cannot draw DocStruct's comment boxes or let a user drag a pin onto a
+ *   page, so pages are drawn here on canvases with an overlay. Rendering only pages near the screen keeps
+ *   long PDFs from freezing the tab.
+ *
  * How it works
  *   - Uses the pdf.js library. The PDF is opened from a signed URL given as a prop; the API is not called here.
  *   - PdfViewer loads the file once per URL and makes a PdfPage for each page, up to 200 pages.

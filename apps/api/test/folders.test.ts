@@ -3,6 +3,11 @@
  *   Tests folders: the pure tree helpers (building the tree, detecting cycles) and the folder API
  *   (create, case-insensitive duplicate names, permissions, rename, move, delete with confirmation).
  *
+ * Why it exists
+ *   Moving a folder into its own subfolder would create a loop that hides its documents, so the cycle check, and
+ *   the guard that stops tree building looping on an already broken tree, are tested directly, along with the
+ *   naming, permission and confirm-before-delete rules (Folder.Move.Cycle, SA-2, SA-3).
+ *
  * How it works
  *   - The first block calls buildFolderTree() and wouldCreateCycle() from tree.ts directly with small maps.
  *   - The rest use createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite

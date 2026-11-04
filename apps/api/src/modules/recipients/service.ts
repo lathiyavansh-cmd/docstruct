@@ -2,6 +2,11 @@
  * What this file does
  *   Sends a document to every member of its project at once, and gives each member a "Shared with me" list.
  *
+ * Why it exists
+ *   Share links are for people outside the project; members also need to be told about a document and find
+ *   it in one list. One INSERT ... SELECT keeps sending fast for any project size, and resending updates the
+ *   existing entry instead of adding duplicates.
+ *
  * How it works
  *   - shareWithMembers() adds one document_recipients row per member (except the sender) with a single
  *     INSERT ... SELECT, so 100 members or 10,000 take one database statement. Sending again refreshes the

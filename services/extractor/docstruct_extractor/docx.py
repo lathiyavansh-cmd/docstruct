@@ -1,12 +1,17 @@
 """
-Text extraction from Word (.docx) files using only the standard library.
+What this file does
+    Text extraction from Word (.docx) files using only the standard library.
 
-A .docx file is a ZIP package (Office Open XML, ECMA-376). The body text lives in word/document.xml as
-paragraphs (w:p) made of runs (w:r) holding text (w:t), tabs (w:tab) and breaks (w:br). Tables (w:tbl)
-contain rows and cells that themselves contain paragraphs. Each paragraph becomes one block of output,
-separated by a blank line, which is the paragraph boundary the version comparison relies on.
+Why it exists
+    DOCX is an accepted upload format, but its text sits in zipped Word XML and no third-party parser may be
+    used, so it is read by hand here. Without it, Word uploads could not be searched, compared or summarised.
 
 How it works
+    A .docx file is a ZIP package (Office Open XML, ECMA-376). The body text lives in word/document.xml as
+    paragraphs (w:p) made of runs (w:r) holding text (w:t), tabs (w:tab) and breaks (w:br). Tables (w:tbl)
+    contain rows and cells that themselves contain paragraphs. Each paragraph becomes one block of output,
+    separated by a blank line, which is the paragraph boundary the version comparison relies on.
+
     - Opens the bytes as a ZIP file and reads word/document.xml (after a size check).
     - Parses the XML and walks the top-level children of the body: paragraphs, tables and content controls.
     - Each table row becomes one line with its cells joined by " | ".

@@ -3,6 +3,11 @@
  *   Searches and filters documents, then ranks the results by how well they match. All work is done
  *   in one SQL query on PostgreSQL.
  *
+ * Why it exists
+ *   No external search engine is used, so ranking is the team's own formula (Algorithm I) on PostgreSQL's
+ *   trigram and full-text features. Filtering, matching and scoring in one query avoids loading every
+ *   document into the API, and protected documents' text is kept out of matches.
+ *
  * How it works
  *   - search() builds a WHERE list step by step: project scope first, then each filter that was given.
  *   - With a search term, the title is matched with trigram similarity and the extracted text with
