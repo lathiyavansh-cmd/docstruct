@@ -2,6 +2,10 @@
  * What this file does
  *   This is the Activity tab of a project. It shows the full log of important actions (uploads, reviews, comments, member changes and so on), newest first and grouped by day.
  *
+ * Why it exists
+ *   Members need to trace who did what and when (uploads, decisions, role changes) in a project. The Overview
+ *   tab shows only the latest entries; this tab pages back through the whole log.
+ *
  * How it works
  *   - Gets the project from ProjectLayout with useCurrentProject().
  *   - useInfiniteQuery ['activity', projectId] loads the log 50 entries at a time from GET /projects/:projectId/activity?limit=50&before=<logId>.

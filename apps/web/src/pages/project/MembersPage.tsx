@@ -2,6 +2,10 @@
  * What this file does
  *   This is the Members tab of a project. It lists the project's members and their roles. An owner can add a member by email, change roles and remove members.
  *
+ * Why it exists
+ *   Who can see and change a project's documents depends on membership and role, so the owner needs one place
+ *   to grant, change and withdraw access.
+ *
  * How it works
  *   - Gets the project from ProjectLayout with useCurrentProject(), and the member list with useMembers (query key ['members', projectId], GET /projects/:projectId/members).
  *   - Change role: useMutation PATCH /projects/:projectId/members/:userId. Remove: useMutation DELETE on the same path. Add: useMutation POST /projects/:projectId/members.

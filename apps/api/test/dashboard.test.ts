@@ -3,6 +3,11 @@
  *   Tests the project dashboard (status counts, my pending reviews, my documents needing changes,
  *   review progress, open annotations, recent activity) and the activity log (order, paging, filter).
  *
+ * Why it exists
+ *   The dashboard counts rows from several tables, so a query mistake would show members wrong numbers or leak a
+ *   project to outsiders. These tests pin the figures, the instant update after a decision (PE-9) and the
+ *   activity log's order, paging and retention of deleted documents.
+ *
  * How it works
  *   - beforeAll calls createTestEnv() from helpers.ts, which boots the whole API on an in-memory PGlite
  *     database, and creates a project with an owner, editor, reviewer and viewer.

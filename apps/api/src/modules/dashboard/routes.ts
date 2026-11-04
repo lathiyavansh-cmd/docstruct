@@ -2,6 +2,11 @@
  * What this file does
  *   Defines two read-only endpoints for a project: the dashboard summary and the activity log.
  *
+ * Why it exists
+ *   The dashboard and the activity log are both read-only views of one project behind the same membership
+ *   check; keeping them together gives the dashboard page its data in one request, and the paging values are
+ *   validated before they reach SQL.
+ *
  * How it works
  *   - GET /projects/:projectId/dashboard returns everything the dashboard page shows, via DashboardService.
  *   - GET /projects/:projectId/activity returns log entries, with optional paging and document filter.

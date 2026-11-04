@@ -3,6 +3,11 @@
  *   Holds the logic for the review workflow. A document version is sent to one reviewer, who then
  *   approves it or requests changes. The submitter or an owner can cancel the review.
  *
+ * Why it exists
+ *   A document may have only one open review and only the named reviewer may decide it (SE-9), even when two
+ *   people click at the same moment; the row locks (FOR UPDATE) and the unique index guarantee that. Other
+ *   modules need the same guards, so they are exported from here rather than copied.
+ *
  * How it works
  *   - submit() locks the document row, checks the reviewer and the status change, inserts a review
  *     and sets the document to UNDER_REVIEW.

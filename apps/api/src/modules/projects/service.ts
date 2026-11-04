@@ -3,6 +3,11 @@
  *   Holds the business logic and SQL for projects and their members. It creates, reads, renames
  *   and archives projects, and adds, re-roles and removes members.
  *
+ * Why it exists
+ *   A project must never be left without an owner, or nobody could manage its members or archive it. Two
+ *   owners demoting each other at once could cause that, so the last-owner check runs under a project row
+ *   lock. It also limits list() and get() to the caller's memberships, so other projects stay invisible.
+ *
  * How it works
  *   - list() and get() join projects with project_members, so a user only sees projects they belong to.
  *   - create() inserts the project and makes the creator its OWNER in one transaction.

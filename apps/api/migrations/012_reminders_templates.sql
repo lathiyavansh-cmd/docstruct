@@ -2,6 +2,10 @@
 --   Adds review nudges (a reminder sent to a reviewer) and document templates (a checklist of required
 --   section headings that a document can be checked against).
 --
+-- Why it exists
+--   Pending reviews can be forgotten, so submitters need a recorded way to remind the reviewer; and teams need
+--   to check that a document contains every section heading their format requires.
+--
 -- How it works
 --   - reviews gains nudged_at, nudged_by and nudge_count. Only a PENDING review can be nudged, which is
 --     also the only state the guard_review() trigger lets through, so finished reviews stay read-only.

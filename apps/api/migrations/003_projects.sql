@@ -1,6 +1,11 @@
 -- What this file does
 --   Creates the projects and project_members tables, and a rule that keeps at least one owner.
 --
+-- Why it exists
+--   Every permission in DocStruct depends on a user's role in a project, so projects and memberships must exist
+--   before folders, documents and reviews. The last-owner rule stops a project being left with no one to
+--   manage it.
+--
 -- How it works
 --   - projects holds name, description, creator and an archived_at time.
 --   - project_members links users to projects with a role (OWNER, EDITOR, REVIEWER, VIEWER).

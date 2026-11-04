@@ -3,6 +3,11 @@
  *   The Review section of a document page. It shows the open review, lets the assigned reviewer approve
  *   or request changes, lets members send the document for review, and lists past reviews.
  *
+ * Why it exists
+ *   The review workflow (send, approve, request changes, cancel) is the core of DocStruct, and the rules on
+ *   who may act are easy to get wrong in several places; one panel holds all of it. The buttons only follow
+ *   those rules for convenience; the API enforces them.
+ *
  * How it works
  *   - Loads all reviews of the document: query key ['reviews', documentId], GET /documents/:id/reviews.
  *     The one with status PENDING is the open review.

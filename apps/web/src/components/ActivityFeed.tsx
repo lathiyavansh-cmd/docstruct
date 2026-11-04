@@ -3,6 +3,11 @@
  *   Shows entries from a project's activity log as readable lines, such as
  *   "Asha uploaded version 2 of Report.pdf, 3 min ago".
  *
+ * Why it exists
+ *   The activity log stores action codes and raw details, which mean little to members; this turns them
+ *   into the plain "who did what, when" lines the log is for. The dashboard feed and the full Activity
+ *   page share it, so both word every entry the same way.
+ *
  * How it works
  *   - describe() maps each action code (like 'review.approved') to a short sentence.
  *   - kindOf() picks an icon and colour for each kind of action.

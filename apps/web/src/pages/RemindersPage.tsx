@@ -4,6 +4,10 @@
  *   Overdue and soon-due reviews assigned to them, nudges they received, reviews they sent that are
  *   overdue (with a "Remind reviewer" button), and decisions made on their documents this week.
  *
+ * Why it exists
+ *   Deadlines spread over several projects are easy to miss. This screen gathers what needs the user's attention,
+ *   both as reviewer and as submitter, into one urgent-first list so no review waits silently.
+ *
  * How it works
  *   - useQuery ['reminders'] loads GET /me/reminders (the server sorts it, most urgent first).
  *   - Each row explains why it is there and links to the document. The due-date pill turns red when overdue.

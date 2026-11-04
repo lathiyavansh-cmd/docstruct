@@ -3,6 +3,11 @@
  *   Builds the project dashboard: document counts per status, reviews waiting for me, my documents
  *   needing changes, documents under review, open annotation count and recent activity.
  *
+ * Why it exists
+ *   Opening a project should take one request, not seven (PE-6). This service gathers numbers owned by other
+ *   modules and combines them; without it the web client would fetch each list itself and would also have to
+ *   drop review-queue items that belong to other projects.
+ *
  * How it works
  *   - get() runs seven lookups at the same time with Promise.all and waits for all of them.
  *   - Some lookups reuse other services (ProjectService, ReviewService, ActivityService); the rest are SQL.
