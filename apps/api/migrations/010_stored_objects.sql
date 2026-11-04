@@ -1,6 +1,10 @@
 -- What this file does
 --   Creates the stored_objects table, which keeps uploaded file bytes inside the database.
 --
+-- Why it exists
+--   Render's free disk is wiped on every restart, so files saved on disk would vanish. Keeping the bytes in the
+--   Supabase database keeps uploads safe without using an outside file storage service.
+--
 -- How it works
 --   - Used only when STORAGE_DRIVER=database (for example on Render, whose disk is wiped on restart).
 --   - key is the same opaque object key the file system store uses; data holds the file bytes.

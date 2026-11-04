@@ -2,6 +2,10 @@
  * What this file does
  *   Creates the demo accounts, project, folders and documents used for presentations and manual testing.
  *
+ * Why it exists
+ *   Presentations and manual tests need projects with documents in every review state. Building them by hand
+ *   after each fresh database would be slow and never the same twice.
+ *
  * How it works
  *   - seedDemoData() runs two parts, each skipped when its first account already exists, so it is safe to call
  *     twice and it tops up a database seeded by an older version. It then resets every demo password.

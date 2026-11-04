@@ -2,6 +2,11 @@
  * What this file does
  *   The HTTP endpoints for password-protected documents.
  *
+ * Why it exists
+ *   Unlocking, locking and resetting need different roles (any member may unlock with the password, editors
+ *   lock, only owners reset), so each endpoint names its own permission. Keeping them out of
+ *   documents/routes.ts keeps all password handling in one module.
+ *
  * How it works
  *   - POST /documents/:id/unlock           any member, with the password: opens the document for 12 hours.
  *   - POST /documents/:id/protection        editors and owners: lock with a new password.

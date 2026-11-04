@@ -1,4 +1,9 @@
-# Keeps local-only files out of the container build (installed packages, build output, local data and secrets).
+# What this file does
+#   Keeps local-only files out of the container build (installed packages, build output, local data and secrets).
+#
+# Why it exists
+#   Without it, COPY . . in the Dockerfile would copy a local .env and the embedded database into the image,
+#   and a Windows node_modules folder would overwrite the Linux packages that npm ci installed.
 **/node_modules
 **/dist
 **/.data

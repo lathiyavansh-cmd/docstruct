@@ -1,8 +1,19 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
- *   The shared base for every animated icon. AnimateIcon starts an icon's small animation when the user
- *   hovers, taps or scrolls it into view; IconWrapper is what each individual icon file builds on.
+ * What this file does
+ *   The shared base for every animated icon. AnimateIcon runs an icon's small animation when a component
+ *   passes `animate` (or `animateOnTap` / `animateOnView`); IconWrapper is what each individual icon file
+ *   builds on. Hover no longer starts an animation: the mouse-enter handler was emptied on purpose (see
+ *   "DocStruct: icons stay still on hover"), so `animateOnHover` only stops a running animation when the
+ *   pointer leaves.
+ *
+ * Why it exists
+ *   Forty icon files share one set of timing and trigger rules here instead of repeating them, and this is
+ *   the one place where the site-wide "icons stay still on hover" choice is made. The team writes every
+ *   feature itself (the professor's no-external-API rule); this open-source piece only affects looks, so it
+ *   was copied in rather than built from scratch.
+ *
+ * Where it fits
  *   Used by: every icon file in components/animate-ui/icons/, components/icons.ts, components/ui.tsx and
  *   components/unlumen-ui/sidebar-001.tsx. It only affects appearance; no feature logic.
  */

@@ -1,3 +1,6 @@
+// What this file does: TypeScript settings for building packages/shared from src/ into dist/ with .d.ts files.
+// Why it exists: the API and the website both import this package, so it is compiled on its own as an ES module
+//   (NodeNext); the built dist/ and its type declarations are what the API loads in production.
 {
   "compilerOptions": {
     "target": "ES2022",

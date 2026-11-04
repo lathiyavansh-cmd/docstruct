@@ -2,6 +2,10 @@
  * What this file does
  *   Tells TypeScript about the extra fields our middleware adds to Express's Request object.
  *
+ * Why it exists
+ *   Without it every route that reads req.auth or req.membership would need a type cast, and a misspelt field
+ *   name would not be caught at compile time.
+ *
  * How it works
  *   - AuthContext holds the logged-in user and session ids.
  *   - MembershipContext holds the user's role in the current project.

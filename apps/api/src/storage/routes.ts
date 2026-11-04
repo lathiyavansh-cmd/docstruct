@@ -2,6 +2,10 @@
  * What this file does
  *   The HTTP endpoints that signed storage links point to: PUT uploads a file, GET downloads it.
  *
+ * Why it exists
+ *   Signed links are opened directly by the browser (a download link, an upload PUT) without the login token,
+ *   so these routes trust only the signature. They read raw bytes, not JSON, so they sit outside the modules.
+ *
  * How it works
  *   - signedQuery is the Zod schema for the link's query string fields.
  *   - check() validates the query, confirms the operation matches, and verifies the signature and expiry.

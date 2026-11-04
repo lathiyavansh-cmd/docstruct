@@ -3,6 +3,10 @@
  *   Keeps track of who is logged in and shares that with the whole app through React context.
  *   Components call useAuth() to read the user or to sign in and out.
  *
+ * Why it exists
+ *   Many parts of the app need to know who is logged in, and logging out (or an expired session) must also
+ *   clear cached data so the next person on the same browser cannot see the last user's projects.
+ *
  * How it works
  *   - On start, if a token is saved, it calls GET /auth/me to load the profile. A failed call clears the token.
  *   - It listens to onSessionExpired from lib/api.ts. When the server rejects the token it clears the user,

@@ -1,3 +1,7 @@
+// What this file does
+//   Compiler settings for the production build: compiles only src (no test files) into dist.
+// Why it exists
+//   The Docker image runs dist/server.js; this keeps tests out of the build while tsconfig.json still checks them.
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {

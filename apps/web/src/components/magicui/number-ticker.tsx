@@ -1,7 +1,15 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
- *   Shows a number that counts up smoothly to its final value when it scrolls into view (e.g. dashboard counts).
+ * What this file does
+ *   Shows a number that counts up smoothly to its final value when it scrolls into view (e.g. dashboard
+ *   counts).
+ *
+ * Why it exists
+ *   Counts such as the sidebar badges and dashboard totals change as work is done; counting up makes a new
+ *   value noticeable. The team writes every feature itself (the professor's no-external-API rule); this
+ *   open-source piece only affects looks, so it was copied in rather than built from scratch.
+ *
+ * Where it fits
  *   Used by: components/AppLayout.tsx, pages/ComparePage.tsx, pages/ProjectsPage.tsx and
  *   pages/project/DashboardPage.tsx. It only affects appearance; no feature logic.
  */

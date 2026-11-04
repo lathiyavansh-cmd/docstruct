@@ -2,6 +2,10 @@
  * What this file does
  *   The text of the documents created for the second demo project (Campus Canteen App).
  *
+ * Why it exists
+ *   The comparison and summary features only show what they do on documents with realistic changes. Keeping
+ *   these long texts in their own file keeps demo-data.ts readable.
+ *
  * How it works
  *   - CANTEEN_SRS holds four versions of one requirements document. Each upload changes something the
  *     comparison engine flags: changed figures, a TBD, a weakened requirement, a reversed meaning, a missing

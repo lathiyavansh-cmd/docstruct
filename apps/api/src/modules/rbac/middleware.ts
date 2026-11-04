@@ -2,6 +2,11 @@
  * What this file does
  *   Decides whether the logged-in user may perform an action inside a project, based on their project role.
  *
+ * Why it exists
+ *   Permissions are enforced on the server on every request, not by hiding buttons in the browser. Finding
+ *   the project from whatever id is in the URL means guessing another project's id gives 404 (SE-6), and one
+ *   authorize() keeps the 404, 403 and 409 rules the same in every module.
+ *
  * How it works
  *   - Resolver helpers (byProject, byDocument, byVersion, ...) find which project a URL id belongs to.
  *   - loadMembership() reads the user's role in that project from project_members.

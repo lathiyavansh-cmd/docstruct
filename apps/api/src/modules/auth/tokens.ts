@@ -2,6 +2,10 @@
  * What this file does
  *   Creates random tokens and hashes them. Used for login sessions and password reset links.
  *
+ * Why it exists
+ *   Sessions and reset links both need unguessable tokens that are useless if the database leaks; one tiny
+ *   file keeps both on the same generation and hashing rules.
+ *
  * How it works
  *   - newToken() makes 32 random bytes and encodes them as URL-safe text.
  *   - hashToken() turns a token into its SHA-256 hex digest, which is what the database stores.

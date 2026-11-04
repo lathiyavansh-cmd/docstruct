@@ -2,6 +2,11 @@
 --   First migration. Creates the profiles and activity_log tables and two helper
 --   functions that later migrations reuse.
 --
+-- Why it exists
+--   Every later table calls lock_down(), and the append-only tables reuse forbid_mutation(), so these must exist
+--   first. profiles is the user table that almost every other table points to, and the activity log must be
+--   impossible to edit (Log.Immutable, CO-7).
+--
 -- How it works
 --   - Enables the pg_trgm extension (used later for the title search index).
 --   - forbid_mutation() is a trigger function that blocks UPDATE and DELETE.

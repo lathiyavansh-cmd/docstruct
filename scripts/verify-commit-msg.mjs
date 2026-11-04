@@ -4,6 +4,10 @@
  *   Checks that commit messages follow the team's format, like "feat(auth): add login".
  *   Usage is described in the comment below.
  *
+ * Why it exists
+ *   The same commit rules are checked in three places (the local hook, CI and a manual check), so they live in
+ *   one script instead of three copies that could drift apart.
+ *
  * How it works
  *   - TYPES and SCOPES list the allowed words before and inside the brackets.
  *   - HEADER is a regex that splits the first line into type, scope, "!" and subject.

@@ -134,7 +134,7 @@ Log in as **arjun@docstruct.test** (no projects).
 - **What happens to old versions?** Kept forever, read-only; any two can be compared; any can be restored
   as a new version.
 - **Can two people review at once?** One open review per document, enforced by a database index.
-- **How is it tested?** 171 server tests and 7 browser tests run on every change; the CI also checks commit
+- **How is it tested?** 181 automated tests (154 for the server, 20 for the Python text extractor, 7 for the browser) run on every change; the CI also checks commit
   messages.
 - **Where is it hosted?** One Docker container on Render; PostgreSQL on Supabase; uploaded files are stored
   in the database so a restart loses nothing.

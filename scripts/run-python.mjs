@@ -3,6 +3,10 @@
  * What this file does
  *   Finds a working Python 3.9+ on this machine and runs it with the given arguments (see below).
  *
+ * Why it exists
+ *   The Python command differs between machines (`py -3` on Windows, python3 or python elsewhere), so one fixed
+ *   command in package.json would fail for part of the team.
+ *
  * How it works
  *   - candidates lists the commands to try, in order.
  *   - findPython() runs a tiny version check with each one and returns the first that passes.

@@ -2,6 +2,11 @@
  * What this file does
  *   Hashes passwords before they are stored, and checks a typed password against a stored hash.
  *
+ * Why it exists
+ *   The no-external-APIs rule means sign-in cannot use a hosted identity service, so password storage is the
+ *   team's own code. Keeping scrypt, the salt format and the constant-time compare in one file lets document
+ *   passwords (protection/service.ts) and the demo seed reuse exactly the same hashing.
+ *
  * How it works
  *   - hashPassword() makes a random salt and runs scrypt to produce the stored string.
  *   - verifyPassword() splits the stored string, re-runs scrypt with the same salt and compares the results.

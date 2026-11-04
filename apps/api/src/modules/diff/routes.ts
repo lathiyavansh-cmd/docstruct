@@ -3,6 +3,11 @@
  *   Defines the two HTTP endpoints for version comparison: compare any two versions of a document, and get
  *   the pre-review (change summary and findings) for a review.
  *
+ * Why it exists
+ *   A comparison shows the text of both versions, so these endpoints put sign-in, the diff.read role check
+ *   and the document-password check in front of DiffService. The pre-review route finds the project through
+ *   the review, so a non-member gets 404 rather than a hint that the review exists.
+ *
  * How it works
  *   - Both routes run requireAuth and then authorize(ctx, 'diff.read', ...) to check project membership.
  *   - The compare route validates the "from" and "to" query values as UUIDs, then calls DiffService.compare().

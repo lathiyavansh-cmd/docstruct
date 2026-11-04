@@ -3,6 +3,10 @@
  *   The "Use a demo account" strip under the login card: open it, click a person, and their email and
  *   password are filled in.
  *
+ * Why it exists
+ *   People trying the live demo need to log in as the seeded users, with their different roles, without signing
+ *   up or knowing the passwords. Asking the server keeps the strip hidden on a real installation.
+ *
  * How it works
  *   - useQuery ['demo-accounts'] loads GET /demo-accounts. The server answers only in demo mode, so on a
  *     real installation the request fails quietly and nothing is shown.

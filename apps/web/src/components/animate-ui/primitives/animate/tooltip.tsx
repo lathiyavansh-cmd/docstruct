@@ -1,9 +1,19 @@
 // Source: animate-ui (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   The unstyled tooltip engine: it places one floating label next to the hovered element (using
- *   @floating-ui) and slides that same label smoothly from one trigger to the next, with open and close delays.
- *   Used by: components/animate-ui/components/animate/tooltip.tsx. It only affects appearance; no feature logic.
+ *   @floating-ui) and slides that same label smoothly from one trigger to the next, with open and close
+ *   delays.
+ *
+ * Why it exists
+ *   Positioning a label so it stays on screen and moving one shared label between neighbouring buttons is
+ *   fiddly; keeping that logic here lets the styled tooltip stay a thin wrapper. The team writes every
+ *   feature itself (the professor's no-external-API rule); this open-source piece only affects looks, so it
+ *   was copied in rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: components/animate-ui/components/animate/tooltip.tsx. It only affects appearance; no feature
+ *   logic.
  */
 import * as React from 'react';
 import {

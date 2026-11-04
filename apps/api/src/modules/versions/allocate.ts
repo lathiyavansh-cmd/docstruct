@@ -2,6 +2,11 @@
  * What this file does
  *   Picks the next version number (1, 2, 3, ...) for a document, safely even when two uploads happen at once.
  *
+ * Why it exists
+ *   Two uploads to one document at the same moment could both read the same highest number and claim it;
+ *   the lock makes one wait, so numbers never repeat (Version.Number.Concurrent). Upload and restore both
+ *   need it, so it is its own file.
+ *
  * How it works
  *   - Takes a PostgreSQL advisory lock for this document id, inside the caller's transaction.
  *   - Reads the highest existing version_no and adds 1.

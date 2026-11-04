@@ -3,6 +3,10 @@
  *   Tests the database file store (STORAGE_DRIVER=database), which the deployed site uses because Render's
  *   free disk is wiped on every restart.
  *
+ * Why it exists
+ *   The deployed site depends on this store, but the other tests use the temporary-folder store, so without this
+ *   file a broken database store would only show up after deploying.
+ *
  * How it works
  *   - Boots the whole API with createTestEnv({ storageDriver: 'database' }) on an in-memory database.
  *   - Uploads a document, then checks that its bytes are in stored_objects, that download returns the same

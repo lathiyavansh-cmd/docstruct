@@ -2,6 +2,11 @@
  * What this file does
  *   Text helpers for picking out important words and sentences, used by the pre-review and the summary.
  *
+ * Why it exists
+ *   Both the pre-review summary and the document summariser rank words and sentences, and no external NLP
+ *   library or service is used; sharing one file means both features tokenise, drop stop words and split
+ *   sentences in the same way.
+ *
  * How it works
  *   - terms() lists the meaningful words of a text; idfTable() and salience() score them with TF-IDF.
  *   - sentences() splits a paragraph into sentences; keySentence() picks the highest scoring one.

@@ -3,6 +3,10 @@
  *   The Versions tab of a document. It lists every version, newest first, and lets the user view,
  *   download, compare or restore an older version.
  *
+ * Why it exists
+ *   Users must be able to go back to, compare and download any earlier version (Version.Download.Previous).
+ *   Restore makes a new version instead of editing history, so the record of what was reviewed stays intact.
+ *
  * How it works
  *   - The versions come in as a prop; DocumentPage loads them (query key ['versions', documentId],
  *     GET /documents/:id/versions). canRestore comes from the user's role and the document status.
@@ -26,7 +30,7 @@ import { AnimateIcon, DownloadIcon, ExternalLinkIcon, LayersIcon, RotateCcwIcon 
 import { useToast } from './toast';
 import { ConfirmDialog, ErrorNote, cx, type AnimatedIcon } from './ui';
 
-/** A small action pill whose icon plays when hovered. */
+/** A small action pill with an icon; on hover only its colours change. */
 function VersionAction({ icon: Icon, children, onClick, to }: { icon: AnimatedIcon; children: string; onClick?: () => void; to?: string }) {
   const cls =
     'inline-flex items-center gap-1 rounded-full border border-rule bg-surface px-2 py-0.5 text-[12.5px] text-ink-soft transition-colors hover:border-primary/40 hover:bg-primary-wash hover:text-primary';

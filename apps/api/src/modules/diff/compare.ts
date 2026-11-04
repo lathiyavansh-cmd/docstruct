@@ -3,6 +3,11 @@
  *   Compares the text of two document versions paragraph by paragraph and lists what was added, deleted or
  *   modified. It also marks each change as substantive or only cosmetic, and finds the section it is in.
  *
+ * Why it exists
+ *   Reviewers need to see what changed between two uploads, and the no-external-APIs rule rules out a hosted
+ *   diff service. Comparing paragraphs rather than lines stops a reflowed paragraph showing as a change to
+ *   every line, and the cosmetic label keeps whitespace-only edits out of the findings and the summary.
+ *
  * How it works
  *   - segmentParagraphs() splits text on blank lines; normalise() makes a case and spacing free form.
  *   - compareVersions() runs SequenceMatcher over the paragraph lists and pairs replaced paragraphs by similarity.

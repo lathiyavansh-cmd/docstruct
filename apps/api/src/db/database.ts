@@ -3,6 +3,10 @@
  *   Gives the rest of the API one simple database interface that works with either an
  *   embedded database (PGlite) or a real PostgreSQL server. See the interface comment below.
  *
+ * Why it exists
+ *   Local development and tests use embedded PGlite, so no PostgreSQL install is needed, while Render uses
+ *   Supabase PostgreSQL. This layer lets the same module code and SQL run on both.
+ *
  * How it works
  *   - EmbeddedDatabase wraps PGlite, a PostgreSQL engine that runs inside Node.
  *   - PostgresDatabase wraps a pg connection pool and runs transactions with BEGIN/COMMIT/ROLLBACK.

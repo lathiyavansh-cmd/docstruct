@@ -3,6 +3,11 @@
  *   Tests password-protected documents end to end: locking, the 423 answer on every content route,
  *   unlocking per login session, changing, removing and resetting the password, search and public links.
  *
+ * Why it exists
+ *   A protected document must stay closed on every route that can reveal its content, even for its owner, in
+ *   search and on public links; one missed route would leak it. The tests also prove only a hash of the password
+ *   is stored and that guessing is stopped after five tries.
+ *
  * How it works
  *   - Boots the whole API on an in-memory database with createTestEnv() and sends real HTTP requests.
  *   - Uses an owner, an editor, a viewer and an outsider in one project, so role rules are checked too.

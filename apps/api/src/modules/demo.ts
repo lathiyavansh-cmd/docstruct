@@ -2,10 +2,16 @@
  * What this file does
  *   The public endpoint that lists the demo accounts, so the login page can offer them with one click.
  *
+ * Why it exists
+ *   Testers of the live demo need to sign in without asking anyone for credentials, but a real installation
+ *   must never reveal passwords. A separate router that answers 404 outside demo mode keeps that switch in
+ *   one place.
+ *
  * How it works
  *   - GET /demo-accounts answers only in demo mode (SEED_DEMO=true, or local development). Anywhere else it
  *     answers 404, so a real installation never shows sign-in details.
- *   - It returns the shared demo password, each account's name, email and role, and a hint of what to try.
+ *   - It returns the shared demo password, the password of the protected demo contract, and each account's
+ *     name, email and role with a hint of what to try.
  *
  * Where it fits
  *   Registered in modules/index.ts. The accounts are created by db/demo-data.ts; the list is shown by

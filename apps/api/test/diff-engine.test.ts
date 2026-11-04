@@ -3,6 +3,11 @@
  *   Unit tests for the comparison algorithms: SequenceMatcher, paragraph comparison and classification,
  *   word-level diff, the pre-review rules and the change summary.
  *
+ * Why it exists
+ *   The comparison algorithms were designed against Python's difflib (Algorithm F), and the TypeScript port must
+ *   give the same answers. Calling the functions on small texts pins each rule exactly, which a test through
+ *   uploads and extraction could not do.
+ *
  * How it works
  *   - It does not start the API; it calls the functions in modules/diff directly with small text samples.
  *   - SequenceMatcher results are checked against values produced by Python's difflib on the same input.

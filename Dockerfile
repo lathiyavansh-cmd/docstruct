@@ -1,6 +1,10 @@
 # What this file does
 #   Builds the single container that runs DocStruct in production (used by Render, see render.yaml).
 #
+# Why it exists
+#   DocStruct is deployed as a single service on Render, so the API, the built website and Python for the text
+#   extractor must ship together in one image, built the same way on every push.
+#
 # How it works
 #   - Build stage: installs every package, builds the shared package, the API and the website,
 #     then removes development-only packages.

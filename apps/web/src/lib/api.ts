@@ -3,6 +3,11 @@
  *   The single place where the web app talks to the DocStruct server. Every request goes through
  *   api(), which adds the login token and turns server errors into readable ApiError objects.
  *
+ * Why it exists
+ *   Handling the token, error shape and session expiry in one function means no page can forget the auth
+ *   header or show a raw server error (Usability-4). Only a 401 counts as a lost session: the server answers
+ *   a locked document with 423 and a wrong document password with 403, so a password prompt never logs out.
+ *
  * How it works
  *   - The session token is kept in a module variable and copied to localStorage under 'docstruct.session',
  *     so a page refresh keeps the user logged in.

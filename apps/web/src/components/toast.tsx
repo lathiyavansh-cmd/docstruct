@@ -3,6 +3,10 @@
  *   Small pop-up messages ("toasts") in the bottom-right corner, such as "Comment added" or an error.
  *   Any component can show one by calling the function from useToast().
  *
+ * Why it exists
+ *   Every action needs a visible confirmation or error (UI-12) that does not block the page; one shared
+ *   provider gives every component the same look and timing instead of each inventing its own.
+ *
  * How it works
  *   - ToastProvider keeps a list of open toasts in state and shares a push(text, kind) function through React context.
  *   - push() adds a toast with a unique id and sets a timer to remove it: 3.5 s for 'ok', 7 s for 'error'.

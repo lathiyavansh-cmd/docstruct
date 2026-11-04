@@ -3,6 +3,11 @@
  *   Keeps the fixed limits and the list of accepted file formats in one place,
  *   so the server and the website always agree on them.
  *
+ * Why it exists
+ *   The SRS fixes these limits and formats (CO-8, Doc.Upload.Format), and both sides check them: the browser for
+ *   quick feedback, the server for real. One shared copy stops the file picker offering a file the server then
+ *   refuses, or the reverse.
+ *
  * How it works
  *   - MAX_UPLOAD_BYTES and MAX_FOLDER_DEPTH are plain number limits.
  *   - FILE_FORMATS lists each allowed type with its MIME type, extensions, and whether it can be previewed or text-extracted.

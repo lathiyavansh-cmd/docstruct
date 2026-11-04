@@ -3,6 +3,11 @@
  *   Middleware that stops a request for a password-protected document's contents unless the caller has
  *   unlocked it in this login session.
  *
+ * Why it exists
+ *   Many routes reveal a protected document's content, and each names the document by a different id. One
+ *   middleware means none of them can forget the password check, and no role, not even owner, can get round
+ *   it by using a different route.
+ *
  * How it works
  *   - requireUnlocked(ctx, from) finds the document the request is about, from a document, version,
  *     annotation or review id in the URL.

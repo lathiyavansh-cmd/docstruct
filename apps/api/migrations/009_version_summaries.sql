@@ -1,6 +1,10 @@
 -- What this file does
 --   Creates the version_summaries table, a cache of one generated summary per document version.
 --
+-- Why it exists
+--   Summarising reads the whole extracted text, and a version never changes, so the result is worked out once
+--   on first request and stored instead of being rebuilt on every visit.
+--
 -- How it works
 --   - version_id is the primary key, so each version has at most one stored summary.
 --   - status is READY with a JSON result, or UNAVAILABLE with a reason.

@@ -1,6 +1,10 @@
 -- What this file does
 --   Adds password protection for documents and the "shared with me" list for documents sent to members.
 --
+-- Why it exists
+--   Some documents, such as contracts, need a lock on top of project roles, and members need a list of what was
+--   sent to them. Tying each unlock to a login session means logging out locks the document again.
+--
 -- How it works
 --   - documents gains password_hash (scrypt, never the password itself), protected_at, protected_by and
 --     password_version. Changing or resetting the password increases password_version, which makes every

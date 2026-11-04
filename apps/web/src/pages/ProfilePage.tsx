@@ -2,6 +2,10 @@
  * What this file does
  *   This is the profile screen. The logged-in user can change their display name and their password.
  *
+ * Why it exists
+ *   A user's name appears on their reviews, comments and activity, so they need a way to correct it, and a way
+ *   to change a password they still know without going through the forgot-password email.
+ *
  * How it works
  *   - Reads the current user from useAuth() (no useQuery here; the user is already loaded at login).
  *   - Save name calls patch('/auth/me') and puts the updated profile back into useAuth with setUser, so the new name shows everywhere.

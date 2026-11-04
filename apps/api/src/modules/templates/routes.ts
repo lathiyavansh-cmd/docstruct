@@ -3,6 +3,10 @@
  *   The HTTP endpoints for document templates: managing a project's checklists, choosing one for a
  *   document, and reading the check results.
  *
+ * Why it exists
+ *   Owners define the checklists, editors choose one for their document and any member reads the results;
+ *   each endpoint names its permission so these differences are enforced on the server.
+ *
  * How it works
  *   - GET    /projects/:id/templates                    any member: the project's templates
  *   - POST   /projects/:id/templates                    owner: create one (name, description, headings)

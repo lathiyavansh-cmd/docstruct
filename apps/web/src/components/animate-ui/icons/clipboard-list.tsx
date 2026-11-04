@@ -1,5 +1,21 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
-// In DocStruct: the animated "clipboard-list" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
+/**
+ * What this file does
+ *   The animated "clipboard-list" icon, exported as ClipboardListIcon through components/icons.ts. Like every
+ *   icon here it stays still on hover (hover motion is switched off in icon.tsx, see "DocStruct: icons stay
+ *   still on hover") and plays its motion only when a component passes `animate`. Nothing passes `animate` to
+ *   it today, so it always shows still. It only affects appearance.
+ *
+ * Why it exists
+ *   It marks templates and the template check (the list of sections a document should contain), and the
+ *   pre-review findings. Copied from animate-ui rather than drawn from scratch: it only changes how the
+ *   screen looks, and every DocStruct feature is still written by the team.
+ *
+ * Where it fits
+ *   Used by: pages/project/ProjectLayout.tsx ("Templates" tab), pages/project/TemplatesPage.tsx,
+ *   components/TemplateCheckCard.tsx, pages/ComparePage.tsx ("Pre-review findings"), pages/DocumentPage.tsx
+ *   ("Edit details") and pages/project/DashboardPage.tsx ("Under review" card).
+ */
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

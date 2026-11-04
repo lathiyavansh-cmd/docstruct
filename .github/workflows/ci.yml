@@ -1,6 +1,10 @@
 # What this file does
 #   GitHub Actions workflow that checks every push and pull request to develop and main.
 #
+# Why it exists
+#   Every change to develop or main must pass the same typecheck, tests, build and commit-message checks on a
+#   clean machine, so code that only works on one laptop cannot be merged.
+#
 # How it works
 #   - commit-messages: on pull requests, checks every new commit message.
 #   - node: installs packages, then runs typecheck, tests and build.

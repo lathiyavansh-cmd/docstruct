@@ -2,6 +2,11 @@
  * What this file does
  *   This is the entry point of the web app. The browser runs this file first, and it mounts the whole React app into the page.
  *
+ * Why it exists
+ *   The providers must wrap the app once, at the top, so every page shares one query cache, login state,
+ *   router and toast list. The fonts are bundled from npm here, so the app does not load them from an
+ *   outside server.
+ *
  * How it works
  *   - Loads the IBM Plex fonts and the global stylesheet (index.css).
  *   - Creates one TanStack Query client that caches all server data for every page.

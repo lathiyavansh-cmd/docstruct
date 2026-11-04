@@ -3,6 +3,10 @@
  *   Defines the HTTP endpoints for document versions: list history, upload a new version, restore an old one,
  *   and get a download or preview link for any version.
  *
+ * Why it exists
+ *   Older versions are still content, so downloading or previewing any version needs the same role and
+ *   password checks as the current one, and replacing a protected document's contents needs an unlock too.
+ *
  * How it works
  *   - Every route runs requireAuth, then authorize() with the permission it needs (for example version.create).
  *   - The body or URL params are validated with zod, then one VersionService method does the work.

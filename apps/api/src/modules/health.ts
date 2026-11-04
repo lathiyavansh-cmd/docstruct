@@ -2,6 +2,10 @@
  * What this file does
  *   A simple GET /api/health endpoint that shows the server and database are working.
  *
+ * Why it exists
+ *   Render health-checks the service at /api/health (render.yaml), and the tests use it too. It needs no login
+ *   and runs a real query, so a lost database connection shows up as a 500 instead of a false "ok".
+ *
  * How it works
  *   - Runs "SELECT 1" to prove the database answers.
  *   - Replies with status 'ok', the app version and which database kind is in use.

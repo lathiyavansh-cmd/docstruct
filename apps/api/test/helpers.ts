@@ -3,6 +3,11 @@
  *   Shared setup code for the API tests. It starts a complete copy of the API for each test file and offers
  *   shortcuts for common steps like signing up, creating a project and uploading a document.
  *
+ * Why it exists
+ *   Each test file needs its own fresh API and database so tests cannot affect each other, and the suite must
+ *   run without a PostgreSQL server, locally and in CI. Keeping that setup and the multi-step sign-up and
+ *   upload calls here stops every test file repeating them.
+ *
  * How it works
  *   - createTestEnv() boots the API with an in-memory PGlite database ("memory://") and a temporary folder
  *     for stored files, and wraps the Express app in supertest so tests can send real HTTP requests.

@@ -1,5 +1,22 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
-// In DocStruct: the animated "send" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
+/**
+ * What this file does
+ *   The animated "send" icon, exported as SendIcon through components/icons.ts. Like every icon here it stays
+ *   still on hover (hover motion is switched off in icon.tsx, see "DocStruct: icons stay still on hover") and
+ *   plays its motion only when a component passes `animate`. It animates only on the selected row of
+ *   CommandPalette.tsx. It only affects appearance.
+ *
+ * Why it exists
+ *   It means "send to someone": sending for review, replying, sharing with members, reminding, and the
+ *   "Shared with me" page. Copied from animate-ui rather than drawn from scratch: it only changes how the
+ *   screen looks, and every DocStruct feature is still written by the team.
+ *
+ * Where it fits
+ *   Used by: components/AppLayout.tsx (sidebar "Shared with me"), components/CommandPalette.tsx,
+ *   components/ReviewPanel.tsx ("Send for review"), components/AnnotationsPanel.tsx (Reply),
+ *   components/ShareWithMembersDialog.tsx, pages/DocumentPage.tsx, pages/RemindersPage.tsx,
+ *   pages/SharedWithMePage.tsx and pages/auth/PasswordPages.tsx.
+ */
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

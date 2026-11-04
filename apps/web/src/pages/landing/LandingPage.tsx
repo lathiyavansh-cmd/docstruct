@@ -3,6 +3,10 @@
  *   The overview page a logged-out visitor sees at "/": what DocStruct is, what it does and how a document
  *   moves through it, with buttons to log in or create an account.
  *
+ * Why it exists
+ *   A logged-out visitor at "/" (an evaluator or a new team member) needs to learn what DocStruct is before
+ *   signing up. Without it, "/" would drop them on a bare login form with no explanation.
+ *
  * How it works
  *   - Sections from top to bottom: navigation bar, hero, numbers,
  *     feature tabs (FeatureTabs), the scroll timeline, the "built in-house" grid, questions and a final call to action.
@@ -134,7 +138,7 @@ function RotatingWord() {
 
 const STATS = [
   { value: 13, label: 'pre-review rules', note: 'Wording, numbers, dates, placeholders and sections; each finding names its rule' },
-  { value: 178, label: 'automated tests', note: '171 on the server and 7 in the browser, run on every change' },
+  { value: 181, label: 'automated tests', note: '154 for the server, 20 for the text extractor and 7 for the browser, run on every change' },
   { value: 4, label: 'project roles', note: 'Owner, editor, reviewer and viewer, checked on every request' },
   { value: 12, label: 'hours per unlock', note: 'A protected document asks for its password again after that' },
 ];

@@ -3,13 +3,17 @@
  *   The sample requirements document used by the feature demos on the overview page: four versions with
  *   their changes marked, and the pre-review finding for each.
  *
+ * Why it exists
+ *   The overview demos must work with no account and no API, so they need realistic data of their own. One
+ *   shared file keeps the versions, change marks and findings consistent across all the demo tabs.
+ *
  * How it works
  *   - VERSIONS holds the sample text; each line is a list of pieces that are unchanged, inserted (+) or deleted (-).
  *   - DiffLine draws one line with insertions highlighted and deletions struck through.
  *   - Everything is local sample data: no API calls, nothing is saved.
  *
  * Where it fits
- *   Used by pages/landing/FeatureTabs.tsx. The findings use the names of real rules from
+ *   Used by pages/landing/FeatureTabs.tsx. The findings are modelled on real rules in
  *   apps/api/src/modules/diff/prereview.ts. Module: app shell / landing page (owner: Vansh).
  */
 import { AlertTriangle, Info, OctagonAlert } from 'lucide-react';

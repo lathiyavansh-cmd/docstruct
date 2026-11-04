@@ -2,6 +2,10 @@
  * What this file does
  *   The entry point that starts the real API server and listens on the configured port.
  *
+ * Why it exists
+ *   Kept apart from app.ts so tests can build the app without opening a port. Only this file listens, loads
+ *   the demo data on a first deployment and shuts down cleanly.
+ *
  * How it works
  *   - Calls bootstrap() to get the context, then createApp() to get the Express app.
  *   - With SEED_DEMO=true it first loads the demo data into an empty database (used on the first deployment).

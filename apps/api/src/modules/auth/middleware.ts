@@ -2,6 +2,11 @@
  * What this file does
  *   Provides the Express middleware that checks a request is logged in, and a helper to read the logged-in user.
  *
+ * Why it exists
+ *   The server, not the browser, decides who is signed in. Routes add this check one by one, so public
+ *   endpoints (share links, signed storage URLs, health, demo accounts) stay open while every private route
+ *   gets the same token check and the same 401.
+ *
  * How it works
  *   - requireAuth(ctx) reads the "Authorization: Bearer <token>" header.
  *   - It asks AuthService.authenticate() to turn the token into a user, then stores it on req.auth.

@@ -1,6 +1,10 @@
 -- What this file does
 --   Creates the tables for DocStruct's own login system.
 --
+-- Why it exists
+--   DocStruct uses no outside login service, so it needs its own tables for password hashes, sessions and
+--   reset tokens. Sessions live in the database so any API instance can check a login (Scalability-2).
+--
 -- How it works
 --   - user_credentials stores one password hash per user.
 --   - sessions stores login sessions by token hash. last_seen_at drives the idle timeout and

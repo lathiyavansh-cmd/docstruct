@@ -3,6 +3,10 @@
  * What this file does
  *   One-time project setup after cloning. The full list of steps is in the comment below.
  *
+ * Why it exists
+ *   A fresh clone has no .env, no built shared package, no tables and no active git hooks (git never turns on
+ *   committed hooks by itself). One command gets every team member to the same working state.
+ *
  * How it works
  *   - run() executes a shell command in the repository root; step() prints a heading.
  *   - Points git at the .githooks folder and copies .env.example to .env if needed.

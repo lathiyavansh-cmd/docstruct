@@ -3,6 +3,11 @@
  *   Defines every permission in DocStruct and which project role (Owner, Editor, Reviewer, Viewer) holds it.
  *   It answers one question: "may a user with this role do this action?"
  *
+ * Why it exists
+ *   The SRS requires the API to enforce roles on every request (SE-10) and the website to hide controls a role
+ *   cannot use (UI-11). Keeping one table here means both read the same rules, so the website does not offer a
+ *   button the API will refuse, while the API stays the only enforcement.
+ *
  * How it works
  *   - PERMISSIONS is the full list of action names, like 'document.create' or 'member.add'.
  *   - OWN says which permissions each role adds by itself.

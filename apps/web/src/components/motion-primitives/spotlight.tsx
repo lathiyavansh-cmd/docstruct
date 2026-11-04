@@ -1,8 +1,17 @@
 // Source: motion-primitives (ibelick), https://motion-primitives.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
- *   A blurred circle of light that follows the mouse inside its parent element and hides when the mouse leaves.
- *   Used by: pages/auth/AuthLayout.tsx (the login and sign-up screens). It only affects appearance; no feature logic.
+ * What this file does
+ *   A blurred circle of light that follows the mouse inside its parent element and hides when the mouse
+ *   leaves.
+ *
+ * Why it exists
+ *   It gives the log-in, sign-up and landing screens a little depth without adding any content. The team
+ *   writes every feature itself (the professor's no-external-API rule); this open-source piece only affects
+ *   looks, so it was copied in rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: pages/auth/AuthLayout.tsx (the login and sign-up screens) and pages/landing/LandingPage.tsx. It
+ *   only affects appearance; no feature logic.
  */
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, useSpring, useTransform, type SpringOptions } from 'motion/react';

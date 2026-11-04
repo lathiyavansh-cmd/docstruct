@@ -3,6 +3,11 @@
  *   The one global stylesheet of the web app. It loads Tailwind CSS and defines DocStruct's fonts,
  *   colours, shadows and a few shared CSS classes.
  *
+ * Why it exists
+ *   Colours and shadows are defined once as theme variables, so every page and component share one palette
+ *   and a colour change here applies everywhere. Focus outlines and reduced motion must cover every page,
+ *   so they belong in the one global stylesheet.
+ *
  * How it works
  *   - @import 'tailwindcss' brings in Tailwind v4. The @theme block turns each --color-* and --shadow-*
  *     variable into Tailwind classes, so --color-primary gives bg-primary, text-primary and so on.

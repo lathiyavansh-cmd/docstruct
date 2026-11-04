@@ -1,5 +1,22 @@
 // Source: animate-ui animated icons (skyleen77), https://animate-ui.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
-// In DocStruct: the animated "arrow-right" icon. It plays its motion when its AnimateIcon parent is hovered (see icon.tsx); it only affects appearance.
+/**
+ * What this file does
+ *   The animated "arrow-right" icon, exported as ArrowRightIcon through components/icons.ts. Like every icon
+ *   here it stays still on hover (hover motion is switched off in icon.tsx, see "DocStruct: icons stay still
+ *   on hover") and plays its motion only when a component passes `animate`. It loops on purpose between the
+ *   "from" and "to" pickers in ComparePage.tsx and on the selected row of CommandPalette.tsx. It only affects
+ *   appearance.
+ *
+ * Why it exists
+ *   It means "go on / open this": it sits on the log-in and sign-up buttons, at the end of clickable rows,
+ *   and between the two version pickers when comparing. Copied from animate-ui rather than drawn from
+ *   scratch: it only changes how the screen looks, and every DocStruct feature is still written by the team.
+ *
+ * Where it fits
+ *   Used by: pages/auth/LoginPage.tsx and SignUpPage.tsx (submit buttons); the rows of ProjectsPage,
+ *   ReviewQueuePage, RemindersPage, SearchPage, SharedWithMePage, project/WorkspacePage and
+ *   project/DashboardPage; pages/ComparePage.tsx and components/CommandPalette.tsx.
+ */
 import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 

@@ -2,6 +2,11 @@
  * What this file does
  *   The core matching algorithm behind version comparison. It finds which parts of two sequences are equal.
  *
+ * Why it exists
+ *   The team's comparison algorithm (Algorithm F) is written against Python's difflib.SequenceMatcher, which
+ *   Node does not have, and the API uses no diff library. This port gives compare.ts the same matching
+ *   blocks, opcodes and ratio for paragraphs, words or characters.
+ *
  * How it works
  *   - The constructor indexes sequence b (b2j: element to positions) and drops "popular" elements.
  *   - findLongestMatch() finds the longest equal run in a given range.

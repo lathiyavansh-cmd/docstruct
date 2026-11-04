@@ -1,9 +1,16 @@
 // Source: motion-primitives (ibelick), https://motion-primitives.com, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   A highlight box that slides smoothly behind whichever item in a list is hovered (or clicked).
- *   Used by: pages/SearchPage.tsx, pages/project/DashboardPage.tsx and pages/project/WorkspacePage.tsx.
- *   It only affects appearance; no feature logic.
+ *
+ * Why it exists
+ *   In long lists of documents and results, a highlight that follows the pointer shows which row a click will
+ *   open. The team writes every feature itself (the professor's no-external-API rule); this open-source piece
+ *   only affects looks, so it was copied in rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: pages/SearchPage.tsx, pages/project/DashboardPage.tsx, pages/project/WorkspacePage.tsx and
+ *   pages/landing/FeatureTabs.tsx. It only affects appearance; no feature logic.
  */
 import { cn } from '@/lib/utils';
 import { AnimatePresence, type Transition, motion } from 'motion/react';

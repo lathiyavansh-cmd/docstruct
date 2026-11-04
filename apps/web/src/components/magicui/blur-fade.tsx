@@ -1,9 +1,18 @@
 // Source: Magic UI (dillionverma), https://magicui.design, MIT. Published on 21st.dev by its author; adapted for DocStruct.
 /**
- * In DocStruct
+ * What this file does
  *   Makes its content fade in from a slight blur and slide a few pixels into place when it first appears.
- *   Used by: pages/ProjectsPage.tsx, ReviewQueuePage.tsx, SearchPage.tsx, auth/AuthLayout.tsx and
- *   project/DashboardPage.tsx. It only affects appearance; no feature logic.
+ *
+ * Why it exists
+ *   Many pages load their sections at different times; a short fade-in makes content arriving feel smooth
+ *   instead of popping in. One shared component keeps the timing the same on every page. The team writes
+ *   every feature itself (the professor's no-external-API rule); this open-source piece only affects looks,
+ *   so it was copied in rather than built from scratch.
+ *
+ * Where it fits
+ *   Used by: pages/ProjectsPage.tsx, ReviewQueuePage.tsx, RemindersPage.tsx, SearchPage.tsx,
+ *   SharedWithMePage.tsx, auth/AuthLayout.tsx, landing/LandingPage.tsx and project/DashboardPage.tsx. It only
+ *   affects appearance; no feature logic.
  */
 import { useRef } from "react"
 import {

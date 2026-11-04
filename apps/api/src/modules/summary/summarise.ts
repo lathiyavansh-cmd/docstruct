@@ -3,6 +3,11 @@
  *   Builds a summary of a whole document: short, medium and detailed sentence lists, key terms, a section
  *   outline and simple stats. It picks real sentences from the text; it does not write new ones.
  *
+ * Why it exists
+ *   Reviewers need a quick overview of a long document, and the no-external-APIs rule rules out an AI
+ *   summarisation service, so this is the team's own TextRank summariser. Picking real sentences means the
+ *   summary never states something the document does not say.
+ *
  * How it works
  *   - sentenceUnits() cuts the text into sentences and remembers which section each belongs to.
  *   - vectors() and cosine() measure how similar every pair of sentences is (TF-IDF).

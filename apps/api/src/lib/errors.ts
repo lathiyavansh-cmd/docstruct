@@ -2,6 +2,10 @@
  * What this file does
  *   Defines the HttpError class and short helper functions for the common HTTP errors.
  *
+ * Why it exists
+ *   Modules throw these instead of writing responses themselves, so every failure reaches the user with a
+ *   status, a code and a readable reason (Usability-4) through the single handler in app.ts.
+ *
  * How it works
  *   - HttpError carries a status code, a machine-readable code and a readable message.
  *   - Helpers like badRequest(), forbidden() and notFound() build the matching HttpError.

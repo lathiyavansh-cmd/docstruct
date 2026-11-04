@@ -2,6 +2,10 @@
  * What this file does
  *   The single list of all feature module routers that the API serves (see the comment below).
  *
+ * Why it exists
+ *   Each feature module is built on its own branch by one owner; one array means merging a module is a
+ *   one-line change here, and app.ts mounts every router the same way under /api.
+ *
  * How it works
  *   - Imports the routes function of each module.
  *   - Exports them in one array; the comments show the SRS module number.

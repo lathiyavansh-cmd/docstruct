@@ -2,6 +2,11 @@
  * What this file does
  *   Tests the role-to-permission rules: what OWNER, EDITOR, REVIEWER and VIEWER may and may not do.
  *
+ * Why it exists
+ *   One permission table decides both what the API allows and which buttons the website shows, so one wrong entry
+ *   would open a security hole or hide a feature. These tests lock in separation of duties (a reviewer cannot
+ *   submit), a read-only viewer and owner-only actions (SE-7, SE-8).
+ *
  * How it works
  *   - This is a plain unit test. It does not start the API; it calls can() and resolvePermissions() from
  *     the shared package directly.
